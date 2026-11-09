@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, TypeAdapter, field_validator
 
+from app.core.rbac import Role
+
 
 class UserCreate(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
@@ -38,6 +40,20 @@ class UserLogin(BaseModel):
         return value
 
 
+class ProfileUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=120)
+    phone: str | None = Field(default=None, pattern=r"^0[0-9]{9}$")
+
+    @field_validator("full_name", mode="before")
+    @classmethod
+    def strip_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
+class RoleAssign(BaseModel):
+    role: Role
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,9 +61,12 @@ class UserResponse(BaseModel):
     full_name: str
     email: EmailStr
     phone: str
+    role: str
     created_at: datetime
 
 
 class LoginResponse(BaseModel):
     message: str
+    access_token: str
+    token_type: str = "bearer"
     user: UserResponse
