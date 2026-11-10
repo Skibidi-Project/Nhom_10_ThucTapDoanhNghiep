@@ -59,8 +59,6 @@ def delete_property(db: Session, user: User, property_id: int) -> None:
     has_room = db.scalar(select(Room.id).where(Room.property_id == prop.id))
     if has_room is not None:
         raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn phòng.")
-    # Xóa liên kết người quản lý trước để tránh vi phạm khóa ngoại.
-    db.query(PropertyManager).filter(PropertyManager.property_id == prop.id).delete(synchronize_session=False)
     db.delete(prop)
     save(db)
 
