@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập | MiniStay</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+    <main class="container">
+        <section class="left">
+            <div class="logo">
+                <div class="logo-icon">⌂</div>
+                <span>MiniStay</span>
+            </div>
+
+            <div class="welcome">
+                <div class="tagline">GIẢI PHÁP QUẢN LÝ THÔNG MINH</div>
+                <h1>
+                    Quản lý phòng trọ
+                    <span>dễ dàng hơn.</span>
+                </h1>
+                <p>
+                    Nền tảng quản lý phòng trọ và ký túc xá mini,
+                    giúp bạn quản lý phòng, người thuê, hợp đồng
+                    và thanh toán trên cùng một hệ thống.
+                </p>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">⌂</div>
+                    <span>Quản lý phòng trọ và ký túc xá</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">♙</div>
+                    <span>Quản lý người thuê và hợp đồng</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✓</div>
+                    <span>Theo dõi hóa đơn và thanh toán</span>
+                </div>
+            </div>
+
+            <div class="left-footer">
+                © 2026 MiniStay. Smart Living Management.
+            </div>
+        </section>
+
+        <section class="right">
+            <div class="form-header">
+                <div class="form-tag">CHÀO MỪNG TRỞ LẠI MINISTAY</div>
+                <h2>Đăng nhập ✨</h2>
+                <p>Đăng nhập bằng email hoặc số điện thoại của bạn.</p>
+            </div>
+            <div id="message" class="message" role="status" aria-live="polite"></div>
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="identifier">Email hoặc số điện thoại</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="identifier" autocomplete="username" placeholder="Email hoặc số điện thoại" required maxlength="255">
+                    </div>
+                    <span class="error" id="identifierError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required maxlength="128">
+                        <button type="button" class="toggle-password" data-target="password" aria-label="Hiện mật khẩu">◉</button>
+                    </div>
+                    <span class="error" id="passwordError"></span>
+                </div>
+                <button type="submit" class="register-btn" id="loginBtn">Đăng nhập <span>→</span></button>
+                <p class="login-text">Chưa có tài khoản? <a href="index.html">Đăng ký ngay</a></p>
+            </form>
+            <div id="userInfo" class="message" role="status" aria-live="polite"></div>
+        </section>
+    </main>
+    <script src="login.api.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý cơ sở / khu trọ - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="login.html">MiniStay</a>
+        <div class="topbar-actions">
+            <span id="accountInfo">Chưa xác thực</span>
+            <button type="button" class="button button-light" id="logoutBtn">Ngắt kết nối</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <div>
+                <h1>Quản lý cơ sở / khu trọ</h1>
+                <p class="subtitle">Tạo mới, xem, cập nhật và xóa các cơ sở thuộc quyền sở hữu của bạn.</p>
+            </div>
+            <button type="button" class="button button-primary" id="addPropertyBtn" hidden>+ Thêm cơ sở</button>
+        </section>
+
+        <section class="panel auth-panel" id="authPanel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Kết nối tài khoản</h2>
+                    <p>Dán Access Token JWT nhận được sau khi đăng nhập để sử dụng chức năng.</p>
+                </div>
+            </div>
+            <form id="tokenForm" class="token-form">
+                <label for="accessToken">Access Token</label>
+                <div class="token-row">
+                    <input id="accessToken" type="password" autocomplete="off" placeholder="Dán Access Token vào đây" required>
+                    <button class="button button-primary" type="submit" id="connectBtn">Kết nối</button>
+                </div>
+            </form>
+            <p class="hint">Token chỉ được lưu trong sessionStorage của tab trình duyệt hiện tại.</p>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section id="propertySection" hidden>
+            <div class="section-heading">
+                <div>
+                    <h2>Danh sách cơ sở</h2>
+                    <p id="propertyCount">0 cơ sở</p>
+                </div>
+                <button type="button" class="button button-outline" id="refreshBtn">↻ Làm mới</button>
+            </div>
+            <div id="propertyList" class="property-grid"></div>
+            <div id="emptyState" class="empty-state" hidden>
+                <div class="empty-icon">⌂</div>
+                <h3>Chưa có cơ sở nào</h3>
+                <p>Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.</p>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="propertyDialog" class="property-dialog">
+        <form id="propertyForm" method="dialog">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">THÔNG TIN CƠ SỞ</p>
+                    <h2 id="dialogTitle">Thêm cơ sở mới</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <input type="hidden" id="propertyId">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="propertyName">Tên cơ sở <span>*</span></label>
+                    <input id="propertyName" name="name" type="text" maxlength="150" placeholder="Ví dụ: Khu trọ Bình An" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="propertyAddress">Địa chỉ <span>*</span></label>
+                    <textarea id="propertyAddress" name="address" rows="2" maxlength="255" placeholder="Số nhà, đường, phường/xã, quận/huyện..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="electricityPrice">Đơn giá điện (đ/kWh)</label>
+                    <input id="electricityPrice" type="number" min="0" step="1" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="waterPrice">Đơn giá nước (đ/m³)</label>
+                    <input id="waterPrice" type="number" min="0" step="1" value="0" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="servicePrice">Phí dịch vụ (đ/tháng)</label>
+                    <input id="servicePrice" type="number" min="0" step="1" value="0" required>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="saveBtn">Lưu cơ sở</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="properties.js"></script>
+</body>
+</html>
