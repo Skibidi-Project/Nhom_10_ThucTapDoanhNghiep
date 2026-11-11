@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:123456@localhost/products_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:123123@localhost/products_db")
 
 engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):
