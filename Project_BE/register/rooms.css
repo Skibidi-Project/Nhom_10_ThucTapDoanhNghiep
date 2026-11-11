@@ -1,0 +1,207 @@
+.room-toolbar {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.5fr) repeat(2, minmax(180px, 1fr));
+    gap: 14px;
+    margin: 22px 0 16px;
+    padding: 18px;
+    border: 1px solid #e8edf1;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.room-toolbar label {
+    display: grid;
+    gap: 7px;
+    color: #53606b;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.room-toolbar input,
+.room-toolbar select,
+.form-group select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    padding: 9px 11px;
+    color: #25313b;
+    background: #fff;
+    font: inherit;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    border: 1px solid #e7ecef;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.room-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.room-table th,
+.room-table td {
+    padding: 14px 15px;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 13px;
+}
+
+.room-table th {
+    color: #66727e;
+    background: #f9fafb;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.room-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.room-table td:first-child {
+    font-weight: 650;
+}
+
+.room-number-button {
+    padding: 0;
+    border: 0;
+    color: #176b57;
+    background: transparent;
+    font-weight: 700;
+}
+
+.room-actions {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.room-action {
+    padding: 7px 9px;
+    border: 1px solid #dce3e8;
+    border-radius: 7px;
+    color: #46525e;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.room-action.danger {
+    color: #b34b46;
+    border-color: #f1d8d6;
+}
+
+.room-action:disabled,
+.pagination button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-available {
+    color: #176348;
+    background: #e9f6ef;
+}
+
+.status-occupied {
+    color: #345c87;
+    background: #edf5ff;
+}
+
+.status-maintenance {
+    color: #8a5a18;
+    background: #fff4dc;
+}
+
+.table-state {
+    margin: 0;
+    padding: 34px 18px;
+    border: 1px dashed #d9e1e6;
+    border-radius: 12px;
+    color: #78838f;
+    background: #fff;
+    text-align: center;
+    font-size: 13px;
+}
+
+.error-state,
+.form-error {
+    color: #a13b37;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #66727e;
+    font-size: 12px;
+}
+
+.pagination .button {
+    padding: 8px 13px;
+}
+
+.form-error {
+    min-height: 18px;
+    margin: 13px 0 0;
+    font-size: 12px;
+}
+
+.detail-content {
+    padding: 26px;
+}
+
+.detail-body {
+    display: grid;
+    gap: 11px;
+    margin-top: 22px;
+    color: #56616c;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.detail-row strong {
+    color: #303b45;
+}
+
+.detail-contract {
+    margin-top: 8px;
+    padding: 15px;
+    border-radius: 9px;
+    background: #f4f8f6;
+}
+
+.detail-contract h3 {
+    margin: 0 0 10px;
+    color: #176b57;
+    font-size: 14px;
+}
+
+@media (max-width: 720px) {
+    .room-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .intro-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .topbar-actions a.button {
+        display: none;
+    }
+}

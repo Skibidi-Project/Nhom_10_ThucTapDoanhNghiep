@@ -94,6 +94,10 @@ function renderProperties() {
         }
         card.append(prices);
 
+        const roomsLink = createElement("a", "button button-outline rooms-link", "Quản lý phòng");
+        roomsLink.href = `rooms.html?property_id=${encodeURIComponent(property.id)}`;
+        card.append(roomsLink);
+
         if (currentUser?.role === "landlord") {
             const actions = createElement("div", "card-actions");
             const editButton = createElement("button", "edit-btn", "Chỉnh sửa");

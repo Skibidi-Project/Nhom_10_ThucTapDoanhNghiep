@@ -64,17 +64,24 @@ form.addEventListener("submit", async event => {
             throw new Error(detail || validation || (response.status === 401 ? "Email/SĐT hoặc mật khẩu không đúng." : response.status >= 500 ? "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng nhập."));
         }
         if (!data?.user || typeof data.message !== "string") throw new Error("Phản hồi máy chủ không hợp lệ.");
+        // showMessage(data.message, "success");
+        // // Chỉ hiển thị các trường công khai mà API trả về; không lưu tài khoản.
+        // const labels = {id: "ID", full_name: "Họ tên", email: "Email", phone: "Số điện thoại", created_at: "Ngày tạo"};
+        // for (const [key, label] of Object.entries(labels)) {
+        //     if (data.user[key] == null) continue;
+        //     const row = document.createElement("p");
+        //     row.textContent = label + ": " + data.user[key];
+        //     userInfo.append(row);
+        // }
+        // userInfo.className = "message success";
+        // password.value = "";
+
+        sessionStorage.setItem("us05_access_token", data.access_token);
         showMessage(data.message, "success");
-        // Chỉ hiển thị các trường công khai mà API trả về; không lưu tài khoản.
-        const labels = {id: "ID", full_name: "Họ tên", email: "Email", phone: "Số điện thoại", created_at: "Ngày tạo"};
-        for (const [key, label] of Object.entries(labels)) {
-            if (data.user[key] == null) continue;
-            const row = document.createElement("p");
-            row.textContent = label + ": " + data.user[key];
-            userInfo.append(row);
-        }
-        userInfo.className = "message success";
         password.value = "";
+        setTimeout(() => {
+            window.location.assign("properties.html");
+        }, 800);
     } catch (error) {
         showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : error.message, "failure");
     } finally {

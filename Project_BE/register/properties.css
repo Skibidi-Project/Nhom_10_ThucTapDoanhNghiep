@@ -69,6 +69,18 @@ button {
     gap: 20px;
 }
 
+.intro-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rooms-link {
+    display: inline-block;
+    margin-top: 14px;
+    text-decoration: none;
+}
+
 h1 {
     margin: 0;
     font-size: clamp(27px, 4vw, 36px);
