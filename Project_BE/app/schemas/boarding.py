@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
@@ -52,6 +53,7 @@ class ManagerAssignmentResponse(BaseModel):
 
 class RoomCreate(BaseModel):
     room_number: str = Field(min_length=1, max_length=20)
+    area_sqm: Decimal | None = Field(default=None, gt=0, max_digits=6, decimal_places=2)
     base_rent: int = Field(ge=0)
 
     @field_validator("room_number", mode="before")
@@ -61,8 +63,15 @@ class RoomCreate(BaseModel):
 
 
 class RoomUpdate(BaseModel):
+    room_number: str | None = Field(default=None, min_length=1, max_length=20)
+    area_sqm: Decimal | None = Field(default=None, gt=0, max_digits=6, decimal_places=2)
     base_rent: int | None = Field(default=None, ge=0)
     status: str | None = None
+
+    @field_validator("room_number", mode="before")
+    @classmethod
+    def strip_number(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("status")
     @classmethod
@@ -78,8 +87,33 @@ class RoomResponse(BaseModel):
     id: int
     property_id: int
     room_number: str
+    area_sqm: Decimal | None
     base_rent: int
     status: str
+
+
+class RoomListItem(RoomResponse):
+    property_name: str
+
+
+class RoomListResponse(BaseModel):
+    items: list[RoomListItem]
+    total: int
+    page: int
+    page_size: int
+
+
+class RoomActiveContractResponse(BaseModel):
+    id: int
+    tenant: str
+    start_date: date
+    end_date: date
+    monthly_rent: int
+
+
+class RoomDetailResponse(RoomResponse):
+    property_name: str
+    active_contract: RoomActiveContractResponse | None
 
 
 class TenantCreate(BaseModel):

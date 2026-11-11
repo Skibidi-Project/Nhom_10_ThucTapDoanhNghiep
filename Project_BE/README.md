@@ -72,6 +72,33 @@ Vai trò: `admin`, `landlord` (chủ trọ), `manager` (người quản lý đư
 `tenant` (người thuê). Chưa đăng nhập: 401. Đã đăng nhập nhưng sai quyền hoặc ngoài
 phạm vi dữ liệu: 403.
 
+### Quản lý phòng
+
+Các endpoint phòng yêu cầu quyền `PROPERTY_OPERATE`: landlord thao tác trên phòng
+thuộc khu trọ mình sở hữu; manager thao tác trên khu trọ được gán. Tenant và tài
+khoản chưa đăng nhập lần lượt nhận 403 và 401.
+
+- `GET /api/properties/{property_id}/rooms` giữ nguyên danh sách phòng của một khu trọ.
+- `POST /api/properties/{property_id}/rooms` tạo phòng (201), body gồm
+  `room_number`, `base_rent` và `area_sqm` tùy chọn. Phòng mới luôn ở trạng thái
+  `available`.
+- `GET /api/rooms?page=1&page_size=10&search=P101&property_id=1&status=available`
+  trả `{items, total, page, page_size}`. `page_size` tối đa 100; status nhận
+  `available`, `occupied` hoặc `maintenance`.
+- `GET /api/rooms/{room_id}` trả chi tiết phòng, tên khu trọ và thông tin hợp đồng
+  hiện ở trạng thái `active` (nếu có).
+- `PUT /api/rooms/{room_id}` nhận một phần các trường `room_number`, `area_sqm`,
+  `base_rent`, `status`. Chỉ được đặt trạng thái thủ công thành `available` hoặc
+  `maintenance`; phòng có hợp đồng `active` không được đổi trạng thái.
+- `DELETE /api/rooms/{room_id}` trả 204. Phòng có hợp đồng hoạt động hoặc lịch sử
+  hợp đồng/chỉ số điện nước không thể xóa.
+
+Số phòng phải duy nhất trong một khu trọ; diện tích (m²) phải lớn hơn 0 và tối đa
+2 chữ số thập phân; giá thuê là số nguyên không âm theo VNĐ. Cột diện tích mới
+được bổ sung an toàn khi ứng dụng khởi động, không ghi đè dữ liệu phòng hiện có.
+Seed demo tùy chọn nằm trong `seed_demo_rooms.sql`; script này không được ứng dụng
+tự chạy.
+
 ## Phân quyền API
 
 | API / nghiệp vụ | Vai trò được phép |
@@ -82,13 +109,14 @@ phạm vi dữ liệu: 403.
 | `/api/users/me` và `/api/users/me/contracts`, `/api/users/me/invoices` | Người dùng đã đăng nhập; chỉ dữ liệu cá nhân/thuê gắn với tài khoản |
 | `/api/properties` | `landlord` xem/tạo khu trọ của mình; `manager` chỉ xem khu trọ được giao |
 | `/api/properties/{id}` và `/api/properties/{id}/managers` | `landlord` sở hữu khu trọ; `manager` không sửa thông tin khu trọ hoặc gán quản lý |
-| `/api/properties/{id}/rooms`, `/api/rooms/{id}` | `landlord` sở hữu hoặc `manager` được giao khu trọ |
+| `/api/properties/{id}/rooms`, `/api/rooms`, `/api/rooms/{id}` (GET/PUT/DELETE) | `landlord` sở hữu hoặc `manager` được giao khu trọ |
 | `/api/tenants`, `/api/contracts` | `landlord` hoặc `manager`, giới hạn theo phạm vi khu trọ |
 | `/api/rooms/{id}/readings` | `landlord` sở hữu hoặc `manager` được giao khu trọ |
 | `/api/invoices`, `/api/contracts/{id}/invoices`, `/api/invoices/{id}/payments` | `landlord`/`manager` trong phạm vi được phép; `tenant` chỉ xem hóa đơn của mình |
 
-Lỗi: 422 khi dữ liệu không hợp lệ; 409 khi trùng email/SĐT; 401 khi thông tin
-đăng nhập sai; 503 khi database gặp sự cố. Không trả chi tiết SQL cho client.
+Lỗi: 422 khi dữ liệu không hợp lệ; 409 khi trùng email/SĐT, trùng số phòng hoặc
+xung đột nghiệp vụ; 401 khi thông tin đăng nhập sai; 503 khi database gặp sự cố.
+Không trả chi tiết SQL cho client.
 Chỉ thử đăng ký tài khoản khi đã xác nhận database là môi trường thử nghiệm an toàn.
 
 ## Xử lý lỗi MySQL

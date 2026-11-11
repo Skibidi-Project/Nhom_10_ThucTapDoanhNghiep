@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
@@ -12,6 +12,8 @@ from app.schemas.boarding import (
     PropertyResponse,
     PropertyUpdate,
     RoomCreate,
+    RoomDetailResponse,
+    RoomListResponse,
     RoomResponse,
     RoomUpdate,
 )
@@ -113,3 +115,35 @@ def update_room(
     user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
 ):
     return property_service.update_room(db, user, room_id, data)
+
+
+@room_router.get("", response_model=RoomListResponse)
+def read_all_rooms(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    search: str | None = Query(default=None, max_length=20),
+    property_id: int | None = Query(default=None, gt=0),
+    room_status: str | None = Query(default=None, alias="status", pattern="^(available|occupied|maintenance)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
+):
+    return property_service.list_all_rooms(db, user, page, page_size, search, property_id, room_status)
+
+
+@room_router.get("/{room_id}", response_model=RoomDetailResponse)
+def read_room(
+    room_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
+):
+    return property_service.read_room(db, user, room_id)
+
+
+@room_router.delete("/{room_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_room(
+    room_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
+):
+    property_service.delete_room(db, user, room_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

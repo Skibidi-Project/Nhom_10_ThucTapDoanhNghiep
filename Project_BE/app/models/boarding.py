@@ -1,6 +1,7 @@
 from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -38,6 +39,7 @@ class Room(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     property_id: Mapped[int] = mapped_column(ForeignKey("properties.id"), nullable=False)
     room_number: Mapped[str] = mapped_column(String(20), nullable=False)
+    area_sqm: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     base_rent: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="available")
 

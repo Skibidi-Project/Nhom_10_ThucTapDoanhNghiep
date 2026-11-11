@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý phòng - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="rooms.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="login.html">MiniStay</a>
+        <div class="topbar-actions">
+            <span id="accountInfo">Chưa xác thực</span>
+            <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
+            <button type="button" class="button button-light" id="logoutBtn">Ngắt kết nối</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <div>
+                <h1>Quản lý phòng</h1>
+                <p class="subtitle">Theo dõi danh sách phòng trong các khu trọ bạn được phép quản lý.</p>
+            </div>
+            <button type="button" class="button button-primary" id="addRoomBtn" hidden>+ Thêm phòng</button>
+        </section>
+
+        <section class="panel auth-panel" id="authPanel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Kết nối tài khoản</h2>
+                    <p>Dán Access Token JWT nhận được sau khi đăng nhập để sử dụng chức năng.</p>
+                </div>
+            </div>
+            <form id="tokenForm" class="token-form">
+                <label for="accessToken">Access Token</label>
+                <div class="token-row">
+                    <input id="accessToken" type="password" autocomplete="off" placeholder="Dán Access Token vào đây" required>
+                    <button class="button button-primary" type="submit" id="connectBtn">Kết nối</button>
+                </div>
+            </form>
+            <p class="hint">Token được dùng chung với trang quản lý cơ sở trong sessionStorage của tab hiện tại.</p>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section id="roomSection" hidden>
+            <div class="section-heading">
+                <div>
+                    <h2>Danh sách phòng</h2>
+                    <p id="resultSummary">Đang tải...</p>
+                </div>
+                <button type="button" class="button button-outline" id="refreshBtn">↻ Làm mới</button>
+            </div>
+
+            <div class="room-toolbar">
+                <label class="search-field" for="searchInput">
+                    <span>Tìm số phòng</span>
+                    <input id="searchInput" type="search" maxlength="20" placeholder="Nhập số phòng...">
+                </label>
+                <label for="propertyFilter">
+                    <span>Khu trọ</span>
+                    <select id="propertyFilter"><option value="">Tất cả khu trọ</option></select>
+                </label>
+                <label for="statusFilter">
+                    <span>Trạng thái</span>
+                    <select id="statusFilter">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="available">Trống</option>
+                        <option value="occupied">Đã thuê</option>
+                        <option value="maintenance">Bảo trì</option>
+                    </select>
+                </label>
+            </div>
+
+            <p id="loadingState" class="table-state">Đang tải danh sách phòng...</p>
+            <p id="errorState" class="table-state error-state" hidden></p>
+            <p id="emptyState" class="table-state" hidden>Không tìm thấy phòng phù hợp.</p>
+            <div class="table-scroll" id="tableContainer" hidden>
+                <table class="room-table">
+                    <thead>
+                        <tr>
+                            <th>Khu trọ</th>
+                            <th>Số phòng</th>
+                            <th>Diện tích</th>
+                            <th>Giá thuê</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roomRows"></tbody>
+                </table>
+            </div>
+            <nav class="pagination" aria-label="Phân trang danh sách phòng">
+                <button type="button" class="button button-outline" id="previousPageBtn">Trước</button>
+                <span id="pageInfo">Trang 1/1</span>
+                <button type="button" class="button button-outline" id="nextPageBtn">Sau</button>
+            </nav>
+        </section>
+    </main>
+
+    <dialog id="roomDialog" class="property-dialog">
+        <form id="roomForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">THÔNG TIN PHÒNG</p>
+                    <h2 id="roomDialogTitle">Thêm phòng</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <input type="hidden" id="roomId">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="roomProperty">Khu trọ <span>*</span></label>
+                    <select id="roomProperty" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="roomNumber">Số phòng <span>*</span></label>
+                    <input id="roomNumber" type="text" maxlength="20" required>
+                </div>
+                <div class="form-group">
+                    <label for="roomArea">Diện tích (m²)</label>
+                    <input id="roomArea" type="number" min="0.01" max="9999.99" step="0.01" placeholder="Ví dụ: 20.5">
+                </div>
+                <div class="form-group full-width">
+                    <label for="roomRent">Giá thuê (đ/tháng) <span>*</span></label>
+                    <input id="roomRent" type="number" min="0" step="1" required>
+                </div>
+                <div class="form-group full-width" id="statusFormGroup" hidden>
+                    <label for="roomStatus">Trạng thái</label>
+                    <select id="roomStatus">
+                        <option value="available">Trống</option>
+                        <option value="maintenance">Bảo trì</option>
+                    </select>
+                </div>
+            </div>
+            <p id="formError" class="form-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="saveRoomBtn">Lưu phòng</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="detailDialog" class="property-dialog">
+        <div class="detail-content">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">CHI TIẾT PHÒNG</p>
+                    <h2 id="detailTitle">Thông tin phòng</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDetailBtn" aria-label="Đóng">×</button>
+            </div>
+            <div id="detailBody" class="detail-body"></div>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="closeDetailActionBtn">Đóng</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="rooms.js"></script>
+</body>
+</html>
