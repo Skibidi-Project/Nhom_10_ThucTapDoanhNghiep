@@ -134,6 +134,7 @@ function renderGuestView() {
     addPropertyBtn.hidden = true;
     document.getElementById("refreshBtn").hidden = true;
     document.getElementById("roomsLink").hidden = true;
+    document.getElementById("contractsLink").hidden = true;
 }
 
 async function connect(token) {
@@ -153,6 +154,7 @@ async function connect(token) {
     guestActions.hidden = true;
     document.getElementById("refreshBtn").hidden = false;
     document.getElementById("roomsLink").hidden = false;
+    document.getElementById("contractsLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
     document.getElementById("emptyTitle").textContent = "Chưa có cơ sở nào";
     document.getElementById("emptyDescription").textContent = "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";

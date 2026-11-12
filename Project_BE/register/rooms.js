@@ -111,6 +111,11 @@ function renderRows(items) {
         const actionsCell = document.createElement("td");
         const actions = createElement("div", "room-actions");
         appendAction(actions, "Chi tiết", () => showRoomDetail(room));
+        if (room.status === "available") {
+            appendAction(actions, "Lập hợp đồng", () => {
+                window.location.href = `contracts.html?room_id=${encodeURIComponent(room.id)}`;
+            });
+        }
         if (room.status !== "occupied") {
             appendAction(actions, "Sửa", () => openEditDialog(room));
             appendAction(actions, "Xóa", () => deleteRoom(room), "danger");
