@@ -46,6 +46,17 @@ button {
     letter-spacing: -.7px;
 }
 
+.topbar-left,
+.guest-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.guest-actions .button {
+    text-decoration: none;
+}
+
 .topbar-actions {
     display: flex;
     align-items: center;

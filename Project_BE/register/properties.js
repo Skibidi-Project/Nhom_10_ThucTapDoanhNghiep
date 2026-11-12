@@ -1,10 +1,7 @@
 const API_BASE = "/api";
-const tokenForm = document.getElementById("tokenForm");
-const accessTokenInput = document.getElementById("accessToken");
-const connectBtn = document.getElementById("connectBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const accountInfo = document.getElementById("accountInfo");
-const authPanel = document.getElementById("authPanel");
+const guestActions = document.getElementById("guestActions");
 const propertySection = document.getElementById("propertySection");
 const propertyList = document.getElementById("propertyList");
 const propertyCount = document.getElementById("propertyCount");
@@ -123,6 +120,22 @@ async function loadProperties() {
     }
 }
 
+function renderGuestView() {
+    currentUser = null;
+    properties = [];
+    propertyList.replaceChildren();
+    propertyCount.textContent = "Đăng nhập để xem cơ sở";
+    emptyState.hidden = false;
+    document.getElementById("emptyTitle").textContent = "Đăng nhập để xem danh sách cơ sở";
+    document.getElementById("emptyDescription").textContent = "Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.";
+    guestActions.hidden = false;
+    accountInfo.hidden = true;
+    logoutBtn.hidden = true;
+    addPropertyBtn.hidden = true;
+    document.getElementById("refreshBtn").hidden = true;
+    document.getElementById("roomsLink").hidden = true;
+}
+
 async function connect(token) {
     accessToken = token.trim();
     if (!accessToken) throw new Error("Vui lòng nhập Access Token.");
@@ -135,9 +148,14 @@ async function connect(token) {
     currentUser = user;
     sessionStorage.setItem("us05_access_token", accessToken);
     accountInfo.textContent = `${user.full_name} · ${user.role}`;
-    authPanel.hidden = true;
-    propertySection.hidden = false;
+    accountInfo.hidden = false;
+    logoutBtn.hidden = false;
+    guestActions.hidden = true;
+    document.getElementById("refreshBtn").hidden = false;
+    document.getElementById("roomsLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
+    document.getElementById("emptyTitle").textContent = "Chưa có cơ sở nào";
+    document.getElementById("emptyDescription").textContent = "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";
     await loadProperties();
 }
 
@@ -147,11 +165,7 @@ function disconnect() {
     currentUser = null;
     properties = [];
     propertyList.replaceChildren();
-    propertySection.hidden = true;
-    authPanel.hidden = false;
-    addPropertyBtn.hidden = true;
-    accountInfo.textContent = "Chưa xác thực";
-    accessTokenInput.value = "";
+    renderGuestView();
     hideNotice();
 }
 
@@ -241,21 +255,6 @@ async function deleteProperty(property) {
     }
 }
 
-tokenForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    connectBtn.disabled = true;
-    connectBtn.textContent = "Đang kết nối...";
-    try {
-        await connect(accessTokenInput.value);
-        showNotice("Kết nối tài khoản thành công.", "success");
-    } catch (error) {
-        showNotice(error.message, "error");
-    } finally {
-        connectBtn.disabled = false;
-        connectBtn.textContent = "Kết nối";
-    }
-});
-
 addPropertyBtn.addEventListener("click", openCreateDialog);
 document.getElementById("refreshBtn").addEventListener("click", loadProperties);
 document.getElementById("closeDialogBtn").addEventListener("click", () => dialog.close());
@@ -267,4 +266,6 @@ if (accessToken) {
         disconnect();
         showNotice(error.message, "error");
     });
+} else {
+    renderGuestView();
 }

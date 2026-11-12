@@ -8,10 +8,16 @@
 </head>
 <body>
     <header class="topbar">
-        <a class="brand" href="login.html">MiniStay</a>
+        <div class="topbar-left">
+            <a class="brand" href="properties.html">MiniStay</a>
+            <nav class="guest-actions" id="guestActions" aria-label="Tài khoản">
+                <a class="button button-outline" href="login.html">Đăng nhập</a>
+                <a class="button button-primary" href="index.html">Đăng ký</a>
+            </nav>
+        </div>
         <div class="topbar-actions">
-            <span id="accountInfo">Chưa xác thực</span>
-            <button type="button" class="button button-light" id="logoutBtn">Ngắt kết nối</button>
+            <span id="accountInfo" hidden></span>
+            <button type="button" class="button button-light" id="logoutBtn" hidden>Đăng xuất</button>
         </div>
     </header>
 
@@ -22,43 +28,26 @@
                 <p class="subtitle">Tạo mới, xem, cập nhật và xóa các cơ sở thuộc quyền sở hữu của bạn.</p>
             </div>
             <div class="intro-actions">
-                <a class="button button-outline" href="rooms.html">Quản lý phòng</a>
+                <a class="button button-outline" id="roomsLink" href="rooms.html">Quản lý phòng</a>
                 <button type="button" class="button button-primary" id="addPropertyBtn" hidden>+ Thêm cơ sở</button>
             </div>
         </section>
 
-        <section class="panel auth-panel" id="authPanel">
-            <div class="panel-heading">
-                <div>
-                    <h2>Kết nối tài khoản</h2>
-                    <p>Dán Access Token JWT nhận được sau khi đăng nhập để sử dụng chức năng.</p>
-                </div>
-            </div>
-            <form id="tokenForm" class="token-form">
-                <label for="accessToken">Access Token</label>
-                <div class="token-row">
-                    <input id="accessToken" type="password" autocomplete="off" placeholder="Dán Access Token vào đây" required>
-                    <button class="button button-primary" type="submit" id="connectBtn">Kết nối</button>
-                </div>
-            </form>
-            <p class="hint">Token chỉ được lưu trong sessionStorage của tab trình duyệt hiện tại.</p>
-        </section>
-
         <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
-        <section id="propertySection" hidden>
+        <section id="propertySection">
             <div class="section-heading">
                 <div>
                     <h2>Danh sách cơ sở</h2>
                     <p id="propertyCount">0 cơ sở</p>
                 </div>
-                <button type="button" class="button button-outline" id="refreshBtn">↻ Làm mới</button>
+                <button type="button" class="button button-outline" id="refreshBtn" hidden>↻ Làm mới</button>
             </div>
             <div id="propertyList" class="property-grid"></div>
             <div id="emptyState" class="empty-state" hidden>
                 <div class="empty-icon">⌂</div>
-                <h3>Chưa có cơ sở nào</h3>
-                <p>Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.</p>
+                <h3 id="emptyTitle">Đăng nhập để xem danh sách cơ sở</h3>
+                <p id="emptyDescription">Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.</p>
             </div>
         </section>
     </main>

@@ -76,8 +76,8 @@ class RoomUpdate(BaseModel):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value):
-        if value is not None and value not in {"available", "maintenance"}:
-            raise ValueError("Chỉ được chuyển phòng sang Trống hoặc Bảo trì.")
+        if value is not None and value not in {"available", "reserved", "occupied", "maintenance"}:
+            raise ValueError("Trạng thái phòng không hợp lệ.")
         return value
 
 

@@ -115,6 +115,11 @@
     background: #e9f6ef;
 }
 
+.status-reserved {
+    color: #805018;
+    background: #fff4dc;
+}
+
 .status-occupied {
     color: #345c87;
     background: #edf5ff;

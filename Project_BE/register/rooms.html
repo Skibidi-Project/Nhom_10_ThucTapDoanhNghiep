@@ -67,8 +67,9 @@
                     <span>Trạng thái</span>
                     <select id="statusFilter">
                         <option value="">Tất cả trạng thái</option>
-                        <option value="available">Trống</option>
-                        <option value="occupied">Đã thuê</option>
+                        <option value="available">Đang trống</option>
+                        <option value="reserved">Đã đặt cọc</option>
+                        <option value="occupied">Đang thuê</option>
                         <option value="maintenance">Bảo trì</option>
                     </select>
                 </label>
@@ -130,7 +131,9 @@
                 <div class="form-group full-width" id="statusFormGroup" hidden>
                     <label for="roomStatus">Trạng thái</label>
                     <select id="roomStatus">
-                        <option value="available">Trống</option>
+                        <option value="available">Đang trống</option>
+                        <option value="reserved">Đã đặt cọc</option>
+                        <option value="occupied">Đang thuê</option>
                         <option value="maintenance">Bảo trì</option>
                     </select>
                 </div>
