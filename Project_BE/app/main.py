@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.db.database import engine, init_db
-from app.routers import auth, billing, contracts, properties, tenants, users
+from app.routers import auth, billing, buildings, contracts, properties, tenants, users
 
 
 @asynccontextmanager
@@ -23,6 +23,8 @@ app = FastAPI(
 )
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(buildings.property_router)
+app.include_router(buildings.router)
 app.include_router(properties.router)
 app.include_router(properties.room_router)
 app.include_router(tenants.router)

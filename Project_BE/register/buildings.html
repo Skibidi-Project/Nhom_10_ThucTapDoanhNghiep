@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tòa nhà & tầng - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="buildings.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="properties.html">MiniStay<span class="brand-dot">.</span></a>
+        <div class="topbar-actions">
+            <span id="accountInfo">Chưa xác thực</span>
+            <button type="button" class="button button-light" id="logoutBtn">Ngắt kết nối</button>
+        </div>
+    </header>
+
+    <main class="container buildings-container">
+        <nav class="breadcrumb" aria-label="Điều hướng">
+            <a href="properties.html">Cơ sở / Khu trọ</a>
+            <span aria-hidden="true">›</span>
+            <span>Tòa nhà & tầng</span>
+        </nav>
+
+        <section class="hero">
+            <div>
+                <p class="eyebrow">MINISTAY · QUẢN LÝ CƠ SỞ</p>
+                <h1>Tòa nhà & <em>phân tầng</em></h1>
+                <p class="subtitle">Tổ chức các block và đặt tên tầng cho từng khu trọ.</p>
+                <p id="propertyInfo" class="property-label">Đang xác định khu trọ...</p>
+            </div>
+            <button type="button" class="button button-primary" id="addBuildingBtn" hidden>+ Thêm tòa nhà</button>
+        </section>
+
+        <section class="panel auth-panel" id="authPanel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Kết nối tài khoản</h2>
+                    <p>Dán token sau khi đăng nhập để tiếp tục. Token chỉ lưu trong tab hiện tại.</p>
+                </div>
+            </div>
+            <form id="tokenForm" class="token-form">
+                <label for="accessToken">Access Token</label>
+                <div class="token-row">
+                    <input id="accessToken" type="password" autocomplete="off" placeholder="Dán JWT Access Token" required>
+                    <button type="submit" id="connectBtn" class="button button-primary">Kết nối</button>
+                </div>
+            </form>
+        </section>
+
+        <div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+        <section id="buildingSection" hidden>
+            <div class="stats-row" aria-label="Tổng quan">
+                <div class="stat-box"><span>SỐ TÒA NHÀ</span><strong id="buildingCount">0</strong></div>
+                <div class="stat-box"><span>TỔNG SỐ TẦNG</span><strong id="floorCount">0</strong></div>
+                <div class="stat-box stat-hint"><span>PHẠM VI</span><strong>1 khu trọ</strong></div>
+            </div>
+            <div class="section-heading building-heading">
+                <div>
+                    <h2>Danh sách tòa nhà</h2>
+                    <p>Tòa nhà và cấu hình tầng hiện tại</p>
+                </div>
+                <button type="button" class="button button-outline" id="refreshBtn">↻ Làm mới</button>
+            </div>
+            <p id="loadingState" class="state-info" hidden>Đang tải dữ liệu...</p>
+            <div id="buildingList" class="building-grid"></div>
+            <div id="emptyState" class="empty-state" hidden>
+                <div class="empty-icon">▤</div>
+                <h3>Chưa có tòa nhà nào</h3>
+                <p>Nhấn “Thêm tòa nhà” để thiết lập block đầu tiên.</p>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="buildingDialog" class="property-dialog building-dialog">
+        <form id="buildingForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">CẤU HÌNH TÒA NHÀ</p>
+                    <h2 id="dialogTitle">Thêm tòa nhà</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <input type="hidden" id="buildingId">
+            <div class="building-form-fields">
+                <div class="form-group">
+                    <label for="buildingName">Tên tòa nhà / Block <span>*</span></label>
+                    <input type="text" id="buildingName" maxlength="120" placeholder="Ví dụ: Block A" required>
+                </div>
+                <div class="form-group">
+                    <label for="numberOfFloors">Số tầng <span>*</span></label>
+                    <input type="number" id="numberOfFloors" min="1" max="30" step="1" value="1" required>
+                    <p class="field-help">Từ 1 đến 30 tầng. Khi giảm số tầng, các tầng cuối sẽ bị xóa.</p>
+                </div>
+                <div class="floor-form-heading">
+                    <strong>Tên từng tầng</strong>
+                    <span>Không trùng tên trong cùng tòa nhà</span>
+                </div>
+                <div id="floorInputs" class="floor-input-grid"></div>
+            </div>
+            <p id="formError" class="form-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button type="button" id="cancelBtn" class="button button-light">Hủy</button>
+                <button type="submit" id="saveBuildingBtn" class="button button-primary">Lưu tòa nhà</button>
+            </div>
+        </form>
+    </dialog>
+    <script src="buildings.js"></script>
+</body>
+</html>

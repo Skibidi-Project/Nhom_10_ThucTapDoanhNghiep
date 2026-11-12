@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
 from app.models.boarding import Contract, Property, PropertyManager, Room, TenantProfile, UtilityReading
+from app.models.building import Building
 from app.models.user import User
 from app.schemas.boarding import (
     ManagerAssign,
@@ -68,6 +69,9 @@ def delete_property(db: Session, user: User, property_id: int) -> None:
     has_room = db.scalar(select(Room.id).where(Room.property_id == prop.id))
     if has_room is not None:
         raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn phòng.")
+    has_building = db.scalar(select(Building.id).where(Building.property_id == prop.id))
+    if has_building is not None:
+        raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn tòa nhà.")
     db.delete(prop)
     save(db)
 
