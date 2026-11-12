@@ -99,6 +99,24 @@ Số phòng phải duy nhất trong một khu trọ; diện tích (m²) phải l
 Seed demo tùy chọn nằm trong `seed_demo_rooms.sql`; script này không được ứng dụng
 tự chạy.
 
+### Lập hợp đồng thuê
+
+`POST /api/contracts` tạo hợp đồng (201) cho phòng đang trống. Body yêu cầu
+`room_id`, `tenant_id`, `start_date`, `end_date`, `monthly_rent`; `deposit`
+mặc định 0 và `payment_cycle_months` mặc định 1. Kỳ thanh toán chỉ nhận 1, 2, 3,
+6 hoặc 12 tháng. Ngày kết thúc phải sau ngày bắt đầu; ngày bắt đầu không được
+quá một năm trong quá khứ và thời hạn không vượt quá 10 năm. Tiền thuê phải lớn
+hơn 0; tiền cọc không âm và tối đa bằng 3 tháng tiền thuê.
+
+Landlord chỉ lập hợp đồng cho khu trọ mình sở hữu; manager chỉ cho khu trọ được
+giao. Khách thuê đại diện phải thuộc cùng landlord sở hữu khu trọ. Phòng phải
+đang trống; hợp đồng active có khoảng ngày giao với hợp đồng mới gây HTTP 409.
+Việc tạo hợp đồng và chuyển phòng sang `occupied` được lưu trong cùng transaction.
+`GET /api/contracts`, `GET /api/contracts/{id}` và response tạo mới bao gồm số
+phòng, mã/tên khu trọ và tên khách thuê. `rental_contracts.payment_cycle_months`
+được ứng dụng tự bổ sung an toàn khi khởi động; có thể áp dụng script tương ứng
+trong `sql.sql` thủ công nếu cần.
+
 ## Phân quyền API
 
 | API / nghiệp vụ | Vai trò được phép |

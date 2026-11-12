@@ -49,9 +49,23 @@ def ensure_room_area_column() -> None:
         connection.execute(text("ALTER TABLE rooms ADD COLUMN area_sqm NUMERIC(6, 2) NULL"))
 
 
+def ensure_contract_payment_cycle_column() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("rental_contracts"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("rental_contracts")}
+    if "payment_cycle_months" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE rental_contracts ADD COLUMN payment_cycle_months INT NOT NULL DEFAULT 1")
+        )
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     ensure_user_role_column()
     ensure_room_area_column()
+    ensure_contract_payment_cycle_column()

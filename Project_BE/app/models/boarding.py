@@ -70,6 +70,7 @@ class Contract(Base):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     deposit: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     monthly_rent: Mapped[int] = mapped_column(Integer, nullable=False)
+    payment_cycle_months: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
 
 

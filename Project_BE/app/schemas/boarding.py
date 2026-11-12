@@ -1,8 +1,15 @@
+import calendar
 from datetime import date
 from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+
+MAX_CONTRACT_YEARS = 10
+MAX_START_DATE_PAST_YEARS = 1
+MAX_DEPOSIT_MONTHS = 3
+ALLOWED_PAYMENT_CYCLES = {1, 2, 3, 6, 12}
+
 
 class PropertyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=150)
@@ -158,13 +165,53 @@ class ContractCreate(BaseModel):
     tenant_id: int = Field(gt=0)
     start_date: date
     end_date: date
-    deposit: int = Field(default=0, ge=0)
-    monthly_rent: int = Field(ge=0)
+    deposit: int = 0
+    monthly_rent: int
+    payment_cycle_months: int = Field(default=1)
+
+    @field_validator("deposit")
+    @classmethod
+    def validate_deposit(cls, value):
+        if value < 0:
+            raise ValueError("Tiền cọc phải là số nguyên không âm.")
+        return value
+
+    @field_validator("monthly_rent")
+    @classmethod
+    def validate_monthly_rent(cls, value):
+        if value <= 0:
+            raise ValueError("Tiền thuê hàng tháng phải lớn hơn 0.")
+        return value
+
+    @field_validator("payment_cycle_months")
+    @classmethod
+    def validate_payment_cycle(cls, value):
+        if value not in ALLOWED_PAYMENT_CYCLES:
+            raise ValueError("Kỳ thanh toán chỉ được là 1, 2, 3, 6 hoặc 12 tháng.")
+        return value
 
     @model_validator(mode="after")
     def check_dates(self):
         if self.end_date <= self.start_date:
             raise ValueError("Ngày kết thúc phải sau ngày bắt đầu.")
+        today = date.today()
+        earliest_start = date(
+            today.year - MAX_START_DATE_PAST_YEARS,
+            today.month,
+            min(today.day, calendar.monthrange(today.year - MAX_START_DATE_PAST_YEARS, today.month)[1]),
+        )
+        if self.start_date < earliest_start:
+            raise ValueError("Ngày bắt đầu không được trước hôm nay quá 1 năm.")
+        end_year = self.start_date.year + MAX_CONTRACT_YEARS
+        latest_end = date(
+            end_year,
+            self.start_date.month,
+            min(self.start_date.day, calendar.monthrange(end_year, self.start_date.month)[1]),
+        )
+        if self.end_date > latest_end:
+            raise ValueError("Thời hạn hợp đồng không được vượt quá 10 năm.")
+        if self.deposit > MAX_DEPOSIT_MONTHS * self.monthly_rent:
+            raise ValueError("Tiền cọc không được vượt quá 3 tháng tiền thuê.")
         return self
 
 
@@ -179,7 +226,12 @@ class ContractResponse(BaseModel):
     end_date: date
     deposit: int
     monthly_rent: int
+    payment_cycle_months: int
     status: str
+    room_number: str
+    property_id: int
+    property_name: str
+    tenant_name: str
 
 
 class UtilityType(str, Enum):
