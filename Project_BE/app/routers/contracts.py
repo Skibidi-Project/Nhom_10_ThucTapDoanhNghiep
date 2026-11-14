@@ -5,7 +5,7 @@ from app.core.deps import block_privilege_override, get_current_user, require_pe
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import ContractCreate, ContractResponse, InvoiceCreate, InvoiceResponse
+from app.schemas.boarding import ContractCreate, ContractResponse, DepositUpdate, InvoiceCreate, InvoiceResponse
 from app.services import billing_service, contract_service
 
 router = APIRouter(
@@ -48,6 +48,25 @@ def terminate_contract(
     user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
 ):
     return contract_service.terminate_contract(db, user, contract_id)
+
+
+@router.patch("/{contract_id}/deposit", response_model=ContractResponse)
+def update_contract_deposit(
+    contract_id: int,
+    data: DepositUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
+):
+    return contract_service.update_deposit(db, user, contract_id, data)
+
+
+@router.post("/{contract_id}/liquidate", response_model=ContractResponse)
+def liquidate_contract(
+    contract_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
+):
+    return contract_service.liquidate_contract(db, user, contract_id)
 
 
 @router.post("/{contract_id}/invoices", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)

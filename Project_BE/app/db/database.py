@@ -62,6 +62,20 @@ def ensure_contract_payment_cycle_column() -> None:
         )
 
 
+def ensure_contract_deposit_columns() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("rental_contracts"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("rental_contracts")}
+    with engine.begin() as connection:
+        if "deposit_status" not in columns:
+            connection.execute(text("ALTER TABLE rental_contracts ADD COLUMN deposit_status VARCHAR(20) NOT NULL DEFAULT 'unpaid'"))
+        if "deposit_returned_amount" not in columns:
+            connection.execute(text("ALTER TABLE rental_contracts ADD COLUMN deposit_returned_amount INT NOT NULL DEFAULT 0"))
+        if "deposit_note" not in columns:
+            connection.execute(text("ALTER TABLE rental_contracts ADD COLUMN deposit_note VARCHAR(500) NULL"))
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
@@ -69,3 +83,4 @@ def init_db() -> None:
     ensure_user_role_column()
     ensure_room_area_column()
     ensure_contract_payment_cycle_column()
+    ensure_contract_deposit_columns()

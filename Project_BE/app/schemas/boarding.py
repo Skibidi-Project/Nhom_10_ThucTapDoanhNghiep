@@ -225,6 +225,9 @@ class ContractResponse(BaseModel):
     start_date: date
     end_date: date
     deposit: int
+    deposit_status: str
+    deposit_returned_amount: int
+    deposit_note: str | None
     monthly_rent: int
     payment_cycle_months: int
     status: str
@@ -232,6 +235,20 @@ class ContractResponse(BaseModel):
     property_id: int
     property_name: str
     tenant_name: str
+
+
+class DepositUpdate(BaseModel):
+    status: str = Field(pattern=r"^(held|returned|deducted|not_applicable)$")
+    returned_amount: int = Field(default=0, ge=0)
+    note: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_amount(self):
+        if self.status == "returned" and self.returned_amount <= 0:
+            raise ValueError("Số tiền hoàn trả phải lớn hơn 0.")
+        if self.status != "returned" and self.returned_amount != 0:
+            raise ValueError("Chỉ trạng thái returned mới nhận số tiền hoàn trả.")
+        return self
 
 
 class UtilityType(str, Enum):
