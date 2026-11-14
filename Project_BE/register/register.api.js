@@ -64,7 +64,7 @@ function validateEmail(value) {
 
 function validatePhone(value) {
     if (value.length === 0) {
-        return "Vui lòng nhập số điện thoại";
+        return "";
     }
 
     const phoneRegex = /^0[0-9]{9}$/;
@@ -182,7 +182,7 @@ registerForm.addEventListener("submit", async function (event) {
         const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({full_name: nameValue, email: emailValue, phone: phoneValue, password: passwordValue})
+            body: JSON.stringify({full_name: nameValue, email: emailValue, phone: phoneValue || null, password: passwordValue})
         });
         const data = await response.json().catch(() => null);
         if (response.status !== 201) {
