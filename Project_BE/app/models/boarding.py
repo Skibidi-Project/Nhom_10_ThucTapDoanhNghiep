@@ -22,6 +22,18 @@ class Property(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
 
+class PropertyServicePrice(Base):
+    __tablename__ = "property_service_prices"
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE"), primary_key=True
+    )
+    service_code: Mapped[str] = mapped_column(String(20), primary_key=True)
+    billing_unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class PropertyManager(Base):
     __tablename__ = "property_managers"
     __table_args__ = {"mysql_charset": "utf8mb4"}

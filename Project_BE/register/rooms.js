@@ -116,6 +116,9 @@ function renderRows(items) {
                 window.location.href = `contracts.html?room_id=${encodeURIComponent(room.id)}`;
             });
         }
+        appendAction(actions, "Dịch vụ", () => {
+            window.location.href = `services.html?room_id=${encodeURIComponent(room.id)}`;
+        });
         if (room.status !== "occupied") {
             appendAction(actions, "Sửa", () => openEditDialog(room));
             appendAction(actions, "Xóa", () => deleteRoom(room), "danger");

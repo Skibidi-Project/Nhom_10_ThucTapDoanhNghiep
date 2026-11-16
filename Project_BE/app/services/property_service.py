@@ -1,9 +1,9 @@
 from fastapi import HTTPException
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
-from app.models.boarding import Contract, Property, PropertyManager, Room, TenantProfile, UtilityReading
+from app.models.boarding import Contract, Property, PropertyManager, PropertyServicePrice, Room, TenantProfile, UtilityReading
 from app.models.building import Building
 from app.models.user import User
 from app.schemas.boarding import (
@@ -72,6 +72,7 @@ def delete_property(db: Session, user: User, property_id: int) -> None:
     has_building = db.scalar(select(Building.id).where(Building.property_id == prop.id))
     if has_building is not None:
         raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn tòa nhà.")
+    db.execute(delete(PropertyServicePrice).where(PropertyServicePrice.property_id == prop.id))
     db.delete(prop)
     save(db)
 
