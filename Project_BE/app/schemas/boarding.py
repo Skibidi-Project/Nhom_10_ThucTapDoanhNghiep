@@ -183,6 +183,21 @@ class TenantResponse(BaseModel):
     id_photo_type: str | None
 
 
+class TenantAccountLink(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    identifier: str = Field(min_length=1, max_length=255)
+
+
+class TenantAccountLinkResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    tenant_id: int
+    user_id: int
+    full_name: str
+    email: str
+
+
 class ContractCreate(BaseModel):
     room_id: int = Field(gt=0)
     tenant_id: int = Field(gt=0)

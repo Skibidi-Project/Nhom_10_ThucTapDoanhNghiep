@@ -61,7 +61,31 @@ async function loadTenants() {
         heading.textContent = tenant.full_name;
         const details = document.createElement("p");
         details.textContent = [tenant.phone, tenant.id_number, tenant.id_issue_date, tenant.id_issue_place, tenant.hometown].filter(Boolean).join(" · ");
-        row.append(heading, details);
+        const accountStatus = document.createElement("p");
+        accountStatus.textContent = tenant.user_id ? `Tài khoản: Đã liên kết (user_id: ${tenant.user_id})` : "Tài khoản: Chưa liên kết";
+        row.append(heading, details, accountStatus);
+
+        if (tenant.user_id) {
+            action(row, "Gỡ liên kết", async () => {
+                if (!confirm(`Gỡ liên kết tài khoản khỏi hồ sơ của ${tenant.full_name}?`)) return;
+                await request(`/tenants/${tenant.id}/account`, {method: "DELETE"});
+                notice.textContent = `Đã gỡ liên kết tài khoản khỏi hồ sơ ${tenant.full_name}.`;
+                await loadTenants();
+            });
+        } else {
+            action(row, "Liên kết tài khoản", async () => {
+                const identifier = window.prompt("Nhập email hoặc SĐT của tài khoản khách thuê cần liên kết:");
+                if (!identifier || !identifier.trim()) throw new Error("Vui lòng nhập email hoặc SĐT hợp lệ.");
+                const payload = await request(`/tenants/${tenant.id}/account`, {
+                    method: "PUT",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({identifier: identifier.trim()})
+                }).then(response => response.json());
+                notice.textContent = `Đã liên kết tài khoản ${payload.full_name} (${payload.email}) với hồ sơ ${tenant.full_name}.`;
+                await loadTenants();
+            });
+        }
+
         const url = `/tenants/${tenant.id}/id-photo`;
         const file = document.createElement("input");
         file.type = "file";

@@ -197,7 +197,10 @@ registerForm.addEventListener("submit", async function (event) {
             throw new Error(detail || (response.status === 409 ? "Email hoặc số điện thoại đã được sử dụng." : response.status === 422 ? "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại." : response.status >= 500 ? "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng ký tài khoản."));
         }
         registered = true;
-        showMessage("Đăng ký MiniStay thành công! Đang chuyển tới trang đăng nhập...", "success");
+        showMessage(
+            "Đăng ký MiniStay thành công! Tài khoản mới có vai trò khách thuê. Nếu bạn là chủ nhà hoặc quản lý, hãy liên hệ quản trị viên để được cấp quyền. Đang chuyển tới trang đăng nhập...",
+            "success"
+        );
         registerForm.reset();
         window.scrollTo({top: 0, behavior: "smooth"});
         window.setTimeout(() => window.location.assign("login.html"), 1500);

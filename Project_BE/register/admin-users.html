@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị tài khoản | MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="admin-users.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a class="brand" href="admin-users.html">MiniStay</a>
+        </div>
+        <div class="topbar-actions">
+            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="container admin-page">
+        <div class="admin-header">
+            <div>
+                <h1>Quản trị tài khoản</h1>
+                <p class="subtitle">Quản lý vai trò tài khoản của người dùng và kích hoạt quyền quản lý.</p>
+            </div>
+        </div>
+
+        <section class="panel admin-toolbar">
+            <div class="toolbar-row">
+                <label class="search-wrap">
+                    <span>Tìm kiếm</span>
+                    <input id="searchInput" type="search" placeholder="Tên, email, số điện thoại" />
+                </label>
+                <label class="filter-wrap">
+                    <span>Vai trò</span>
+                    <select id="roleFilter">
+                        <option value="">Tất cả</option>
+                        <option value="admin">Quản trị viên</option>
+                        <option value="landlord">Chủ nhà</option>
+                        <option value="manager">Quản lý</option>
+                        <option value="tenant">Khách thuê</option>
+                    </select>
+                </label>
+            </div>
+            <div class="toolbar-row pagination-row">
+                <button type="button" id="prevPage" class="button button-outline">Trước</button>
+                <span id="pageInfo">Trang 1 / 1</span>
+                <button type="button" id="nextPage" class="button button-outline">Sau</button>
+            </div>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section class="panel">
+            <div id="loadingState" class="empty-state">
+                <div class="empty-icon">⌛</div>
+                <h3>Đang tải danh sách tài khoản...</h3>
+            </div>
+            <div class="table-wrapper">
+                <table id="usersTable" class="users-table" hidden>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>SĐT</th>
+                            <th>Vai trò</th>
+                            <th>Ngày tạo</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="empty-state" hidden>
+                <div class="empty-icon">🔎</div>
+                <h3>Không tìm thấy tài khoản nào.</h3>
+            </div>
+        </section>
+    </main>
+
+    <script src="admin-users.js"></script>
+</body>
+</html>
