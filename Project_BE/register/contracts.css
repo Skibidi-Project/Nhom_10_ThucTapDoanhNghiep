@@ -13,9 +13,20 @@
     min-width: 0;
 }
 
-.form-group select,
 .form-group input {
+    width: 100%;
     min-height: 44px;
+}
+
+.form-group select {
+    width: auto;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 10px 13px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    color: #25313b;
+    background: #fff;
 }
 
 .form-group select:disabled {
@@ -59,7 +70,7 @@
 
 .contract-table {
     width: 100%;
-    min-width: 1000px;
+    min-width: 1260px;
     border-collapse: collapse;
     text-align: left;
 }
@@ -96,9 +107,57 @@
     background: #e9f6ef;
 }
 
+.contract-status-created {
+    color: #395a83;
+    background: #edf4fc;
+}
+
+.contract-status-pending_liquidation {
+    color: #875817;
+    background: #fff4df;
+}
+
+.contract-status-expired {
+    color: #66727e;
+    background: #eef1f4;
+}
+
 .contract-status-terminated {
     color: #66727e;
     background: #eef1f4;
+}
+
+.deposit-state,
+.deposit-returned {
+    display: block;
+    margin-top: 4px;
+    color: #73808b;
+    font-size: 10px;
+}
+
+.contract-actions {
+    display: flex;
+    min-width: 165px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.contract-action {
+    min-height: 30px;
+    padding: 6px 9px;
+    font-size: 10px;
+}
+
+.contract-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.muted-action,
+.deposit-summary {
+    color: #73808b;
+    font-size: 12px;
 }
 
 .tenant-quick-link {
