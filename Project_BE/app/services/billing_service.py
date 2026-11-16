@@ -27,6 +27,8 @@ def create_reading(db: Session, user: User, room_id: int, data: ReadingCreate) -
     room = get_room(db, room_id)
     prop = property_of_room(db, room)
     assert_can_operate(db, user, prop)
+    # Khóa phòng trước khi đọc lịch sử, kể cả lần ghi đầu chưa có chỉ số.
+    db.refresh(room, with_for_update=True)
     exists = db.scalar(select(UtilityReading).where(
         UtilityReading.room_id == room.id,
         UtilityReading.utility_type == data.utility_type.value,
@@ -34,6 +36,17 @@ def create_reading(db: Session, user: User, room_id: int, data: ReadingCreate) -
     ))
     if exists is not None:
         raise HTTPException(status_code=409, detail="Chỉ số kỳ này đã được ghi.")
+    if data.utility_type.value in {"electricity", "water"}:
+        # Đọc có khóa để thấy bản ghi mới nhất sau khi chờ transaction khác.
+        latest = db.scalar(select(UtilityReading).where(
+            UtilityReading.room_id == room.id,
+            UtilityReading.utility_type == data.utility_type.value,
+        ).order_by(UtilityReading.period.desc()).limit(1).with_for_update())
+        if latest is not None:
+            if data.period <= latest.period:
+                raise HTTPException(status_code=409, detail="Kỳ ghi phải lớn hơn kỳ gần nhất.")
+            if data.previous_reading != latest.current_reading:
+                raise HTTPException(status_code=409, detail="Chỉ số đầu kỳ phải bằng chỉ số cuối kỳ gần nhất.")
     reading = UtilityReading(
         room_id=room.id, utility_type=data.utility_type.value, period=data.period,
         previous_reading=data.previous_reading, current_reading=data.current_reading,
