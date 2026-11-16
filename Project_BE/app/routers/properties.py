@@ -17,7 +17,8 @@ from app.schemas.boarding import (
     RoomResponse,
     RoomUpdate,
 )
-from app.services import property_service
+from app.schemas.service_price import ServiceCode, ServicePriceResponse, ServicePriceWrite
+from app.services import property_service, service_price_service
 
 router = APIRouter(
     prefix="/api/properties",
@@ -146,4 +147,38 @@ def delete_room(
     user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
 ):
     property_service.delete_room(db, user, room_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{property_id}/service-prices", response_model=list[ServicePriceResponse], tags=["Service prices"])
+def read_service_prices(
+    property_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.UTILITY_MANAGE)),
+):
+    property_service.read_property(db, user, property_id)
+    return service_price_service.list_service_prices(db, property_id)
+
+
+@router.put("/{property_id}/service-prices/{code}", response_model=ServicePriceResponse, tags=["Service prices"])
+def set_service_price(
+    property_id: int,
+    code: ServiceCode,
+    data: ServicePriceWrite,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.UTILITY_MANAGE)),
+):
+    property_service.read_property(db, user, property_id)
+    return service_price_service.set_service_price(db, property_id, code, data)
+
+
+@router.delete("/{property_id}/service-prices/{code}", status_code=status.HTTP_204_NO_CONTENT, tags=["Service prices"])
+def clear_service_price(
+    property_id: int,
+    code: ServiceCode,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.UTILITY_MANAGE)),
+):
+    property_service.read_property(db, user, property_id)
+    service_price_service.clear_service_price(db, property_id, code)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
