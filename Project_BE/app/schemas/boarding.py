@@ -123,7 +123,25 @@ class RoomDetailResponse(RoomResponse):
     active_contract: RoomActiveContractResponse | None
 
 
-class TenantCreate(BaseModel):
+class TenantIdentityDetails(BaseModel):
+    id_issue_date: date | None = None
+    id_issue_place: str | None = Field(default=None, min_length=1, max_length=255)
+    hometown: str | None = Field(default=None, min_length=1, max_length=255)
+
+    @field_validator("id_issue_place", "hometown", mode="before")
+    @classmethod
+    def strip_identity_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("id_issue_date")
+    @classmethod
+    def validate_issue_date(cls, value):
+        if value is not None and value > date.today():
+            raise ValueError("Ngày cấp không được nằm trong tương lai.")
+        return value
+
+
+class TenantCreate(TenantIdentityDetails):
     full_name: str = Field(min_length=1, max_length=120)
     phone: str = Field(pattern=r"^0[0-9]{9}$")
     id_number: str = Field(pattern=r"^[0-9]{9,12}$")
@@ -137,7 +155,8 @@ class TenantCreate(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
-class TenantUpdate(BaseModel):
+class TenantUpdate(TenantIdentityDetails):
+    id_number: str | None = Field(default=None, pattern=r"^[0-9]{9,12}$")
     full_name: str | None = Field(default=None, min_length=1, max_length=120)
     phone: str | None = Field(default=None, pattern=r"^0[0-9]{9}$")
     email: EmailStr | None = None
@@ -158,6 +177,10 @@ class TenantResponse(BaseModel):
     phone: str
     id_number: str
     email: EmailStr | None
+    id_issue_date: date | None
+    id_issue_place: str | None
+    hometown: str | None
+    id_photo_type: str | None
 
 
 class ContractCreate(BaseModel):

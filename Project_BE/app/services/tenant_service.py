@@ -41,6 +41,9 @@ def create_tenant(db: Session, user: User, data: TenantCreate) -> TenantProfile:
         full_name=data.full_name,
         phone=data.phone,
         id_number=data.id_number,
+        id_issue_date=data.id_issue_date,
+        id_issue_place=data.id_issue_place,
+        hometown=data.hometown,
         email=str(data.email) if data.email else None,
     )
     db.add(tenant)
@@ -71,6 +74,14 @@ def update_tenant(db: Session, user: User, tenant_id: int, data: TenantUpdate) -
         tenant.phone = data.phone
     if data.email is not None:
         tenant.email = str(data.email)
+    if data.id_number is not None and data.id_number != tenant.id_number:
+        duplicate = db.scalar(select(TenantProfile.id).where(TenantProfile.id_number == data.id_number))
+        if duplicate is not None:
+            raise HTTPException(status_code=409, detail="Số CMND/CCCD đã tồn tại.")
+        tenant.id_number = data.id_number
+    for field in ("id_issue_date", "id_issue_place", "hometown"):
+        if field in data.model_fields_set:
+            setattr(tenant, field, getattr(data, field))
     save(db, tenant)
     return tenant
 

@@ -73,6 +73,22 @@ def ensure_contract_payment_cycle_column() -> None:
         )
 
 
+def ensure_tenant_profile_columns() -> None:
+    columns = {column["name"] for column in inspect(engine).get_columns("tenants")}
+    photo_type = "MEDIUMBLOB" if engine.dialect.name == "mysql" else "BLOB"
+    additions = {
+        "id_issue_date": "DATE",
+        "id_issue_place": "VARCHAR(255)",
+        "hometown": "VARCHAR(255)",
+        "id_photo": photo_type,
+        "id_photo_type": "VARCHAR(32)",
+    }
+    with engine.begin() as connection:
+        for name, sql_type in additions.items():
+            if name not in columns:
+                connection.execute(text(f"ALTER TABLE tenants ADD COLUMN {name} {sql_type} NULL"))
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
@@ -81,3 +97,4 @@ def init_db() -> None:
     ensure_user_phone_nullable()
     ensure_room_area_column()
     ensure_contract_payment_cycle_column()
+    ensure_tenant_profile_columns()
