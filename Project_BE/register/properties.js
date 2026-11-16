@@ -94,6 +94,9 @@ function renderProperties() {
         const roomsLink = createElement("a", "button button-outline rooms-link", "Quản lý phòng");
         roomsLink.href = `rooms.html?property_id=${encodeURIComponent(property.id)}`;
         card.append(roomsLink);
+        const buildingsLink = createElement("a", "button button-outline rooms-link", "Quản lý tòa nhà");
+        buildingsLink.href = `buildings.html?property_id=${encodeURIComponent(property.id)}`;
+        card.append(buildingsLink);
 
         if (currentUser?.role === "landlord") {
             const actions = createElement("div", "card-actions");
