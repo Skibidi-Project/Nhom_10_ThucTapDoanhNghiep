@@ -175,7 +175,8 @@ h2 {
 }
 
 input,
-textarea {
+textarea,
+select {
     width: 100%;
     border: 1px solid #dce3e8;
     border-radius: 8px;
@@ -186,7 +187,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
     border-color: #268a70;
     box-shadow: 0 0 0 3px #16836a18;
 }
@@ -319,6 +321,22 @@ textarea:focus {
     background: #fff8f7;
 }
 
+.assign-btn {
+    color: #176b57;
+    border: 1px solid #cfe1db;
+    background: #e9f6ef;
+}
+
+.assign-btn:hover {
+    background: #d9eee3;
+}
+
+.assignment-status {
+    margin: -5px 0 15px;
+    color: #687481;
+    font-size: 12px;
+}
+
 .readonly-tag {
     color: #66727e;
     background: #f0f3f5;
@@ -366,6 +384,60 @@ textarea:focus {
 
 .property-dialog form {
     padding: 26px;
+}
+
+.manager-dialog {
+    width: min(520px, calc(100% - 28px));
+}
+
+.assignment-property {
+    margin-top: 22px;
+    padding: 16px;
+    border: 1px solid #e8edf1;
+    border-radius: 10px;
+    background: #f8faf9;
+}
+
+.assignment-property h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.assignment-property p {
+    margin: 8px 0 0;
+    color: #687481;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.manager-picker {
+    margin-top: 20px;
+}
+
+.manager-list-state,
+.manager-details,
+.assignment-note {
+    margin: 9px 0 0;
+    color: #687481;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.manager-list-state.error {
+    color: #a13b37;
+}
+
+.manager-details {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #e9f6ef;
+    color: #176b57;
+}
+
+.assignment-note {
+    padding: 12px;
+    border-radius: 8px;
+    background: #f4f7f5;
 }
 
 .close-btn {

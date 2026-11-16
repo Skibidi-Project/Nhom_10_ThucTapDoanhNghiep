@@ -53,6 +53,13 @@ class ManagerAssign(BaseModel):
     user_id: int = Field(gt=0)
 
 
+class AvailableManagerResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    phone: str | None
+
+
 class ManagerAssignmentResponse(BaseModel):
     property_id: int
     user_id: int
