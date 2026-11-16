@@ -70,7 +70,7 @@ function formatMoney(value) {
 }
 
 function statusLabel(status) {
-    return {available: "Trống", occupied: "Đã thuê", maintenance: "Bảo trì"}[status] || status;
+    return {available: "Đang trống", reserved: "Đã đặt cọc", occupied: "Đang thuê", maintenance: "Bảo trì"}[status] || status;
 }
 
 function setLoading(loading) {
@@ -111,6 +111,11 @@ function renderRows(items) {
         const actionsCell = document.createElement("td");
         const actions = createElement("div", "room-actions");
         appendAction(actions, "Chi tiết", () => showRoomDetail(room));
+        if (room.status === "available") {
+            appendAction(actions, "Lập hợp đồng", () => {
+                window.location.href = `contracts.html?room_id=${encodeURIComponent(room.id)}`;
+            });
+        }
         if (room.status !== "occupied") {
             appendAction(actions, "Sửa", () => openEditDialog(room));
             appendAction(actions, "Xóa", () => deleteRoom(room), "danger");
@@ -380,7 +385,9 @@ document.getElementById("closeDetailBtn").addEventListener("click", () => detail
 document.getElementById("closeDetailActionBtn").addEventListener("click", () => detailDialog.close());
 logoutBtn.addEventListener("click", disconnect);
 
-if (accessToken) {
+if (!accessToken) {
+    window.location.replace("index.html");
+} else {
     connect(accessToken).catch(error => {
         disconnect();
         showNotice(error.message, "error");

@@ -1,5 +1,5 @@
 -- Seed tùy chọn cho MySQL local. Chạy thủ công sau khi có ít nhất một landlord.
--- Tạo 1 khu trọ, 4 phòng (đủ ba trạng thái), một khách thuê và một hợp đồng active.
+-- Tạo 1 khu trọ, 4 phòng (đủ ba trạng thái), 3 khách thuê và một hợp đồng active.
 USE products_db;
 
 SET @landlord_id := (SELECT id FROM users WHERE role = 'landlord' ORDER BY id LIMIT 1);
@@ -28,10 +28,22 @@ VALUES (
 );
 SET @tenant_id := LAST_INSERT_ID();
 
+INSERT INTO tenants (landlord_id, created_by, full_name, phone, id_number)
+VALUES (
+    @landlord_id, @landlord_id, 'Khách thuê demo US-13 số 2', '0999990110',
+    CONCAT('8', LPAD(@property_id, 11, '0'))
+);
+INSERT INTO tenants (landlord_id, created_by, full_name, phone, id_number)
+VALUES (
+    @landlord_id, @landlord_id, 'Khách thuê demo US-13 số 3', '0999990111',
+    CONCAT('7', LPAD(@property_id, 11, '0'))
+);
+
 INSERT INTO rental_contracts (
-    room_id, tenant_id, created_by, start_date, end_date, deposit, monthly_rent, status
+    room_id, tenant_id, created_by, start_date, end_date, deposit, monthly_rent,
+    payment_cycle_months, status
 )
-SELECT id, @tenant_id, @landlord_id, '2026-01-01', '2027-01-01', 3000000, 3000000, 'active'
+SELECT id, @tenant_id, @landlord_id, '2026-01-01', '2027-01-01', 3000000, 3000000, 1, 'active'
 FROM rooms
 WHERE property_id = @property_id AND room_number = 'D102';
 

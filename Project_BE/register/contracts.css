@@ -1,0 +1,131 @@
+.contract-form {
+    margin-top: 28px;
+}
+
+.contract-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 25px;
+}
+
+.contract-form-grid .form-group {
+    min-width: 0;
+}
+
+.form-group select,
+.form-group input {
+    min-height: 44px;
+}
+
+.form-group select:disabled {
+    color: #8a949e;
+    background: #f5f7f8;
+}
+
+.field-hint {
+    min-height: 15px;
+    margin: 6px 0 0;
+    color: #87919a;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.rent-warning {
+    color: #805018;
+}
+
+.contract-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.contract-form .form-error,
+.property-dialog .form-error {
+    min-height: 18px;
+    margin: 12px 0;
+    color: #a13b37;
+    font-size: 12px;
+}
+
+.contract-list-section {
+    margin-top: 40px;
+}
+
+.contract-list-section .section-heading {
+    margin-bottom: 16px;
+}
+
+.contract-table {
+    width: 100%;
+    min-width: 1000px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.contract-table th,
+.contract-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.contract-table th {
+    color: #66727e;
+    background: #f9fafb;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.contract-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.contract-status {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.contract-status-active {
+    color: #176348;
+    background: #e9f6ef;
+}
+
+.contract-status-terminated {
+    color: #66727e;
+    background: #eef1f4;
+}
+
+.tenant-quick-link {
+    color: #176b57;
+    font-size: 12px;
+}
+
+@media (max-width: 720px) {
+    .contract-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contract-form-grid .full-width {
+        grid-column: auto;
+    }
+
+    .contract-form .panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .contract-list-section .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .topbar-actions a.button {
+        display: none;
+    }
+}

@@ -15,8 +15,10 @@ password_hasher = PasswordHasher()
 
 def register_user(db: Session, data: UserCreate) -> User:
     try:
-        existing = db.scalar(select(User).where(or_(User.email == str(data.email), User.phone == data.phone)))
-        if existing:
+        duplicate = User.email == str(data.email)
+        if data.phone is not None:
+            duplicate = or_(duplicate, User.phone == data.phone)
+        if db.scalar(select(User.id).where(duplicate)) is not None:
             raise HTTPException(status_code=409, detail="Email hoặc số điện thoại đã được sử dụng.")
         user = User(
             full_name=data.full_name, email=str(data.email), phone=data.phone,

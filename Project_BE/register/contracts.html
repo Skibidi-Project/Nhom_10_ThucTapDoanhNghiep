@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lập hợp đồng - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="contracts.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a class="brand" href="properties.html">MiniStay</a>
+        </div>
+        <div class="topbar-actions">
+            <span id="accountInfo">Đang xác thực...</span>
+            <a class="button button-light" href="login.html">Đăng nhập</a>
+            <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
+            <a class="button button-light" href="rooms.html">Quản lý phòng</a>
+            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <div>
+                <h1>Lập hợp đồng mới</h1>
+                <p class="subtitle">Chọn khu trọ, phòng trống, khách thuê đại diện và các điều khoản thuê.</p>
+            </div>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <section id="contractSection" hidden>
+            <form id="contractForm" class="panel contract-form">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Thông tin hợp đồng</h2>
+                        <p>Phòng chỉ có thể lập hợp đồng khi đang trống.</p>
+                    </div>
+                    <button type="button" class="button button-outline" id="addTenantBtn">+ Thêm khách thuê nhanh</button>
+                </div>
+                <div class="contract-form-grid">
+                    <div class="form-group">
+                        <label for="propertySelect">Khu trọ <span>*</span></label>
+                        <select id="propertySelect" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomSelect">Phòng trống <span>*</span></label>
+                        <select id="roomSelect" required disabled></select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="tenantSelect">Khách thuê đại diện <span>*</span></label>
+                        <select id="tenantSelect" required disabled></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Ngày bắt đầu <span>*</span></label>
+                        <input id="startDate" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">Ngày kết thúc <span>*</span></label>
+                        <input id="endDate" type="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="monthlyRent">Tiền thuê hàng tháng (đ) <span>*</span></label>
+                        <input id="monthlyRent" type="number" min="1" step="1" required>
+                        <p id="rentHint" class="field-hint"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="deposit">Tiền cọc (đ) <span>*</span></label>
+                        <input id="deposit" type="number" min="0" step="1" value="0" required>
+                        <p class="field-hint">Tiền cọc tối đa 3 tháng tiền thuê.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentCycle">Kỳ thanh toán <span>*</span></label>
+                        <select id="paymentCycle" required>
+                            <option value="1">Hàng tháng</option>
+                            <option value="2">2 tháng/lần</option>
+                            <option value="3">3 tháng/lần</option>
+                            <option value="6">6 tháng/lần</option>
+                            <option value="12">12 tháng/lần</option>
+                        </select>
+                    </div>
+                </div>
+                <p id="formError" class="form-error" role="alert"></p>
+                <div class="contract-form-actions">
+                    <button type="submit" class="button button-primary" id="createContractBtn">Lập hợp đồng</button>
+                </div>
+            </form>
+
+            <section class="contract-list-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Danh sách hợp đồng</h2>
+                        <p>Các hợp đồng trong phạm vi khu trọ bạn được quản lý.</p>
+                    </div>
+                    <button type="button" class="button button-outline" id="refreshContractsBtn">↻ Làm mới</button>
+                </div>
+                <p id="contractsLoading" class="table-state">Đang tải danh sách hợp đồng...</p>
+                <p id="contractsError" class="table-state error-state" hidden></p>
+                <p id="contractsEmpty" class="table-state" hidden>Chưa có hợp đồng nào.</p>
+                <div class="table-scroll" id="contractsTableContainer" hidden>
+                    <table class="contract-table">
+                        <thead>
+                            <tr>
+                                <th>Khu trọ</th>
+                                <th>Phòng</th>
+                                <th>Khách thuê</th>
+                                <th>Thời hạn</th>
+                                <th>Tiền cọc</th>
+                                <th>Tiền thuê/tháng</th>
+                                <th>Kỳ thanh toán</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog id="tenantDialog" class="property-dialog">
+        <form id="tenantForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">THÔNG TIN KHÁCH THUÊ</p>
+                    <h2>Thêm khách thuê nhanh</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeTenantDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="tenantName">Họ tên <span>*</span></label>
+                    <input id="tenantName" type="text" maxlength="120" required>
+                </div>
+                <div class="form-group">
+                    <label for="tenantPhone">Số điện thoại <span>*</span></label>
+                    <input id="tenantPhone" type="tel" inputmode="numeric" pattern="0[0-9]{9}" maxlength="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="tenantIdNumber">CMND/CCCD <span>*</span></label>
+                    <input id="tenantIdNumber" type="text" inputmode="numeric" pattern="[0-9]{9,12}" maxlength="12" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="tenantEmail">Email</label>
+                    <input id="tenantEmail" type="email" maxlength="255">
+                </div>
+            </div>
+            <p id="tenantFormError" class="form-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelTenantBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="saveTenantBtn">Thêm khách thuê</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="contracts.js"></script>
+</body>
+</html>

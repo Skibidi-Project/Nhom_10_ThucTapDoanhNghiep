@@ -38,6 +38,17 @@ def ensure_user_role_column() -> None:
         connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'tenant'"))
 
 
+def ensure_user_phone_nullable() -> None:
+    if engine.dialect.name != "mysql":
+        return
+    columns = inspect(engine).get_columns("users")
+    phone_column = next(column for column in columns if column["name"] == "phone")
+    if phone_column["nullable"]:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users MODIFY COLUMN phone VARCHAR(20) NULL"))
+
+
 def ensure_room_area_column() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("rooms"):
@@ -49,9 +60,24 @@ def ensure_room_area_column() -> None:
         connection.execute(text("ALTER TABLE rooms ADD COLUMN area_sqm NUMERIC(6, 2) NULL"))
 
 
+def ensure_contract_payment_cycle_column() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("rental_contracts"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("rental_contracts")}
+    if "payment_cycle_months" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE rental_contracts ADD COLUMN payment_cycle_months INT NOT NULL DEFAULT 1")
+        )
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     ensure_user_role_column()
+    ensure_user_phone_nullable()
     ensure_room_area_column()
+    ensure_contract_payment_cycle_column()
