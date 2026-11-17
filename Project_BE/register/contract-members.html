@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thành viên hợp đồng | MiniStay</title><link rel="stylesheet" href="contract-members.css"><script src="contract-members.js" defer></script></head>
+<body>
+<header><a class="brand" href="properties.html">MiniStay<span>QUẢN LÝ NHÀ TRỌ</span></a><nav><a href="properties.html">Cơ sở của tôi</a><span id="account">Chưa đăng nhập</span><a href="login.html">Đăng nhập</a></nav></header>
+<main>
+<div class="breadcrumb">Quản lý hợp đồng <span>/</span> Thành viên hợp đồng</div>
+<div class="page-heading"><div><span class="eyebrow">US-12 · HỒ SƠ CƯ TRÚ</span><h1>Thành viên hợp đồng</h1><p>Quản lý người đại diện và các thành viên cùng thuê trong một hợp đồng.</p></div><span class="pill">MiniStay Workspace</span></div>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<section class="card picker"><form id="contractForm"><label for="contractId">Mã hợp đồng</label><div class="inline"><input id="contractId" type="number" min="1" step="1" value="1" required><button id="loadBtn">Xem hợp đồng</button></div></form><p>Chọn mã hợp đồng để tải dữ liệu mới nhất từ hệ thống.</p></section>
+<p id="loading" role="status" hidden>Đang tải thông tin hợp đồng…</p>
+<section id="workspace" hidden>
+<article class="card overview"><div><span class="eyebrow">THÔNG TIN HỢP ĐỒNG</span><h2 id="contractTitle"></h2></div><span id="status" class="badge"></span><dl><div><dt>Phòng</dt><dd id="room"></dd></div><div><dt>Thời hạn</dt><dd id="dates"></dd></div><div><dt>Tiền thuê / tháng</dt><dd id="rent"></dd></div><div><dt>Tổng người thuê</dt><dd id="total"></dd></div></dl></article>
+<div class="columns"><section class="card"><div class="section-title"><h2>Danh sách người thuê</h2><span id="count" class="badge"></span></div><p class="muted">Người đại diện được giữ nguyên theo hợp đồng.</p><div id="representative"></div><div class="list-label">THÀNH VIÊN CÙNG THUÊ</div><div id="members"></div><div id="empty" class="empty" hidden>Chưa có thành viên cùng thuê.<br><small>Thêm khách thuê bằng biểu mẫu bên cạnh.</small></div></section>
+<aside class="card add-card"><span class="icon">＋</span><h2>Thêm thành viên</h2><p class="muted">Chọn hồ sơ khách thuê thuộc quyền quản lý của bạn.</p><form id="memberForm"><label for="tenantId">Khách thuê</label><select id="tenantId" required><option value="">Chọn khách thuê</option></select><button id="addBtn" class="full">Thêm vào hợp đồng</button></form><p id="readonly" class="hint" hidden>Hợp đồng đã kết thúc hoặc đang chờ thanh lý. Chỉ có thể xem danh sách.</p><div class="hint">Thêm hoặc xóa thành viên chỉ thay đổi liên kết với hợp đồng, không xóa hồ sơ khách thuê.</div></aside></div>
+</section>
+<footer>MiniStay · Quản lý minh bạch, an tâm mỗi ngày</footer>
+</main>
+<dialog id="removeDialog"><h2>Xóa thành viên?</h2><p id="removeText"></p><p class="muted">Hồ sơ khách thuê vẫn được giữ lại trong hệ thống.</p><div class="actions"><button id="cancelRemove" class="secondary">Hủy</button><button id="confirmRemove" class="danger">Xóa khỏi hợp đồng</button></div></dialog>
+</body></html>
