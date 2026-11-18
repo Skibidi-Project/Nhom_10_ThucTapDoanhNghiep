@@ -374,3 +374,7 @@ class PaymentResult(PaymentResponse):
     invoice_status: str
     total_paid: int
     remaining_amount: int
+
+
+class PaymentHistoryResponse(PaymentResponse):
+    recorded_by_name: str
