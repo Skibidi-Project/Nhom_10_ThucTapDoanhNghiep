@@ -101,6 +101,17 @@ def ensure_contract_deposit_columns() -> None:
             connection.execute(text("ALTER TABLE rental_contracts ADD COLUMN deposit_note VARCHAR(500) NULL"))
 
 
+def ensure_payment_note_column() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("payments"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("payments")}
+    if "note" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE payments ADD COLUMN note VARCHAR(255) NULL"))
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
@@ -111,3 +122,4 @@ def init_db() -> None:
     ensure_contract_payment_cycle_column()
     ensure_tenant_profile_columns()
     ensure_contract_deposit_columns()
+    ensure_payment_note_column()

@@ -138,3 +138,4 @@ class Payment(Base):
     method: Mapped[str] = mapped_column(String(30), nullable=False, default="cash")
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     paid_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    note: Mapped[str | None] = mapped_column(String(255), nullable=True)
