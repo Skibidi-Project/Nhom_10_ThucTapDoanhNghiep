@@ -1,0 +1,347 @@
+.price-page {
+    width: min(1120px, calc(100% - 40px));
+    margin-top: 38px;
+}
+
+.price-page h1,
+.price-page h2 {
+    color: #20272f;
+}
+
+.price-page .notice {
+    margin: 18px 0 0;
+}
+
+.price-property-panel .section-heading {
+    align-items: flex-end;
+    margin-bottom: 0;
+}
+
+.property-picker {
+    width: min(390px, 100%);
+}
+
+.property-picker label,
+.price-dialog .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #46525e;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.property-picker select,
+.price-dialog select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    color: #25313b;
+    background: #fff;
+    font: inherit;
+}
+
+.property-picker select:focus,
+.price-dialog select:focus,
+.price-dialog input:focus {
+    border-color: #268a70;
+    box-shadow: 0 0 0 3px #16836a18;
+    outline: none;
+}
+
+.price-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.price-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 19px;
+    border: 1px solid #e8edf1;
+    border-radius: 12px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.price-card:hover {
+    border-color: #cfe1db;
+    box-shadow: 0 5px 16px #1d29390c;
+}
+
+.price-card-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.price-card h3 {
+    margin: 0;
+    color: #20272f;
+    font-size: 16px;
+}
+
+.price-code {
+    display: block;
+    margin-top: 6px;
+    color: #8a949e;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.price-status {
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    border-radius: 20px;
+    color: #727d87;
+    background: #f0f3f5;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.price-status.configured {
+    color: #176b57;
+    background: #e9f6ef;
+}
+
+.price-value {
+    margin: 20px 0 5px;
+    color: #176b57;
+    font-size: 21px;
+    font-weight: 750;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.price-value.unconfigured {
+    color: #687481;
+    font-size: 15px;
+    font-weight: 650;
+}
+
+.price-unit {
+    min-height: 18px;
+    margin: 0;
+    color: #78838f;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.price-card .button {
+    width: 100%;
+    margin-top: 18px;
+}
+
+.price-page .button:focus-visible,
+.price-page a:focus-visible,
+.price-dialog button:focus-visible {
+    outline: 3px solid #14b8a6;
+    outline-offset: 2px;
+}
+
+.price-page .button:disabled,
+.price-dialog button:disabled,
+.property-picker select:disabled {
+    cursor: not-allowed;
+}
+
+.price-state {
+    margin: 10px 0 0;
+    padding: 16px;
+    border-radius: 9px;
+    color: #687481;
+    background: #f7f9fa;
+    font-size: 13px;
+    text-align: center;
+}
+
+.price-error {
+    color: #a13b37;
+    background: #fff0ef;
+}
+
+.price-dialog {
+    width: min(520px, calc(100% - 28px));
+    max-height: min(90vh, 700px);
+    overflow-y: auto;
+    animation: price-dialog-in .18s ease-out;
+}
+
+.price-dialog form {
+    padding: 26px;
+    color: #20272f;
+}
+
+.price-dialog h2 {
+    color: #20272f;
+}
+
+.price-dialog .eyebrow {
+    margin: 0 0 7px;
+    color: #268a70;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .9px;
+}
+
+.price-form-fields {
+    display: grid;
+    gap: 17px;
+    margin-top: 24px;
+}
+
+.price-dialog .form-group {
+    margin: 0;
+}
+
+.price-dialog input {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #25313b;
+    background: #fff;
+    font: inherit;
+}
+
+.price-dialog input[readonly] {
+    color: #687481;
+    background: #f5f7f9;
+}
+
+.money-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.money-input span {
+    color: #687481;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.price-field-hint {
+    margin: 7px 0 0;
+    color: #87919a;
+    font-size: 11px;
+}
+
+.price-form-error {
+    margin: 14px 0 0;
+    padding: 11px 12px;
+    border-radius: 8px;
+    color: #a13b37;
+    background: #fff0ef;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.price-dialog .dialog-actions {
+    margin-top: 22px;
+}
+
+#savePriceBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#savePriceBtn:disabled {
+    cursor: wait;
+    opacity: .75;
+}
+
+.price-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #ffffff70;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: price-spinner-rotate .7s linear infinite;
+}
+
+@keyframes price-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes price-spinner-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 960px) {
+    .price-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .price-page {
+        width: min(100% - 28px, 560px);
+        margin-top: 28px;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+
+    .topbar-left,
+    .guest-actions {
+        flex-wrap: wrap;
+    }
+
+    .topbar-actions {
+        justify-content: space-between;
+    }
+
+    .price-property-panel .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .property-picker {
+        width: 100%;
+    }
+
+    .price-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .price-dialog form {
+        padding: 22px;
+    }
+
+    .price-dialog .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .price-dialog .dialog-actions .button {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .price-dialog,
+    .price-spinner {
+        animation-duration: .01ms;
+    }
+}

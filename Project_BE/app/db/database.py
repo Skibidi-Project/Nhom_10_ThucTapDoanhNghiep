@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:123456@localhost/products_db")
+DATABASE_URL = os.getenv("DATABASE_URL") or "mysql+pymysql://root:123456@localhost/products_db"
 
 engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):
@@ -38,6 +38,17 @@ def ensure_user_role_column() -> None:
         connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'tenant'"))
 
 
+def ensure_user_phone_nullable() -> None:
+    if engine.dialect.name != "mysql":
+        return
+    columns = inspect(engine).get_columns("users")
+    phone_column = next(column for column in columns if column["name"] == "phone")
+    if phone_column["nullable"]:
+        return
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users MODIFY COLUMN phone VARCHAR(20) NULL"))
+
+
 def ensure_room_area_column() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("rooms"):
@@ -62,6 +73,20 @@ def ensure_contract_payment_cycle_column() -> None:
         )
 
 
+def ensure_tenant_profile_columns() -> None:
+    columns = {column["name"] for column in inspect(engine).get_columns("tenants")}
+    photo_type = "MEDIUMBLOB" if engine.dialect.name == "mysql" else "BLOB"
+    additions = {
+        "id_issue_date": "DATE",
+        "id_issue_place": "VARCHAR(255)",
+        "hometown": "VARCHAR(255)",
+        "id_photo": photo_type,
+        "id_photo_type": "VARCHAR(32)",
+    }
+    with engine.begin() as connection:
+        for name, sql_type in additions.items():
+            if name not in columns:
+                connection.execute(text(f"ALTER TABLE tenants ADD COLUMN {name} {sql_type} NULL"))
 def ensure_contract_deposit_columns() -> None:
     inspector = inspect(engine)
     if not inspector.has_table("rental_contracts"):
@@ -81,6 +106,8 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
     ensure_user_role_column()
+    ensure_user_phone_nullable()
     ensure_room_area_column()
     ensure_contract_payment_cycle_column()
+    ensure_tenant_profile_columns()
     ensure_contract_deposit_columns()

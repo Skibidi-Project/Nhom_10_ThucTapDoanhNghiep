@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, LargeBinary, Numeric, String, UniqueConstraint
+from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -19,6 +20,18 @@ class Property(Base):
     water_unit_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     service_unit_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+
+class PropertyServicePrice(Base):
+    __tablename__ = "property_service_prices"
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id", ondelete="CASCADE"), primary_key=True
+    )
+    service_code: Mapped[str] = mapped_column(String(20), primary_key=True)
+    billing_unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class PropertyManager(Base):
@@ -55,6 +68,11 @@ class TenantProfile(Base):
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     id_number: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
+    id_issue_date: Mapped[date | None] = mapped_column(Date)
+    id_issue_place: Mapped[str | None] = mapped_column(String(255))
+    hometown: Mapped[str | None] = mapped_column(String(255))
+    id_photo: Mapped[bytes | None] = mapped_column(LargeBinary().with_variant(MEDIUMBLOB(), "mysql"), deferred=True)
+    id_photo_type: Mapped[str | None] = mapped_column(String(32))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 

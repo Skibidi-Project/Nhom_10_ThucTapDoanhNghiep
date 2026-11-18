@@ -147,3 +147,25 @@ Chỉ thử đăng ký tài khoản khi đã xác nhận database là môi trư�
   cần quản trị viên kiểm tra schema trước khi dùng.
 
 Không tự đổi mật khẩu root, sửa MySQL Server hoặc xóa dữ liệu để xử lý lỗi.
+
+
+## US-07 - Quản lý tòa nhà và tầng
+
+- `GET/POST /api/properties/{property_id}/buildings`: danh sách và tạo tòa nhà.
+- `GET/PUT/DELETE /api/buildings/{id}`: xem, sửa, xóa tòa nhà.
+- `PUT /api/buildings/{id}/floors/{floor_id}`: đổi tên một tầng.
+- Body tạo mới: `{"name":"Block A","floor_count":3,"floor_names":["Trệt","Lầu 1","Lầu 2"]}`.
+- `floor_names` tùy chọn; mặc định tạo `Tầng 1`, `Tầng 2`, ...
+- Tất cả endpoint yêu cầu `PROPERTY_OPERATE` và quyền trên khu trọ.
+- Giao diện: `/register/properties.html` → nút Quản lý tòa nhà.
+- Lưu ý: US-07 chưa gán `rooms` vào `floors`; thao tác đó thuộc US-09.
+- Test: `pytest -q tests/test_us07_buildings.py` (SQLite bộ nhớ).
+
+## US-18 - Gán dịch vụ cho phòng và hợp đồng
+
+- Giao diện: `/register/services.html`. Chọn khu trọ, chọn phòng hoặc hợp đồng chưa kết thúc, rồi gán dịch vụ trong danh mục hệ thống. US-18 không cấu hình đơn giá.
+- Giao diện lấy tên và mã danh mục qua `GET /api/properties/{property_id}/service-prices`; đơn giá không được hiển thị hoặc chỉnh sửa trên trang này.
+- `GET/POST /api/service-assignments` và `PUT/DELETE /api/service-assignments/{id}` xem, gán, đổi dịch vụ hoặc gỡ assignment. `POST` cần `service_code` cùng một trong `room_id` hoặc `contract_id`; `quantity` mặc định là 1.
+- `GET /api/contracts/{id}/services` trả danh sách dịch vụ hiệu lực, ưu tiên gán trực tiếp cho hợp đồng so với dịch vụ kế thừa từ phòng.
+- Các endpoint yêu cầu đăng nhập và quyền `UTILITY_MANAGE`; landlord/manager chỉ thao tác trong phạm vi khu trọ được phép.
+- Test: `pytest -q tests/test_service_assignments.py` (SQLite bộ nhớ).

@@ -9,7 +9,7 @@ from app.core.rbac import Role
 class UserCreate(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
     email: EmailStr = Field(max_length=255)
-    phone: str = Field(pattern=r"^0[0-9]{9}$")
+    phone: str | None = Field(default=None, pattern=r"^0[0-9]{9}$")
     password: str = Field(min_length=8, max_length=128)
 
     @field_validator("full_name", mode="before")
@@ -60,7 +60,7 @@ class UserResponse(BaseModel):
     id: int
     full_name: str
     email: EmailStr
-    phone: str
+    phone: str | None
     role: str
     created_at: datetime
 
