@@ -48,3 +48,27 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 SHOW TABLES;
+
+-- US-24: bổ sung ghi chú cho khoản thanh toán trên database đã tồn tại.
+-- Ứng dụng cũng tự kiểm tra/thêm cột này khi khởi động.
+SET @payments_table_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE()
+      AND table_name = 'payments'
+);
+SET @payment_note_column_exists := (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'payments'
+      AND column_name = 'note'
+);
+SET @payment_note_migration := IF(
+    @payments_table_exists > 0 AND @payment_note_column_exists = 0,
+    'ALTER TABLE payments ADD COLUMN note VARCHAR(255) NULL',
+    'SELECT 1'
+);
+PREPARE payment_note_statement FROM @payment_note_migration;
+EXECUTE payment_note_statement;
+DEALLOCATE PREPARE payment_note_statement;

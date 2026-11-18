@@ -169,3 +169,39 @@ Không tự đổi mật khẩu root, sửa MySQL Server hoặc xóa dữ liệu
 - `GET /api/contracts/{id}/services` trả danh sách dịch vụ hiệu lực, ưu tiên gán trực tiếp cho hợp đồng so với dịch vụ kế thừa từ phòng.
 - Các endpoint yêu cầu đăng nhập và quyền `UTILITY_MANAGE`; landlord/manager chỉ thao tác trong phạm vi khu trọ được phép.
 - Test: `pytest -q tests/test_service_assignments.py` (SQLite bộ nhớ).
+
+## US-24 - Ghi nhận thanh toán hóa đơn
+
+- `POST /api/invoices/{invoice_id}/payments`: landlord/manager ghi nhận một khoản thanh toán.
+- `GET /api/invoices/{invoice_id}/payments`: xem lịch sử thanh toán, mới nhất trước.
+- `GET /api/invoices`: bổ sung bộ lọc tùy chọn `status`, `period=YYYY-MM`, `contract_id`.
+- `GET /api/invoices/{invoice_id}`: trả thêm `paid_amount`, `remaining_amount`, tên phòng/khu trọ/khu vực khách thuê.
+- Trang giao diện: mở `/register/payments.html` bằng server đang chạy.
+
+Body ghi nhận thanh toán:
+
+```json
+{
+  "amount": 150000,
+  "method": "cash",
+  "paid_at": "2026-11-18T00:00:00",
+  "note": "Thanh toan tien dien nuoc"
+}
+```
+
+`method` chỉ nhận `cash` hoặc `bank_transfer`. `paid_at` tùy chọn, không được nằm trong tương lai.
+`note` tùy chọn, tối đa 255 ký tự. Extra field bị từ chối bằng HTTP 422.
+
+Hệ thống chặn thanh toán vượt số còn nợ và trả HTTP 409 kèm số còn thiếu. Không ghi nhận tiền thừa;
+hoàn tiền được xử lý ngoài hệ thống. Khi tổng đã thu bằng tổng hóa đơn, trạng thái là `paid`.
+Không có chức năng hủy hoặc xóa khoản thanh toán đã ghi.
+
+| API / nghiệp vụ US-24 | Vai trò được phép |
+|---|---|
+| Ghi nhận thanh toán | `landlord`/`manager` trong phạm vi khu trọ; tenant không được ghi |
+| Xem hóa đơn/lịch sử thanh toán | `landlord`/`manager` trong phạm vi; tenant chỉ hóa đơn của chính mình |
+| Admin | Không có quyền quản lý/xem hóa đơn theo RBAC hiện tại |
+
+Ứng dụng tự thêm cột `payments.note` khi khởi động. Có thể áp dụng migration thủ công
+bằng đoạn SQL tương ứng trong `sql.sql`. Seed demo nằm trong `seed_demo_payments.sql`,
+không tự chạy lên database thật.
