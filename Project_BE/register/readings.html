@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉ số điện nước - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="readings.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="properties.html">MiniStay<span class="brand-dot">.</span></a>
+        <div class="topbar-actions">
+            <span id="accountInfo">Chưa xác thực</span>
+            <a class="button button-light" href="rooms.html">Quản lý phòng</a>
+            <a class="button button-light" href="services.html">Dịch vụ</a>
+            <button type="button" class="button button-light" id="logoutBtn">Ngắt kết nối</button>
+        </div>
+    </header>
+
+    <main class="container readings-container">
+        <section class="intro">
+            <div>
+                <p class="eyebrow">MINISTAY · QUẢN LÝ CHI PHÍ</p>
+                <h1>Chỉ số điện &amp; nước</h1>
+                <p class="subtitle">Ghi chỉ số theo tháng. Lượng tiêu thụ và tiền điện, nước được tính ngay khi nhập.</p>
+            </div>
+        </section>
+
+        <section class="panel auth-panel" id="authPanel">
+            <div class="panel-heading"><div><h2>Kết nối tài khoản</h2><p>Dán Access Token JWT nhận được sau khi đăng nhập để sử dụng chức năng.</p></div></div>
+            <form id="tokenForm" class="token-form">
+                <label for="accessToken">Access Token</label>
+                <div class="token-row"><input id="accessToken" type="password" autocomplete="off" placeholder="Dán Access Token vào đây" required><button class="button button-primary" type="submit" id="connectBtn">Kết nối</button></div>
+            </form>
+            <p class="hint">Token được dùng chung với các trang quản lý trong tab hiện tại.</p>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section id="readingSection" hidden>
+            <section class="panel setup-panel">
+                <div class="section-heading"><div><h2>Chọn phòng và kỳ ghi</h2><p>Đơn giá được lấy từ cấu hình khu trọ.</p></div><button type="button" class="button button-outline" id="refreshBtn">↻ Làm mới</button></div>
+                <div class="selection-grid">
+                    <label for="propertySelect">Khu trọ<select id="propertySelect" required><option value="">Chọn khu trọ</option></select></label>
+                    <label for="roomSelect">Phòng<select id="roomSelect" required disabled><option value="">Chọn phòng</option></select></label>
+                    <label for="periodInput">Kỳ ghi chỉ số<input id="periodInput" type="month" required></label>
+                </div>
+            </section>
+
+            <div class="utility-grid">
+                <article class="panel utility-card electricity-card" data-type="electricity">
+                    <div class="utility-heading"><span class="utility-icon">ϟ</span><div><p class="eyebrow">CHỈ SỐ ĐIỆN</p><h2>Điện năng</h2></div><span class="unit-price" id="electricityPrice">Đơn giá: —</span></div>
+                    <div class="reading-inputs">
+                        <label for="electricityPrevious">Chỉ số cũ<input id="electricityPrevious" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+                        <span class="operator">→</span>
+                        <label for="electricityCurrent">Chỉ số mới<input id="electricityCurrent" type="number" min="0" step="1" inputmode="numeric" placeholder="Nhập chỉ số mới"></label>
+                    </div>
+                    <div class="calculation"><div><span>Tiêu thụ</span><strong id="electricityUsage">— <small>kWh</small></strong></div><div class="calculation-total"><span>Thành tiền</span><strong id="electricityAmount">—</strong></div></div>
+                    <p class="formula">Tiêu thụ = Chỉ số mới − Chỉ số cũ · Tiền = Tiêu thụ × Đơn giá</p>
+                    <p class="saved-state" id="electricitySaved" hidden></p>
+                    <button type="button" class="button button-primary save-reading" data-type="electricity" disabled>Lưu chỉ số điện</button>
+                </article>
+
+                <article class="panel utility-card water-card" data-type="water">
+                    <div class="utility-heading"><span class="utility-icon">⌁</span><div><p class="eyebrow">CHỈ SỐ NƯỚC</p><h2>Nước sinh hoạt</h2></div><span class="unit-price" id="waterPrice">Đơn giá: —</span></div>
+                    <div class="reading-inputs">
+                        <label for="waterPrevious">Chỉ số cũ<input id="waterPrevious" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+                        <span class="operator">→</span>
+                        <label for="waterCurrent">Chỉ số mới<input id="waterCurrent" type="number" min="0" step="1" inputmode="numeric" placeholder="Nhập chỉ số mới"></label>
+                    </div>
+                    <div class="calculation"><div><span>Tiêu thụ</span><strong id="waterUsage">— <small>m³</small></strong></div><div class="calculation-total"><span>Thành tiền</span><strong id="waterAmount">—</strong></div></div>
+                    <p class="formula">Tiêu thụ = Chỉ số mới − Chỉ số cũ · Tiền = Tiêu thụ × Đơn giá</p>
+                    <p class="saved-state" id="waterSaved" hidden></p>
+                    <button type="button" class="button button-primary save-reading" data-type="water" disabled>Lưu chỉ số nước</button>
+                </article>
+            </div>
+
+            <section class="panel history-panel">
+                <div class="section-heading"><div><h2>Lịch sử kỳ ghi</h2><p>Các chỉ số điện, nước đã lưu của phòng trong tháng đang chọn.</p></div></div>
+                <div id="historyEmpty" class="empty-state">Chọn phòng để xem chỉ số.</div>
+                <div class="table-scroll" id="historyContainer" hidden><table class="history-table"><thead><tr><th>Dịch vụ</th><th>Chỉ số cũ</th><th>Chỉ số mới</th><th>Tiêu thụ</th></tr></thead><tbody id="historyRows"></tbody></table></div>
+            </section>
+        </section>
+    </main>
+    <script src="readings.js"></script>
+</body>
+</html>
