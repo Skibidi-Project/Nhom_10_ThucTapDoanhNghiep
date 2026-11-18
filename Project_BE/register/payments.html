@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toan - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="payments.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a class="brand" href="properties.html">MiniStay</a>
+        </div>
+        <div class="topbar-actions">
+            <a class="button button-light" href="tenants.html">Khách thuê</a>
+            <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
+            <a class="button button-light" href="rooms.html">Quản lý phòng</a>
+            <a class="button button-light" href="contracts.html">Hợp đồng</a>
+            <a class="button button-light" href="services.html">Dịch vụ</a>
+            <span id="accountInfo">Đang xác thực...</span>
+            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="intro">
+            <div>
+                <h1>Ghi nhận thanh toán</h1>
+                <p class="subtitle">Theo dõi đã thu, còn thiếu và lịch sử thanh toán của hóa đơn.</p>
+            </div>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <section id="paymentSection" hidden>
+            <div class="panel payment-filters">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="statusFilter">Trạng thái</label>
+                        <select id="statusFilter">
+                            <option value="">Tất cả</option>
+                            <option value="unpaid">Chưa thanh toán</option>
+                            <option value="partially_paid">Thanh toán một phần</option>
+                            <option value="paid">Đã thanh toán</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="periodFilter">Kỳ</label>
+                        <input id="periodFilter" type="month">
+                    </div>
+                    <div class="form-group">
+                        <label for="searchFilter">Tìm phòng hoặc khách thuê</label>
+                        <input id="searchFilter" type="search" placeholder="Ví dụ: P101 hoặc Nguyễn Văn A">
+                    </div>
+                </div>
+            </div>
+
+            <section class="payment-list-section">
+                <p id="paymentsLoading" class="table-state">Đang tải danh sách hóa đơn...</p>
+                <p id="paymentsError" class="table-state error-state" hidden></p>
+                <p id="paymentsEmpty" class="table-state" hidden>Không có hóa đơn phù hợp.</p>
+                <div class="table-scroll" id="paymentsTableContainer" hidden>
+                    <table class="payment-table">
+                        <thead>
+                            <tr>
+                                <th>Kỳ</th>
+                                <th>Khu trọ</th>
+                                <th>Phòng</th>
+                                <th>Khách thuê</th>
+                                <th>Tổng tiền</th>
+                                <th>Đã thu</th>
+                                <th>Còn thiếu</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <dialog id="paymentDialog" class="property-dialog">
+        <form id="paymentForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">US-24 · GHI NHẬN THANH TOÁN</p>
+                    <h2>Ghi nhận thanh toán</h2>
+                </div>
+                <button type="button" class="close-btn" id="closePaymentDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <p id="paymentSummary" class="payment-summary"></p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="paymentAmount">Số tiền (đ) <span>*</span></label>
+                    <input id="paymentAmount" type="number" min="1" step="1" required>
+                    <button type="button" class="button button-outline fill-remaining-btn" id="fillRemainingBtn">Điền đủ số còn thiếu</button>
+                    <p id="paymentPreview" class="payment-preview"></p>
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Phương thức <span>*</span></label>
+                    <select id="paymentMethod" required>
+                        <option value="cash">Tiền mặt</option>
+                        <option value="bank_transfer">Chuyển khoản</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentPaidAt">Ngày thanh toán <span>*</span></label>
+                    <input id="paymentPaidAt" type="date" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="paymentNote">Ghi chú</label>
+                    <textarea id="paymentNote" rows="3" maxlength="255"></textarea>
+                </div>
+            </div>
+            <p id="paymentFormError" class="form-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelPaymentBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="savePaymentBtn">Lưu thanh toán</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="historyDialog" class="property-dialog history-dialog">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">LỊCH SỬ THANH TOÁN</p>
+                <h2 id="historyTitle">Lịch sử thanh toán</h2>
+            </div>
+            <button type="button" class="close-btn" id="closeHistoryDialogBtn" aria-label="Đóng">×</button>
+        </div>
+        <p id="historyLoading" class="table-state">Đang tải lịch sử...</p>
+        <p id="historyError" class="table-state error-state" hidden></p>
+        <p id="historyEmpty" class="table-state" hidden>Chưa có khoản thanh toán nào.</p>
+        <div class="table-scroll" id="historyTableContainer" hidden>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Số tiền</th>
+                        <th>Phương thức</th>
+                        <th>Ghi chú</th>
+                        <th>Người ghi nhận</th>
+                    </tr>
+                </thead>
+                <tbody id="historyRows"></tbody>
+            </table>
+        </div>
+    </dialog>
+
+    <script src="payments.js"></script>
+</body>
+</html>
