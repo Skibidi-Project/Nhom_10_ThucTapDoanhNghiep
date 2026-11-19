@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hồ sơ cá nhân | MiniStay</title><link rel="stylesheet" href="properties.css"></head>
+<body><header class="topbar"><a class="brand" href="properties.html">MiniStay</a><a href="login.html">Đăng nhập</a></header>
+<main class="container"><h1>Hồ sơ cá nhân</h1><p id="notice" role="status"></p>
+<form id="profile" class="panel" hidden>
+<label class="form-group">Họ tên<input name="full_name" required maxlength="120"></label>
+<label class="form-group">Email<input name="email" type="email" required maxlength="255"></label>
+<label class="form-group">Số điện thoại<input name="phone" pattern="0[0-9]{9}" placeholder="10 chữ số, bắt đầu bằng 0"></label>
+<label class="form-group">CMND/CCCD<input name="id_number" pattern="([0-9]{9}|[0-9]{12})" placeholder="9 hoặc 12 chữ số"></label>
+<button class="button">Lưu thông tin</button></form>
+<form id="avatarForm" class="panel" hidden>
+<img id="avatar" alt="Ảnh đại diện" width="120" height="120" hidden>
+<label>Ảnh đại diện (PNG/JPEG, tối đa 2 MB)<input id="photo" type="file" accept="image/png,image/jpeg" required></label>
+<button class="button">Lưu ảnh</button><button id="removeAvatar" type="button" class="button">Xóa ảnh</button>
+</form></main><script src="profile.js"></script></body></html>

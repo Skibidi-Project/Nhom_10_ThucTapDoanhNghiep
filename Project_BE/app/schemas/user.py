@@ -41,6 +41,8 @@ class UserLogin(BaseModel):
 
 
 class ProfileUpdate(BaseModel):
+    email: EmailStr | None = Field(default=None, max_length=255)
+    id_number: str | None = Field(default=None, pattern=r"^(?:[0-9]{9}|[0-9]{12})$")
     full_name: str | None = Field(default=None, min_length=1, max_length=120)
     phone: str | None = Field(default=None, pattern=r"^0[0-9]{9}$")
 
@@ -63,6 +65,11 @@ class UserResponse(BaseModel):
     phone: str | None
     role: str
     created_at: datetime
+
+
+class ProfileResponse(UserResponse):
+    id_number: str | None
+    avatar_type: str | None
 
 
 class LoginResponse(BaseModel):
