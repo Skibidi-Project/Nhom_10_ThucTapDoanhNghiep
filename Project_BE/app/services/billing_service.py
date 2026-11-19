@@ -1,8 +1,11 @@
+import calendar
+from datetime import date
+
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Invoice, Payment, TenantProfile, UtilityReading
+from app.models.boarding import Contract, Invoice, InvoiceMonth, Payment, TenantProfile, UtilityReading
 from app.models.user import User
 from app.schemas.boarding import InvoiceCreate, PaymentCreate, ReadingCreate
 from app.services.access_scope import (
@@ -15,6 +18,7 @@ from app.services.access_scope import (
     property_of_room,
 )
 from app.services.db_util import save
+from app.services.service_assignment_service import get_effective_services
 
 PRICES = {
     "electricity": "electricity_unit_price",
@@ -52,14 +56,28 @@ def list_readings(db: Session, user: User, room_id: int) -> list[UtilityReading]
     ))
 
 
-def _utility_amount(db: Session, room_id: int, period: str, prop) -> int:
-    readings = db.scalars(select(UtilityReading).where(
-        UtilityReading.room_id == room_id, UtilityReading.period == period
-    )).all()
+def _utility_amount(db: Session, contract: Contract, period: str, prop) -> int:
+    readings = {row.utility_type: row for row in db.scalars(select(UtilityReading).where(
+        UtilityReading.room_id == contract.room_id, UtilityReading.period == period
+    ))}
+    services = get_effective_services(db, contract)
     total = 0
-    for reading in readings:
-        price = getattr(prop, PRICES[reading.utility_type])
-        total += (reading.current_reading - reading.previous_reading) * price
+    if not services:
+        for code, column in PRICES.items():
+            reading = readings.get(code)
+            if reading is not None:
+                total += (reading.current_reading - reading.previous_reading) * getattr(prop, column)
+        return total
+    for service in services:
+        if service.effective_price is None or service.billing_unit is None:
+            raise HTTPException(status_code=409, detail=f"Chưa cấu hình giá/đơn vị cho {service.service_name}.")
+        quantity = service.quantity
+        if service.billing_unit.value in {"kwh", "m3"}:
+            reading = readings.get(service.service_code.value)
+            if reading is None:
+                raise HTTPException(status_code=409, detail=f"Thiếu chỉ số {service.service_name} kỳ {period}.")
+            quantity = reading.current_reading - reading.previous_reading
+        total += quantity * service.effective_price
     return total
 
 
@@ -70,10 +88,18 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
     assert_can_operate(db, user, prop)
     if contract.status != "active":
         raise HTTPException(status_code=409, detail="Chỉ sinh hóa đơn cho hợp đồng đang hoạt động.")
-    exists = db.scalar(select(Invoice).where(Invoice.contract_id == contract.id, Invoice.period == data.period))
+    year, month = map(int, data.period.split("-"))
+    first = date(year, month, 1)
+    last = date(year, month, calendar.monthrange(year, month)[1])
+    if contract.start_date > last or contract.end_date < first:
+        raise HTTPException(status_code=409, detail="Hợp đồng không có hiệu lực trong tháng này.")
+    exists = db.scalar(select(Invoice).join(Contract).where(Contract.room_id == room.id, Invoice.period == data.period))
     if exists is not None:
         raise HTTPException(status_code=409, detail="Hóa đơn của kỳ này đã tồn tại.")
-    utility_amount = _utility_amount(db, room.id, data.period, prop)
+    utility_amount = _utility_amount(db, contract, data.period, prop)
+    if contract.monthly_rent + utility_amount > 2_147_483_647:
+        raise HTTPException(status_code=422, detail="Tổng tiền vượt giới hạn lưu trữ.")
+    db.add(InvoiceMonth(room_id=room.id, period=data.period))
     invoice = Invoice(
         contract_id=contract.id, period=data.period, rent_amount=contract.monthly_rent,
         utility_amount=utility_amount, total_amount=contract.monthly_rent + utility_amount, status="unpaid",
