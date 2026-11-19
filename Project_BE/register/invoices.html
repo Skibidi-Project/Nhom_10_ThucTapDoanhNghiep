@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chốt hóa đơn | MiniStay</title><link rel="stylesheet" href="properties.css"></head>
+<body>
+<header class="topbar"><a class="brand" href="properties.html">MiniStay</a><a href="contracts.html">Hợp đồng</a><a href="login.html">Đăng nhập</a></header>
+<main class="container">
+<h1>Chốt hóa đơn hàng tháng</h1>
+<p>Tiền phòng tính đủ một tháng. Phí dịch vụ lấy từ các dịch vụ đã gán cho phòng hoặc hợp đồng.</p>
+<form id="invoiceForm" class="panel">
+<label>Tháng <input type="month" id="period" required></label>
+<label>Hợp đồng <select id="contract" required></select></label>
+<button type="submit" class="button">Chốt hóa đơn</button>
+</form>
+<p id="notice" role="status" aria-live="polite"></p>
+<section class="panel"><h2>Hóa đơn đã chốt</h2><div id="invoices"></div></section>
+</main><script src="invoices.js"></script>
+</body></html>

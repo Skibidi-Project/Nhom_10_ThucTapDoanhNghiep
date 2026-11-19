@@ -111,6 +111,14 @@ class UtilityReading(Base):
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
 
+class InvoiceMonth(Base):
+    __tablename__ = "invoice_months"
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), primary_key=True)
+    period: Mapped[str] = mapped_column(String(7), primary_key=True)
+
+
 class Invoice(Base):
     __tablename__ = "invoices"
     __table_args__ = (
