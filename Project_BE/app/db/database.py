@@ -101,10 +101,20 @@ def ensure_contract_deposit_columns() -> None:
             connection.execute(text("ALTER TABLE rental_contracts ADD COLUMN deposit_note VARCHAR(500) NULL"))
 
 
+def ensure_profile_columns() -> None:
+    columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    blob = "MEDIUMBLOB" if engine.dialect.name == "mysql" else "BLOB"
+    with engine.begin() as connection:
+        for name, sql_type in {"id_number": "VARCHAR(12)", "avatar": blob, "avatar_type": "VARCHAR(32)"}.items():
+            if name not in columns:
+                connection.execute(text(f"ALTER TABLE users ADD COLUMN {name} {sql_type} NULL"))
+
+
 def init_db() -> None:
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    ensure_profile_columns()
     ensure_user_role_column()
     ensure_user_phone_nullable()
     ensure_room_area_column()

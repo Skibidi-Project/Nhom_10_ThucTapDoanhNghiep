@@ -83,6 +83,13 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> User:
         if taken is not None:
             raise HTTPException(status_code=409, detail="Số điện thoại đã được sử dụng.")
         user.phone = data.phone
+    if data.email is not None and str(data.email) != user.email:
+        taken = db.scalar(select(User.id).where(User.email == str(data.email), User.id != user.id))
+        if taken is not None:
+            raise HTTPException(status_code=409, detail="Email đã được sử dụng.")
+        user.email = str(data.email)
+    if "id_number" in data.model_fields_set:
+        user.id_number = data.id_number
     save(db, user)
     return user
 
