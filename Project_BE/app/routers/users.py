@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
@@ -6,7 +6,9 @@ from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.boarding import ContractResponse, InvoiceResponse
-from app.schemas.user import ProfileUpdate, RoleAssign, UserResponse
+from app.schemas.user import ProfileResponse, ProfileUpdate, RoleAssign, UserResponse
+from app.routers.tenants import read_photo_upload
+from app.services.db_util import save
 from app.services.billing_service import list_own_invoices
 from app.services.contract_service import list_own_contracts
 from app.services.user_service import assign_role, get_account, list_users, update_profile
@@ -18,12 +20,12 @@ router = APIRouter(
 )
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=ProfileResponse)
 def read_me(user: User = Depends(require_permissions(Permission.PROFILE_READ))):
     return user
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me", response_model=ProfileResponse)
 def update_me(
     data: ProfileUpdate,
     db: Session = Depends(get_db),
@@ -54,6 +56,38 @@ def read_users(
     _: User = Depends(require_permissions(Permission.USERS_READ)),
 ):
     return list_users(db)
+
+
+
+@router.put("/me/avatar", status_code=204)
+def upload_avatar(
+    upload: tuple[bytes, str] = Depends(read_photo_upload),
+    user: User = Depends(require_permissions(Permission.PROFILE_UPDATE)),
+    db: Session = Depends(get_db),
+):
+    user.avatar, user.avatar_type = upload
+    save(db)
+    return Response(status_code=204)
+
+
+@router.get("/me/avatar")
+def read_avatar(user: User = Depends(require_permissions(Permission.PROFILE_READ))):
+    if user.avatar is None:
+        raise HTTPException(status_code=404, detail="Chưa có ảnh đại diện.")
+    return Response(user.avatar, media_type=user.avatar_type, headers={
+        "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+    })
+
+
+@router.delete("/me/avatar", status_code=204)
+def delete_avatar(
+    user: User = Depends(require_permissions(Permission.PROFILE_UPDATE)),
+    db: Session = Depends(get_db),
+):
+    user.avatar = None
+    user.avatar_type = None
+    save(db)
+    return Response(status_code=204)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
