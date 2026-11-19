@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cấu hình đơn giá dịch vụ - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="service-prices.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a class="brand" href="properties.html">MiniStay</a>
+            <nav class="guest-actions" aria-label="Điều hướng">
+                <a class="button button-light" href="properties.html">Cơ sở</a>
+                <a class="button button-light" href="rooms.html">Phòng</a>
+                <a class="button button-light" href="contracts.html">Hợp đồng</a>
+                <a class="button button-light" href="payments.html">Thanh toán</a>
+                <a class="button button-light" href="services.html">Quản lý gán dịch vụ</a>
+            </nav>
+        </div>
+        <div class="topbar-actions">
+            <span id="accountInfo">Đang kiểm tra đăng nhập...</span>
+            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="container price-page">
+        <section class="intro">
+            <div>
+                <h1>Cấu hình đơn giá dịch vụ</h1>
+                <p class="subtitle">Quản lý đơn giá và đơn vị tính riêng cho từng khu trọ.</p>
+            </div>
+        </section>
+
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section class="panel price-property-panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Khu trọ</h2>
+                    <p>Chọn khu trọ bạn được phép quản lý để xem danh mục và đơn giá.</p>
+                </div>
+                <div class="property-picker">
+                    <label for="propertySelect">Khu trọ</label>
+                    <select id="propertySelect" disabled>
+                        <option value="">Đang tải khu trọ...</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Danh mục và đơn giá</h2>
+                    <p id="priceSummary">Chọn khu trọ để xem cấu hình đơn giá.</p>
+                </div>
+            </div>
+            <p id="priceLoading" class="price-state" role="status" hidden>Đang tải cấu hình đơn giá...</p>
+            <p id="priceError" class="price-state price-error" role="alert" hidden></p>
+            <div id="servicePriceList" class="price-grid"></div>
+            <p id="priceEmpty" class="price-state" hidden></p>
+        </section>
+    </main>
+
+    <dialog id="priceDialog" class="property-dialog price-dialog" aria-labelledby="priceDialogTitle">
+        <form id="priceForm" novalidate>
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">ĐƠN GIÁ THEO KHU TRỌ</p>
+                    <h2 id="priceDialogTitle">Nhập đơn giá</h2>
+                </div>
+                <button type="button" class="close-btn" id="closePriceDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <div class="price-form-fields">
+                <div class="form-group">
+                    <label for="priceServiceName">Dịch vụ</label>
+                    <input id="priceServiceName" type="text" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="billingUnitSelect">Đơn vị tính</label>
+                    <select id="billingUnitSelect" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="unitPriceInput">Đơn giá</label>
+                    <div class="money-input">
+                        <input id="unitPriceInput" type="number" min="0" max="2147483647" step="1" inputmode="numeric" required>
+                        <span>VNĐ</span>
+                    </div>
+                    <p class="price-field-hint">Nhập số nguyên không âm.</p>
+                </div>
+            </div>
+            <p id="priceFormError" class="price-form-error" role="alert" hidden></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelPriceBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="savePriceBtn">
+                    <span id="savePriceLabel">Lưu cấu hình</span>
+                    <span id="savePriceSpinner" class="price-spinner" aria-hidden="true" hidden></span>
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="service-prices.js"></script>
+</body>
+</html>

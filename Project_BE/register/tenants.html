@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Khách thuê | MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="properties.html">MiniStay</a>
+        <nav class="topbar-actions">
+            <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
+            <a class="button button-light" href="contracts.html">Hợp đồng</a>
+            <a class="button button-light" href="payments.html">Thanh toán</a>
+            <a class="button button-light" href="login.html">Đăng nhập</a>
+        </nav>
+    </header>
+    <main class="container">
+        <h1>Hồ sơ khách thuê</h1>
+        <p id="notice" role="status" aria-live="polite"></p>
+        <section id="tenantSection" hidden>
+            <form id="tenantForm" class="panel">
+                <h2 id="formTitle">Thêm khách thuê</h2>
+                <label class="form-group">Họ tên <input name="full_name" required maxlength="120"></label>
+                <label class="form-group">Số điện thoại <input name="phone" type="tel" required pattern="0[0-9]{9}"></label>
+                <label class="form-group">CCCD/CMND <input name="id_number" required inputmode="numeric" pattern="[0-9]{9,12}"></label>
+                <label class="form-group">Ngày cấp <input name="id_issue_date" type="date"></label>
+                <label class="form-group">Nơi cấp <input name="id_issue_place" maxlength="255"></label>
+                <label class="form-group">Quê quán <input name="hometown" maxlength="255"></label>
+                <label class="form-group" id="propertyField" hidden>Khu trọ <select name="property_id"></select></label>
+                <button class="button" type="submit">Lưu hồ sơ</button>
+                <button class="button button-outline" id="cancelEdit" type="button" hidden>Hủy chỉnh sửa</button>
+            </form>
+            <section class="panel">
+                <h2>Danh sách khách thuê</h2>
+                <div id="tenantList"></div>
+            </section>
+        </section>
+    </main>
+    <script src="tenants.js"></script>
+</body>
+</html>
