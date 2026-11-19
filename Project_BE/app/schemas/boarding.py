@@ -306,7 +306,13 @@ class ReadingResponse(BaseModel):
 
 
 class InvoiceCreate(BaseModel):
-    period: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+    period: str = Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")
+
+    @field_validator("period")
+    @classmethod
+    def valid_month(cls, value):
+        date.fromisoformat(value + "-01")
+        return value
 
 
 class InvoiceResponse(BaseModel):
