@@ -32,16 +32,19 @@ async function apiRequest(path, options = {}) {
         headers.set("Content-Type", "application/json");
     }
 
-    const response = await fetch(`${API_BASE}${path}`, {...options, headers});
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers
+    });
     if (response.status === 204) return null;
 
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof data?.detail === "string"
-            ? data.detail
-            : Array.isArray(data?.detail)
-                ? data.detail.map(item => item.msg).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof data?.detail === "string" ?
+            data.detail :
+            Array.isArray(data?.detail) ?
+            data.detail.map(item => item.msg).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return data;
@@ -130,7 +133,8 @@ function renderGuestView() {
     propertyCount.textContent = "Đăng nhập để xem cơ sở";
     emptyState.hidden = false;
     document.getElementById("emptyTitle").textContent = "Đăng nhập để xem danh sách cơ sở";
-    document.getElementById("emptyDescription").textContent = "Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.";
+    document.getElementById("emptyDescription").textContent =
+        "Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.";
     guestActions.hidden = false;
     accountInfo.hidden = true;
     logoutBtn.hidden = true;
@@ -160,7 +164,8 @@ async function connect(token) {
     document.getElementById("contractsLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
     document.getElementById("emptyTitle").textContent = "Chưa có cơ sở nào";
-    document.getElementById("emptyDescription").textContent = "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";
+    document.getElementById("emptyDescription").textContent =
+        "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";
     await loadProperties();
 }
 
@@ -232,10 +237,16 @@ propertyForm.addEventListener("submit", async event => {
         const data = readFormData();
         const propertyId = document.getElementById("propertyId").value;
         if (propertyId) {
-            await apiRequest(`/properties/${propertyId}`, {method: "PUT", body: JSON.stringify(data)});
+            await apiRequest(`/properties/${propertyId}`, {
+                method: "PUT",
+                body: JSON.stringify(data)
+            });
             showNotice("Cập nhật cơ sở thành công.", "success");
         } else {
-            await apiRequest("/properties", {method: "POST", body: JSON.stringify(data)});
+            await apiRequest("/properties", {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
             showNotice("Tạo cơ sở mới thành công.", "success");
         }
         dialog.close();
@@ -248,11 +259,14 @@ propertyForm.addEventListener("submit", async event => {
 });
 
 async function deleteProperty(property) {
-    const confirmed = window.confirm(`Bạn có chắc muốn xóa cơ sở “${property.name}”?\n\nChỉ có thể xóa cơ sở chưa có phòng.`);
+    const confirmed = window.confirm(
+        `Bạn có chắc muốn xóa cơ sở “${property.name}”?\n\nChỉ có thể xóa cơ sở chưa có phòng.`);
     if (!confirmed) return;
 
     try {
-        await apiRequest(`/properties/${property.id}`, {method: "DELETE"});
+        await apiRequest(`/properties/${property.id}`, {
+            method: "DELETE"
+        });
         showNotice("Đã xóa cơ sở.", "success");
         await loadProperties();
     } catch (error) {

@@ -340,6 +340,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .price-dialog,
     .price-spinner {
         animation-duration: .01ms;

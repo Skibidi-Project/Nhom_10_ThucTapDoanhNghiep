@@ -12,7 +12,9 @@ class ServiceAssignmentWrite(BaseModel):
     room_id: int | None = Field(default=None, gt=0)
     contract_id: int | None = Field(default=None, gt=0)
     quantity: int = Field(default=1, strict=True, ge=1, le=2_147_483_647)
-    price_override: int | None = Field(default=None, strict=True, ge=0, le=2_147_483_647)
+    price_override: int | None = Field(
+        default=None, strict=True, ge=0, le=2_147_483_647
+    )
 
     @model_validator(mode="after")
     def require_exactly_one_target(self):
@@ -26,7 +28,9 @@ class ServiceAssignmentUpdate(BaseModel):
 
     service_code: ServiceCode | None = None
     quantity: int | None = Field(default=None, strict=True, ge=1, le=2_147_483_647)
-    price_override: int | None = Field(default=None, strict=True, ge=0, le=2_147_483_647)
+    price_override: int | None = Field(
+        default=None, strict=True, ge=0, le=2_147_483_647
+    )
 
 
 class ServiceAssignmentResponse(BaseModel):

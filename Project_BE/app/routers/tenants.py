@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import block_privilege_override, get_current_user, require_permissions
+from app.core.deps import (
+    block_privilege_override,
+    get_current_user,
+    require_permissions,
+)
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
@@ -76,7 +80,9 @@ async def read_photo_upload(request: Request) -> tuple[bytes, str]:
             raise HTTPException(status_code=413, detail="Ảnh CCCD tối đa 2 MB.")
         content.extend(chunk)
     if not content.startswith(signatures[mime]):
-        raise HTTPException(status_code=415, detail="Nội dung ảnh không khớp định dạng.")
+        raise HTTPException(
+            status_code=415, detail="Nội dung ảnh không khớp định dạng."
+        )
     return bytes(content), mime
 
 

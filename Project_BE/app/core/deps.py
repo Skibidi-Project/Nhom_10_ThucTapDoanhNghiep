@@ -4,7 +4,13 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.core.rbac import FORBIDDEN, PRIVILEGE_DENIED, PRIVILEGE_FIELDS, Permission, permissions_for
+from app.core.rbac import (
+    FORBIDDEN,
+    PRIVILEGE_DENIED,
+    PRIVILEGE_FIELDS,
+    Permission,
+    permissions_for,
+)
 from app.core.security import read_user_id
 from app.db.database import get_db
 from app.models.user import User
@@ -31,14 +37,20 @@ async def block_privilege_override(request: Request) -> None:
     if request.method == "PUT" and request.url.path.rstrip("/").endswith("/role"):
         allowed.add("role")
     if keys & (PRIVILEGE_FIELDS - allowed):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=PRIVILEGE_DENIED)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=PRIVILEGE_DENIED
+        )
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if credentials is None or credentials.scheme.lower() != "bearer" or not credentials.credentials:
+    if (
+        credentials is None
+        or credentials.scheme.lower() != "bearer"
+        or not credentials.credentials
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Chưa đăng nhập hoặc token không hợp lệ.",

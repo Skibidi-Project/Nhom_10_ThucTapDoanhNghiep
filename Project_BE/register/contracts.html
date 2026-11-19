@@ -1,206 +1,379 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lập hợp đồng - MiniStay</title>
-    <link rel="stylesheet" href="properties.css">
-    <link rel="stylesheet" href="contracts.css">
-</head>
-
-<body>
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>
+      Lập hợp đồng - MiniStay
+    </title>
+    <link href="properties.css" rel="stylesheet"/>
+    <link href="contracts.css" rel="stylesheet"/>
+  </head>
+  <body>
     <header class="topbar">
-        <div class="topbar-left">
-            <a class="brand" href="properties.html">MiniStay</a>
-        </div>
-        <div class="topbar-actions">
-            <a class="button button-light" href="invoices.html">Chốt hóa đơn</a>
-            <a class="button button-light" href="tenants.html">Khách thuê</a>
-            <span id="accountInfo">Đang xác thực...</span>
-            <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
-            <a class="button button-light" href="rooms.html">Quản lý phòng</a>
-            <a class="button button-light" href="services.html">Dịch vụ</a>
-            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
-        </div>
+      <div class="topbar-left">
+        <a class="brand" href="properties.html">
+          MiniStay
+        </a>
+      </div>
+      <div class="topbar-actions">
+        <a class="button button-light" href="invoices.html">
+          Chốt hóa đơn
+        </a>
+        <a class="button button-light" href="tenants.html">
+          Khách thuê
+        </a>
+        <span id="accountInfo">
+          Đang xác thực...
+        </span>
+        <a class="button button-light" href="properties.html">
+          Quản lý cơ sở
+        </a>
+        <a class="button button-light" href="rooms.html">
+          Quản lý phòng
+        </a>
+        <a class="button button-light" href="services.html">
+          Dịch vụ
+        </a>
+        <button class="button button-light" id="logoutBtn" type="button">
+          Đăng xuất
+        </button>
+      </div>
     </header>
-
     <main class="container">
-        <section class="intro">
+      <section class="intro">
+        <div>
+          <h1>
+            Quản lý hợp đồng
+          </h1>
+          <p class="subtitle">
+            Lập hợp đồng, theo dõi tiền cọc và xử lý thanh lý.
+          </p>
+        </div>
+      </section>
+      <div aria-live="polite" class="notice" id="notice" role="status">
+      </div>
+      <section hidden="" id="contractSection">
+        <form class="panel contract-form" id="contractForm">
+          <div class="panel-heading">
             <div>
-                <h1>Quản lý hợp đồng</h1>
-                <p class="subtitle">Lập hợp đồng, theo dõi tiền cọc và xử lý thanh lý.</p>
+              <h2>
+                Thông tin hợp đồng
+              </h2>
+              <p>
+                Phòng chỉ có thể lập hợp đồng khi đang trống.
+              </p>
             </div>
+            <button class="button button-outline" id="addTenantBtn" type="button">
+              + Thêm khách thuê nhanh
+            </button>
+          </div>
+          <div class="contract-form-grid">
+            <div class="form-group">
+              <label for="propertySelect">
+                Khu trọ
+                <span>
+                  *
+                </span>
+              </label>
+              <select id="propertySelect" required="">
+                <option value="">
+                  Chọn khu trọ
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="roomSelect">
+                Phòng trống
+                <span>
+                  *
+                </span>
+              </label>
+              <select disabled="" id="roomSelect" required="">
+                <option value="">
+                  Chọn khu trọ trước
+                </option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label for="tenantSelect">
+                Khách thuê đại diện
+                <span>
+                  *
+                </span>
+              </label>
+              <select disabled="" id="tenantSelect" required="">
+                <option value="">
+                  Chọn khu trọ trước
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="startDate">
+                Ngày bắt đầu
+                <span>
+                  *
+                </span>
+              </label>
+              <input id="startDate" required="" type="date"/>
+            </div>
+            <div class="form-group">
+              <label for="endDate">
+                Ngày kết thúc
+                <span>
+                  *
+                </span>
+              </label>
+              <input id="endDate" required="" type="date"/>
+            </div>
+            <div class="form-group">
+              <label for="monthlyRent">
+                Tiền thuê hàng tháng (đ)
+                <span>
+                  *
+                </span>
+              </label>
+              <input id="monthlyRent" min="1" required="" step="1" type="number"/>
+              <p class="field-hint" id="rentHint">
+              </p>
+            </div>
+            <div class="form-group">
+              <label for="deposit">
+                Tiền cọc (đ)
+                <span>
+                  *
+                </span>
+              </label>
+              <input id="deposit" min="0" required="" step="1" type="number" value="0"/>
+              <p class="field-hint">
+                Tiền cọc tối đa 3 tháng tiền thuê.
+              </p>
+            </div>
+            <div class="form-group">
+              <label for="paymentCycle">
+                Kỳ thanh toán
+                <span>
+                  *
+                </span>
+              </label>
+              <select id="paymentCycle" required="">
+                <option value="1">
+                  Hàng tháng
+                </option>
+                <option value="2">
+                  2 tháng/lần
+                </option>
+                <option value="3">
+                  3 tháng/lần
+                </option>
+                <option value="6">
+                  6 tháng/lần
+                </option>
+                <option value="12">
+                  12 tháng/lần
+                </option>
+              </select>
+            </div>
+          </div>
+          <p class="form-error" id="formError" role="alert">
+          </p>
+          <div class="contract-form-actions">
+            <button class="button button-primary" id="createContractBtn" type="submit">
+              Lập hợp đồng
+            </button>
+          </div>
+        </form>
+        <section class="contract-list-section">
+          <div class="section-heading">
+            <div>
+              <h2>
+                Danh sách hợp đồng
+              </h2>
+              <p>
+                Các hợp đồng trong phạm vi khu trọ bạn được quản lý.
+              </p>
+            </div>
+            <button class="button button-outline" id="refreshContractsBtn" type="button">
+              ↻ Làm mới
+            </button>
+          </div>
+          <p class="table-state" id="contractsLoading">
+            Đang tải danh sách hợp đồng...
+          </p>
+          <p class="table-state error-state" hidden="" id="contractsError">
+          </p>
+          <p class="table-state" hidden="" id="contractsEmpty">
+            Chưa có hợp đồng. Lập hợp đồng mới ở biểu mẫu phía trên để bắt đầu theo dõi tiền cọc và trạng thái tại đây.
+          </p>
+          <div class="table-scroll" hidden="" id="contractsTableContainer">
+            <table class="contract-table">
+              <thead>
+                <tr>
+                  <th>
+                    Khu trọ
+                  </th>
+                  <th>
+                    Phòng
+                  </th>
+                  <th>
+                    Khách thuê
+                  </th>
+                  <th>
+                    Thời hạn
+                  </th>
+                  <th>
+                    Tiền cọc
+                  </th>
+                  <th>
+                    Tiền thuê/tháng
+                  </th>
+                  <th>
+                    Kỳ thanh toán
+                  </th>
+                  <th>
+                    Trạng thái
+                  </th>
+                  <th>
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="contractRows">
+              </tbody>
+            </table>
+          </div>
         </section>
-
-        <div id="notice" class="notice" role="status" aria-live="polite"></div>
-        <section id="contractSection" hidden>
-            <form id="contractForm" class="panel contract-form">
-                <div class="panel-heading">
-                    <div>
-                        <h2>Thông tin hợp đồng</h2>
-                        <p>Phòng chỉ có thể lập hợp đồng khi đang trống.</p>
-                    </div>
-                    <button type="button" class="button button-outline" id="addTenantBtn">+ Thêm khách thuê nhanh</button>
-                </div>
-                <div class="contract-form-grid">
-                    <div class="form-group">
-                        <label for="propertySelect">Khu trọ <span>*</span></label>
-                        <select id="propertySelect" required>
-                            <option value="">Chọn khu trọ</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="roomSelect">Phòng trống <span>*</span></label>
-                        <select id="roomSelect" required disabled>
-                            <option value="">Chọn khu trọ trước</option>
-                        </select>
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="tenantSelect">Khách thuê đại diện <span>*</span></label>
-                        <select id="tenantSelect" required disabled>
-                            <option value="">Chọn khu trọ trước</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="startDate">Ngày bắt đầu <span>*</span></label>
-                        <input id="startDate" type="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="endDate">Ngày kết thúc <span>*</span></label>
-                        <input id="endDate" type="date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="monthlyRent">Tiền thuê hàng tháng (đ) <span>*</span></label>
-                        <input id="monthlyRent" type="number" min="1" step="1" required>
-                        <p id="rentHint" class="field-hint"></p>
-                    </div>
-                    <div class="form-group">
-                        <label for="deposit">Tiền cọc (đ) <span>*</span></label>
-                        <input id="deposit" type="number" min="0" step="1" value="0" required>
-                        <p class="field-hint">Tiền cọc tối đa 3 tháng tiền thuê.</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="paymentCycle">Kỳ thanh toán <span>*</span></label>
-                        <select id="paymentCycle" required>
-                            <option value="1">Hàng tháng</option>
-                            <option value="2">2 tháng/lần</option>
-                            <option value="3">3 tháng/lần</option>
-                            <option value="6">6 tháng/lần</option>
-                            <option value="12">12 tháng/lần</option>
-                        </select>
-                    </div>
-                </div>
-                <p id="formError" class="form-error" role="alert"></p>
-                <div class="contract-form-actions">
-                    <button type="submit" class="button button-primary" id="createContractBtn">Lập hợp đồng</button>
-                </div>
-            </form>
-
-            <section class="contract-list-section">
-                <div class="section-heading">
-                    <div>
-                        <h2>Danh sách hợp đồng</h2>
-                        <p>Các hợp đồng trong phạm vi khu trọ bạn được quản lý.</p>
-                    </div>
-                    <button type="button" class="button button-outline" id="refreshContractsBtn">↻ Làm mới</button>
-                </div>
-                <p id="contractsLoading" class="table-state">Đang tải danh sách hợp đồng...</p>
-                <p id="contractsError" class="table-state error-state" hidden></p>
-                <p id="contractsEmpty" class="table-state" hidden>Chưa có hợp đồng. Lập hợp đồng mới ở biểu mẫu phía trên để bắt đầu theo dõi tiền cọc và trạng thái tại đây.</p>
-                <div class="table-scroll" id="contractsTableContainer" hidden>
-                    <table class="contract-table">
-                        <thead>
-                            <tr>
-                                <th>Khu trọ</th>
-                                <th>Phòng</th>
-                                <th>Khách thuê</th>
-                                <th>Thời hạn</th>
-                                <th>Tiền cọc</th>
-                                <th>Tiền thuê/tháng</th>
-                                <th>Kỳ thanh toán</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="contractRows"></tbody>
-                    </table>
-                </div>
-            </section>
-        </section>
+      </section>
     </main>
-
-    <dialog id="tenantDialog" class="property-dialog">
-        <form id="tenantForm">
-            <div class="dialog-heading">
-                <div>
-                    <p class="eyebrow">THÔNG TIN KHÁCH THUÊ</p>
-                    <h2>Thêm khách thuê nhanh</h2>
-                </div>
-                <button type="button" class="close-btn" id="closeTenantDialogBtn" aria-label="Đóng">×</button>
-            </div>
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="tenantName">Họ tên <span>*</span></label>
-                    <input id="tenantName" type="text" maxlength="120" required>
-                </div>
-                <div class="form-group">
-                    <label for="tenantPhone">Số điện thoại <span>*</span></label>
-                    <input id="tenantPhone" type="tel" inputmode="numeric" pattern="0[0-9]{9}" maxlength="10" required>
-                </div>
-                <div class="form-group">
-                    <label for="tenantIdNumber">CMND/CCCD <span>*</span></label>
-                    <input id="tenantIdNumber" type="text" inputmode="numeric" pattern="[0-9]{9,12}" maxlength="12" required>
-                </div>
-                <div class="form-group full-width">
-                    <label for="tenantEmail">Email</label>
-                    <input id="tenantEmail" type="email" maxlength="255">
-                </div>
-            </div>
-            <p id="tenantFormError" class="form-error" role="alert"></p>
-            <div class="dialog-actions">
-                <button type="button" class="button button-light" id="cancelTenantBtn">Hủy</button>
-                <button type="submit" class="button button-primary" id="saveTenantBtn">Thêm khách thuê</button>
-            </div>
-        </form>
+    <dialog class="property-dialog" id="tenantDialog">
+      <form id="tenantForm">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">
+              THÔNG TIN KHÁCH THUÊ
+            </p>
+            <h2>
+              Thêm khách thuê nhanh
+            </h2>
+          </div>
+          <button aria-label="Đóng" class="close-btn" id="closeTenantDialogBtn" type="button">
+            ×
+          </button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="tenantName">
+              Họ tên
+              <span>
+                *
+              </span>
+            </label>
+            <input id="tenantName" maxlength="120" required="" type="text"/>
+          </div>
+          <div class="form-group">
+            <label for="tenantPhone">
+              Số điện thoại
+              <span>
+                *
+              </span>
+            </label>
+            <input id="tenantPhone" inputmode="numeric" maxlength="10" pattern="0[0-9]{9}" required="" type="tel"/>
+          </div>
+          <div class="form-group">
+            <label for="tenantIdNumber">
+              CMND/CCCD
+              <span>
+                *
+              </span>
+            </label>
+            <input id="tenantIdNumber" inputmode="numeric" maxlength="12" pattern="[0-9]{9,12}" required="" type="text"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="tenantEmail">
+              Email
+            </label>
+            <input id="tenantEmail" maxlength="255" type="email"/>
+          </div>
+        </div>
+        <p class="form-error" id="tenantFormError" role="alert">
+        </p>
+        <div class="dialog-actions">
+          <button class="button button-light" id="cancelTenantBtn" type="button">
+            Hủy
+          </button>
+          <button class="button button-primary" id="saveTenantBtn" type="submit">
+            Thêm khách thuê
+          </button>
+        </div>
+      </form>
     </dialog>
-
-    <dialog id="depositDialog" class="property-dialog">
-        <form id="depositForm">
-            <div class="dialog-heading">
-                <div>
-                    <p class="eyebrow">US-14 · TIỀN CỌC</p>
-                    <h2>Quyết toán tiền cọc</h2>
-                </div>
-                <button type="button" class="close-btn" id="closeDepositDialogBtn" aria-label="Đóng">×</button>
-            </div>
-            <input type="hidden" id="depositContractId">
-            <p id="depositContractSummary" class="deposit-summary"></p>
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="depositSettlementStatus">Kết quả tiền cọc <span>*</span></label>
-                    <select id="depositSettlementStatus" required>
-                        <option value="returned">Hoàn trả toàn bộ/một phần</option>
-                        <option value="deducted">Khấu trừ tiền cọc</option>
-                        <option value="held">Tiền cọc vẫn đang được giữ</option>
-                    </select>
-                </div>
-                <div class="form-group full-width" id="returnedAmountGroup">
-                    <label for="returnedAmount">Số tiền hoàn trả (đ) <span>*</span></label>
-                    <input id="returnedAmount" type="number" min="1" step="1">
-                </div>
-                <div class="form-group full-width">
-                    <label for="depositNote">Ghi chú</label>
-                    <textarea id="depositNote" rows="3" maxlength="500"></textarea>
-                </div>
-            </div>
-            <p id="depositFormError" class="form-error" role="alert"></p>
-            <div class="dialog-actions">
-                <button type="button" class="button button-light" id="cancelDepositBtn">Hủy</button>
-                <button type="submit" class="button button-primary" id="saveDepositBtn">Lưu quyết toán</button>
-            </div>
-        </form>
+    <dialog class="property-dialog" id="depositDialog">
+      <form id="depositForm">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">
+              US-14 · TIỀN CỌC
+            </p>
+            <h2>
+              Quyết toán tiền cọc
+            </h2>
+          </div>
+          <button aria-label="Đóng" class="close-btn" id="closeDepositDialogBtn" type="button">
+            ×
+          </button>
+        </div>
+        <input id="depositContractId" type="hidden"/>
+        <p class="deposit-summary" id="depositContractSummary">
+        </p>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="depositSettlementStatus">
+              Kết quả tiền cọc
+              <span>
+                *
+              </span>
+            </label>
+            <select id="depositSettlementStatus" required="">
+              <option value="returned">
+                Hoàn trả toàn bộ/một phần
+              </option>
+              <option value="deducted">
+                Khấu trừ tiền cọc
+              </option>
+              <option value="held">
+                Tiền cọc vẫn đang được giữ
+              </option>
+            </select>
+          </div>
+          <div class="form-group full-width" id="returnedAmountGroup">
+            <label for="returnedAmount">
+              Số tiền hoàn trả (đ)
+              <span>
+                *
+              </span>
+            </label>
+            <input id="returnedAmount" min="1" step="1" type="number"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="depositNote">
+              Ghi chú
+            </label>
+            <textarea id="depositNote" maxlength="500" rows="3"></textarea>
+          </div>
+        </div>
+        <p class="form-error" id="depositFormError" role="alert">
+        </p>
+        <div class="dialog-actions">
+          <button class="button button-light" id="cancelDepositBtn" type="button">
+            Hủy
+          </button>
+          <button class="button button-primary" id="saveDepositBtn" type="submit">
+            Lưu quyết toán
+          </button>
+        </div>
+      </form>
     </dialog>
-
-    <script src="contracts.js"></script>
-</body>
+    <script src="contracts.js">
+    </script>
+  </body>
 </html>

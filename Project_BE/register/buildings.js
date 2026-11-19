@@ -33,15 +33,18 @@ async function apiRequest(path, options = {}) {
     if (options.body && !headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
     }
-    const response = await fetch(`${API_BASE}${path}`, {...options, headers});
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers
+    });
     if (response.status === 204) return null;
     const body = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof body?.detail === "string"
-            ? body.detail
-            : Array.isArray(body?.detail)
-                ? body.detail.map(item => item.msg).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof body?.detail === "string" ?
+            body.detail :
+            Array.isArray(body?.detail) ?
+            body.detail.map(item => item.msg).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return body;
@@ -134,7 +137,8 @@ function disconnect() {
 
 function redrawFloorInputs(names = []) {
     const count = Number(floorCountInput.value);
-    const oldNames = names.length ? names : [...floorInputs.querySelectorAll("input")].map(input => input.value);
+    const oldNames = names.length ? names : [...floorInputs.querySelectorAll("input")].map(input => input
+        .value);
     floorInputs.replaceChildren();
     if (!Number.isSafeInteger(count) || count < 1 || count > 30) return;
 
@@ -189,13 +193,19 @@ function formData() {
     if (new Set(floorNames.map(value => value.toLocaleLowerCase("vi-VN"))).size !== floorNames.length) {
         throw new Error("Tên các tầng không được trùng nhau.");
     }
-    return {name, floor_count: floorCount, floor_names: floorNames};
+    return {
+        name,
+        floor_count: floorCount,
+        floor_names: floorNames
+    };
 }
 
 async function deleteBuilding(building) {
     if (!window.confirm(`Xóa tòa nhà “${building.name}” cùng ${building.floor_count} tầng?`)) return;
     try {
-        await apiRequest(`/buildings/${building.id}`, {method: "DELETE"});
+        await apiRequest(`/buildings/${building.id}`, {
+            method: "DELETE"
+        });
         await loadBuildings();
         showNotice("Đã xóa tòa nhà.", "success");
     } catch (error) {
@@ -212,9 +222,15 @@ buildingForm.addEventListener("submit", async event => {
         const body = JSON.stringify(formData());
         const id = document.getElementById("buildingId").value;
         if (id) {
-            await apiRequest(`/buildings/${id}`, {method: "PUT", body});
+            await apiRequest(`/buildings/${id}`, {
+                method: "PUT",
+                body
+            });
         } else {
-            await apiRequest(`/properties/${propertyId}/buildings`, {method: "POST", body});
+            await apiRequest(`/properties/${propertyId}/buildings`, {
+                method: "POST",
+                body
+            });
         }
         buildingDialog.close();
         await loadBuildings();

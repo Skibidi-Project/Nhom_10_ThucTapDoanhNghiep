@@ -1,7 +1,11 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import block_privilege_override, get_current_user, require_permissions
+from app.core.deps import (
+    block_privilege_override,
+    get_current_user,
+    require_permissions,
+)
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
@@ -9,7 +13,12 @@ from app.schemas.boarding import ContractResponse, InvoiceResponse
 from app.schemas.user import ProfileUpdate, RoleAssign, UserResponse
 from app.services.billing_service import list_own_invoices
 from app.services.contract_service import list_own_contracts
-from app.services.user_service import assign_role, get_account, list_users, update_profile
+from app.services.user_service import (
+    assign_role,
+    get_account,
+    list_users,
+    update_profile,
+)
 
 router = APIRouter(
     prefix="/api/users",

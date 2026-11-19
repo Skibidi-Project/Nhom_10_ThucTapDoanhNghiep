@@ -19,7 +19,9 @@ from app.services.db_util import save
 
 def _get_building(db: Session, user: User, building_id: int) -> Building:
     building = db.scalar(
-        select(Building).options(selectinload(Building.floors)).where(Building.id == building_id)
+        select(Building)
+        .options(selectinload(Building.floors))
+        .where(Building.id == building_id)
     )
     if building is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy tòa nhà.")
@@ -39,7 +41,9 @@ def _response(building: Building) -> BuildingResponse:
     )
 
 
-def _name_taken(db: Session, property_id: int, name: str, ignore_id: int | None = None) -> bool:
+def _name_taken(
+    db: Session, property_id: int, name: str, ignore_id: int | None = None
+) -> bool:
     stmt = select(Building.id).where(
         Building.property_id == property_id,
         func.lower(Building.name) == name.lower(),
@@ -65,32 +69,47 @@ def read_building(db: Session, user: User, building_id: int) -> BuildingResponse
     return _response(_get_building(db, user, building_id))
 
 
-def create_building(db: Session, user: User, property_id: int, data: BuildingCreate) -> BuildingResponse:
+def create_building(
+    db: Session, user: User, property_id: int, data: BuildingCreate
+) -> BuildingResponse:
     property_obj = get_property(db, property_id)
     assert_can_operate(db, user, property_obj)
     if _name_taken(db, property_id, data.name):
-        raise HTTPException(status_code=409, detail="Tên tòa nhà đã tồn tại trong khu trọ.")
-    names = data.floor_names or [f"Tầng {number}" for number in range(1, data.floor_count + 1)]
+        raise HTTPException(
+            status_code=409, detail="Tên tòa nhà đã tồn tại trong khu trọ."
+        )
+    names = data.floor_names or [
+        f"Tầng {number}" for number in range(1, data.floor_count + 1)
+    ]
     building = Building(
         property_id=property_id,
         name=data.name,
-        floors=[Floor(number=number, name=name) for number, name in enumerate(names, start=1)],
+        floors=[
+            Floor(number=number, name=name)
+            for number, name in enumerate(names, start=1)
+        ],
     )
     db.add(building)
     save(db, building)
     return _response(building)
 
 
-def update_building(db: Session, user: User, building_id: int, data: BuildingUpdate) -> BuildingResponse:
+def update_building(
+    db: Session, user: User, building_id: int, data: BuildingUpdate
+) -> BuildingResponse:
     building = _get_building(db, user, building_id)
     if data.name is not None:
         if _name_taken(db, building.property_id, data.name, ignore_id=building.id):
-            raise HTTPException(status_code=409, detail="Tên tòa nhà đã tồn tại trong khu trọ.")
+            raise HTTPException(
+                status_code=409, detail="Tên tòa nhà đã tồn tại trong khu trọ."
+            )
         building.name = data.name
 
     if data.floor_count is not None or data.floor_names is not None:
         existing = sorted(building.floors, key=lambda floor: floor.number)
-        count = data.floor_count if data.floor_count is not None else len(data.floor_names)
+        count = (
+            data.floor_count if data.floor_count is not None else len(data.floor_names)
+        )
         if count < len(existing):
             for floor in existing[count:]:
                 building.floors.remove(floor)
@@ -99,7 +118,9 @@ def update_building(db: Session, user: User, building_id: int, data: BuildingUpd
                 building.floors.append(Floor(number=number, name=f"Tầng {number}"))
 
         if data.floor_names is not None:
-            for floor, name in zip(sorted(building.floors, key=lambda f: f.number), data.floor_names):
+            for floor, name in zip(
+                sorted(building.floors, key=lambda f: f.number), data.floor_names
+            ):
                 floor.name = name
         try:
             check_floor_names([floor.name for floor in building.floors])
@@ -110,13 +131,22 @@ def update_building(db: Session, user: User, building_id: int, data: BuildingUpd
     return _response(building)
 
 
-def rename_floor(db: Session, user: User, building_id: int, floor_id: int, data: FloorRename) -> FloorResponse:
+def rename_floor(
+    db: Session, user: User, building_id: int, floor_id: int, data: FloorRename
+) -> FloorResponse:
     building = _get_building(db, user, building_id)
     floor = next((item for item in building.floors if item.id == floor_id), None)
     if floor is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy tầng thuộc tòa nhà này.")
-    if any(item.id != floor.id and item.name.casefold() == data.name.casefold() for item in building.floors):
-        raise HTTPException(status_code=409, detail="Tên tầng đã tồn tại trong tòa nhà.")
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy tầng thuộc tòa nhà này."
+        )
+    if any(
+        item.id != floor.id and item.name.casefold() == data.name.casefold()
+        for item in building.floors
+    ):
+        raise HTTPException(
+            status_code=409, detail="Tên tầng đã tồn tại trong tòa nhà."
+        )
     floor.name = data.name
     save(db, floor)
     return FloorResponse.model_validate(floor)

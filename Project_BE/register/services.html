@@ -1,184 +1,303 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý dịch vụ - MiniStay</title>
-    <link rel="stylesheet" href="properties.css">
-    <link rel="stylesheet" href="services.css">
-</head>
-<body>
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>
+      Quản lý dịch vụ - MiniStay
+    </title>
+    <link href="properties.css" rel="stylesheet"/>
+    <link href="services.css" rel="stylesheet"/>
+  </head>
+  <body>
     <header class="topbar">
-        <div class="topbar-left">
-            <a class="brand" href="properties.html">MiniStay</a>
-            <nav class="guest-actions" aria-label="Điều hướng">
-                <a class="button button-light" href="properties.html">Cơ sở</a>
-                <a class="button button-light" href="rooms.html">Phòng</a>
-                <a class="button button-light" href="contracts.html">Hợp đồng</a>
-                <a class="button button-light" href="readings.html">Chỉ số điện nước</a>
-                <a class="button button-light" href="service-prices.html">Cấu hình đơn giá</a>
-            </nav>
-        </div>
-        <div class="topbar-actions">
-            <span id="accountInfo">Đang kiểm tra đăng nhập...</span>
-            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
-        </div>
+      <div class="topbar-left">
+        <a class="brand" href="properties.html">
+          MiniStay
+        </a>
+        <nav aria-label="Điều hướng" class="guest-actions">
+          <a class="button button-light" href="properties.html">
+            Cơ sở
+          </a>
+          <a class="button button-light" href="rooms.html">
+            Phòng
+          </a>
+          <a class="button button-light" href="contracts.html">
+            Hợp đồng
+          </a>
+          <a class="button button-light" href="readings.html">
+            Chỉ số điện nước
+          </a>
+          <a class="button button-light" href="service-prices.html">
+            Cấu hình đơn giá
+          </a>
+        </nav>
+      </div>
+      <div class="topbar-actions">
+        <span id="accountInfo">
+          Đang kiểm tra đăng nhập...
+        </span>
+        <button class="button button-light" id="logoutBtn" type="button">
+          Đăng xuất
+        </button>
+      </div>
     </header>
-
     <main class="container services-page">
-        <section class="intro">
-            <div>
-                <h1>Quản lý dịch vụ</h1>
-                <p class="subtitle">Quản lý và gán dịch vụ cho phòng hoặc hợp đồng.</p>
-            </div>
-            <button type="button" class="button button-primary" id="assignBtn" disabled>+ Gán dịch vụ</button>
-        </section>
-
-        <div id="notice" class="notice" role="status" aria-live="polite"></div>
-
-        <section class="stats-grid" aria-label="Tổng quan dịch vụ">
-            <article class="stat-card">
-                <span>Tổng loại dịch vụ</span>
-                <strong id="totalServices">—</strong>
-                <small>Danh mục hệ thống</small>
-            </article>
-            <article class="stat-card">
-                <span>Đang gán cho mục tiêu</span>
-                <strong id="appliedServices">—</strong>
-                <small>Phòng hoặc hợp đồng đang chọn</small>
-            </article>
-        </section>
-
-        <section class="panel target-panel">
-            <div class="section-heading">
-                <div>
-                    <h2>Chọn nơi áp dụng</h2>
-                    <p>Chọn khu trọ, hình thức gán và mục tiêu cần quản lý.</p>
-                </div>
-            </div>
-            <div class="toolbar">
-                <div class="toolbar-item">
-                    <label for="propertySelect">Khu trọ</label>
-                    <select id="propertySelect" disabled>
-                        <option value="">Đang tải khu trọ...</option>
-                    </select>
-                </div>
-                <div class="toolbar-item">
-                    <label>Hình thức gán</label>
-                    <div class="segmented" role="group" aria-label="Hình thức gán dịch vụ">
-                        <button type="button" class="mode-btn active" data-mode="room">Theo phòng</button>
-                        <button type="button" class="mode-btn" data-mode="contract">Theo hợp đồng</button>
-                    </div>
-                </div>
-                <div class="toolbar-item target-control">
-                    <label for="targetSelect" id="targetLabel">Phòng</label>
-                    <select id="targetSelect" disabled>
-                        <option value="">Chọn khu trọ trước</option>
-                    </select>
-                </div>
-            </div>
-        </section>
-
-        <section class="panel catalog-panel">
-            <div class="section-heading">
-                <div>
-                    <h2>Danh mục dịch vụ</h2>
-                    <p>Các dịch vụ có thể gán cho mục tiêu đã chọn.</p>
-                </div>
-            </div>
-            <p id="catalogLoading" class="loading-state" hidden>Đang tải danh mục dịch vụ...</p>
-            <p id="catalogError" class="inline-error" hidden></p>
-            <div id="serviceCatalogCards" class="catalog-grid"></div>
-            <p id="catalogEmpty" class="empty-inline" hidden>Chọn khu trọ để xem danh mục dịch vụ.</p>
-        </section>
-
-        <section class="panel">
-            <div class="section-heading">
-                <div>
-                    <h2>Dịch vụ đang áp dụng</h2>
-                    <p id="summaryText">Chọn khu trọ và mục tiêu để xem dịch vụ.</p>
-                </div>
-                <button type="button" class="button button-outline" id="listAssignBtn" disabled>+ Gán dịch vụ</button>
-            </div>
-            <p id="assignmentsLoading" class="loading-state" hidden>Đang tải danh sách dịch vụ...</p>
-            <p id="assignmentsError" class="inline-error" hidden></p>
-            <div class="table-scroll" id="tableWrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Tên dịch vụ</th>
-                            <th>Mã dịch vụ</th>
-                            <th>Nguồn áp dụng</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="serviceTableBody"></tbody>
-                </table>
-            </div>
-            <div id="emptyState" class="empty-inline" hidden>Chưa có dịch vụ nào được gán cho mục tiêu này.</div>
-        </section>
-    </main>
-
-    <dialog id="assignDialog" class="property-dialog">
-        <form id="assignForm">
-            <div class="dialog-heading">
-                <div>
-                    <p class="eyebrow">GÁN DỊCH VỤ</p>
-                    <h2 id="assignDialogTitle">Gán dịch vụ</h2>
-                </div>
-                <button type="button" class="close-btn" id="closeAssignDialogBtn" aria-label="Đóng">×</button>
-            </div>
-            <p id="editSourceHint" class="form-hint" hidden></p>
-            <div class="form-group">
-                <label for="serviceCode">Dịch vụ</label>
-                <select id="serviceCode" required></select>
-                <p id="selectedServiceInfo" class="service-info" hidden></p>
-                <p id="noAvailableServices" class="configuration-hint" hidden></p>
-            </div>
-            <p id="formError" class="form-error" role="alert"></p>
-            <div class="dialog-actions">
-                <button type="button" class="button button-light" id="cancelAssignBtn">Hủy</button>
-                <button type="submit" class="button button-primary" id="saveAssignBtn">Lưu</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="removeDialog" class="property-dialog remove-dialog" aria-labelledby="removeDialogTitle" aria-describedby="removeWarning">
-        <div class="remove-dialog-content">
-            <div class="dialog-heading">
-                <div>
-                    <p class="eyebrow">GỠ DỊCH VỤ</p>
-                    <h2 id="removeDialogTitle">Xác nhận gỡ dịch vụ</h2>
-                </div>
-                <button type="button" class="close-btn" id="closeRemoveDialogBtn" aria-label="Đóng">×</button>
-            </div>
-            <dl class="remove-service-details">
-                <div>
-                    <dt>Tên dịch vụ</dt>
-                    <dd id="removeServiceName"></dd>
-                </div>
-                <div>
-                    <dt>Mã dịch vụ</dt>
-                    <dd id="removeServiceCode"></dd>
-                </div>
-                <div>
-                    <dt>Phòng hoặc hợp đồng đang áp dụng</dt>
-                    <dd id="removeServiceSource"></dd>
-                </div>
-            </dl>
-            <p id="removeWarning" class="remove-warning">Bạn có chắc chắn muốn gỡ dịch vụ này khỏi nguồn đang áp dụng?</p>
-            <p id="removeError" class="remove-error" role="alert" hidden></p>
-            <div class="dialog-actions">
-                <button type="button" class="button button-light" id="cancelRemoveBtn">Hủy</button>
-                <button type="button" class="button button-primary" id="confirmRemoveBtn">
-                    <span id="removeButtonLabel">Xác nhận gỡ</span>
-                    <span id="removeSpinner" class="remove-spinner" aria-hidden="true" hidden></span>
-                </button>
-            </div>
+      <section class="intro">
+        <div>
+          <h1>
+            Quản lý dịch vụ
+          </h1>
+          <p class="subtitle">
+            Quản lý và gán dịch vụ cho phòng hoặc hợp đồng.
+          </p>
         </div>
+        <button class="button button-primary" disabled="" id="assignBtn" type="button">
+          + Gán dịch vụ
+        </button>
+      </section>
+      <div aria-live="polite" class="notice" id="notice" role="status">
+      </div>
+      <section aria-label="Tổng quan dịch vụ" class="stats-grid">
+        <article class="stat-card">
+          <span>
+            Tổng loại dịch vụ
+          </span>
+          <strong id="totalServices">
+            —
+          </strong>
+          <small>
+            Danh mục hệ thống
+          </small>
+        </article>
+        <article class="stat-card">
+          <span>
+            Đang gán cho mục tiêu
+          </span>
+          <strong id="appliedServices">
+            —
+          </strong>
+          <small>
+            Phòng hoặc hợp đồng đang chọn
+          </small>
+        </article>
+      </section>
+      <section class="panel target-panel">
+        <div class="section-heading">
+          <div>
+            <h2>
+              Chọn nơi áp dụng
+            </h2>
+            <p>
+              Chọn khu trọ, hình thức gán và mục tiêu cần quản lý.
+            </p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-item">
+            <label for="propertySelect">
+              Khu trọ
+            </label>
+            <select disabled="" id="propertySelect">
+              <option value="">
+                Đang tải khu trọ...
+              </option>
+            </select>
+          </div>
+          <div class="toolbar-item">
+            <label>
+              Hình thức gán
+            </label>
+            <div aria-label="Hình thức gán dịch vụ" class="segmented" role="group">
+              <button class="mode-btn active" data-mode="room" type="button">
+                Theo phòng
+              </button>
+              <button class="mode-btn" data-mode="contract" type="button">
+                Theo hợp đồng
+              </button>
+            </div>
+          </div>
+          <div class="toolbar-item target-control">
+            <label for="targetSelect" id="targetLabel">
+              Phòng
+            </label>
+            <select disabled="" id="targetSelect">
+              <option value="">
+                Chọn khu trọ trước
+              </option>
+            </select>
+          </div>
+        </div>
+      </section>
+      <section class="panel catalog-panel">
+        <div class="section-heading">
+          <div>
+            <h2>
+              Danh mục dịch vụ
+            </h2>
+            <p>
+              Các dịch vụ có thể gán cho mục tiêu đã chọn.
+            </p>
+          </div>
+        </div>
+        <p class="loading-state" hidden="" id="catalogLoading">
+          Đang tải danh mục dịch vụ...
+        </p>
+        <p class="inline-error" hidden="" id="catalogError">
+        </p>
+        <div class="catalog-grid" id="serviceCatalogCards">
+        </div>
+        <p class="empty-inline" hidden="" id="catalogEmpty">
+          Chọn khu trọ để xem danh mục dịch vụ.
+        </p>
+      </section>
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>
+              Dịch vụ đang áp dụng
+            </h2>
+            <p id="summaryText">
+              Chọn khu trọ và mục tiêu để xem dịch vụ.
+            </p>
+          </div>
+          <button class="button button-outline" disabled="" id="listAssignBtn" type="button">
+            + Gán dịch vụ
+          </button>
+        </div>
+        <p class="loading-state" hidden="" id="assignmentsLoading">
+          Đang tải danh sách dịch vụ...
+        </p>
+        <p class="inline-error" hidden="" id="assignmentsError">
+        </p>
+        <div class="table-scroll" id="tableWrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>
+                  STT
+                </th>
+                <th>
+                  Tên dịch vụ
+                </th>
+                <th>
+                  Mã dịch vụ
+                </th>
+                <th>
+                  Nguồn áp dụng
+                </th>
+                <th>
+                  Thao tác
+                </th>
+              </tr>
+            </thead>
+            <tbody id="serviceTableBody">
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-inline" hidden="" id="emptyState">
+          Chưa có dịch vụ nào được gán cho mục tiêu này.
+        </div>
+      </section>
+    </main>
+    <dialog class="property-dialog" id="assignDialog">
+      <form id="assignForm">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">
+              GÁN DỊCH VỤ
+            </p>
+            <h2 id="assignDialogTitle">
+              Gán dịch vụ
+            </h2>
+          </div>
+          <button aria-label="Đóng" class="close-btn" id="closeAssignDialogBtn" type="button">
+            ×
+          </button>
+        </div>
+        <p class="form-hint" hidden="" id="editSourceHint">
+        </p>
+        <div class="form-group">
+          <label for="serviceCode">
+            Dịch vụ
+          </label>
+          <select id="serviceCode" required="">
+          </select>
+          <p class="service-info" hidden="" id="selectedServiceInfo">
+          </p>
+          <p class="configuration-hint" hidden="" id="noAvailableServices">
+          </p>
+        </div>
+        <p class="form-error" id="formError" role="alert">
+        </p>
+        <div class="dialog-actions">
+          <button class="button button-light" id="cancelAssignBtn" type="button">
+            Hủy
+          </button>
+          <button class="button button-primary" id="saveAssignBtn" type="submit">
+            Lưu
+          </button>
+        </div>
+      </form>
     </dialog>
-
-    <script src="services.js"></script>
-</body>
+    <dialog aria-describedby="removeWarning" aria-labelledby="removeDialogTitle" class="property-dialog remove-dialog" id="removeDialog">
+      <div class="remove-dialog-content">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">
+              GỠ DỊCH VỤ
+            </p>
+            <h2 id="removeDialogTitle">
+              Xác nhận gỡ dịch vụ
+            </h2>
+          </div>
+          <button aria-label="Đóng" class="close-btn" id="closeRemoveDialogBtn" type="button">
+            ×
+          </button>
+        </div>
+        <dl class="remove-service-details">
+          <div>
+            <dt>
+              Tên dịch vụ
+            </dt>
+            <dd id="removeServiceName">
+            </dd>
+          </div>
+          <div>
+            <dt>
+              Mã dịch vụ
+            </dt>
+            <dd id="removeServiceCode">
+            </dd>
+          </div>
+          <div>
+            <dt>
+              Phòng hoặc hợp đồng đang áp dụng
+            </dt>
+            <dd id="removeServiceSource">
+            </dd>
+          </div>
+        </dl>
+        <p class="remove-warning" id="removeWarning">
+          Bạn có chắc chắn muốn gỡ dịch vụ này khỏi nguồn đang áp dụng?
+        </p>
+        <p class="remove-error" hidden="" id="removeError" role="alert">
+        </p>
+        <div class="dialog-actions">
+          <button class="button button-light" id="cancelRemoveBtn" type="button">
+            Hủy
+          </button>
+          <button class="button button-primary" id="confirmRemoveBtn" type="button">
+            <span id="removeButtonLabel">
+              Xác nhận gỡ
+            </span>
+            <span aria-hidden="true" class="remove-spinner" hidden="" id="removeSpinner">
+            </span>
+          </button>
+        </div>
+      </div>
+    </dialog>
+    <script src="services.js">
+    </script>
+  </body>
 </html>

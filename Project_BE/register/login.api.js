@@ -39,7 +39,8 @@ form.addEventListener("submit", async event => {
     let valid = true;
     if (!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || /^0[0-9]{9}$/.test(value))) {
         identifier.classList.add("invalid");
-        document.getElementById("identifierError").textContent = "Nhập email hợp lệ hoặc SĐT 10 chữ số bắt đầu bằng 0.";
+        document.getElementById("identifierError").textContent =
+            "Nhập email hợp lệ hoặc SĐT 10 chữ số bắt đầu bằng 0.";
         valid = false;
     }
     if (!password.value) {
@@ -54,16 +55,25 @@ form.addEventListener("submit", async event => {
     try {
         const response = await fetch("/api/auth/login", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({identifier: value, password: password.value})
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                identifier: value,
+                password: password.value
+            })
         });
         const data = await response.json().catch(() => null);
         if (response.status !== 200) {
             const detail = typeof data?.detail === "string" ? data.detail : null;
-            const validation = Array.isArray(data?.detail) ? data.detail.map(item => item.msg).join("; ") : null;
-            throw new Error(detail || validation || (response.status === 401 ? "Email/SĐT hoặc mật khẩu không đúng." : response.status >= 500 ? "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng nhập."));
+            const validation = Array.isArray(data?.detail) ? data.detail.map(item => item.msg)
+                .join("; ") : null;
+            throw new Error(detail || validation || (response.status === 401 ?
+                "Email/SĐT hoặc mật khẩu không đúng." : response.status >= 500 ?
+                "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng nhập."));
         }
-        if (!data?.user || typeof data.message !== "string") throw new Error("Phản hồi máy chủ không hợp lệ.");
+        if (!data?.user || typeof data.message !== "string") throw new Error(
+            "Phản hồi máy chủ không hợp lệ.");
         // showMessage(data.message, "success");
         // // Chỉ hiển thị các trường công khai mà API trả về; không lưu tài khoản.
         // const labels = {id: "ID", full_name: "Họ tên", email: "Email", phone: "Số điện thoại", created_at: "Ngày tạo"};
@@ -83,7 +93,8 @@ form.addEventListener("submit", async event => {
             window.location.assign("properties.html");
         }, 800);
     } catch (error) {
-        showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : error.message, "failure");
+        showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." :
+            error.message, "failure");
     } finally {
         button.disabled = false;
         button.innerHTML = buttonHTML;

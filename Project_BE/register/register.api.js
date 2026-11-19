@@ -1,4 +1,3 @@
-
 const registerForm = document.getElementById("registerForm");
 const registerBtn = document.getElementById("registerBtn");
 const message = document.getElementById("message");
@@ -19,11 +18,11 @@ function showError(input, errorId, text) {
 }
 
 function clearErrors() {
-    document.querySelectorAll(".error").forEach(function (item) {
+    document.querySelectorAll(".error").forEach(function(item) {
         item.textContent = "";
     });
 
-    document.querySelectorAll(".invalid").forEach(function (item) {
+    document.querySelectorAll(".invalid").forEach(function(item) {
         item.classList.remove("invalid");
     });
 
@@ -112,7 +111,7 @@ function validateConfirmPassword(value, originalPassword) {
     return "";
 }
 
-registerForm.addEventListener("submit", async function (event) {
+registerForm.addEventListener("submit", async function(event) {
     event.preventDefault();
 
     if (registerBtn.disabled) return;
@@ -181,28 +180,49 @@ registerForm.addEventListener("submit", async function (event) {
         registerBtn.textContent = "Đang tạo tài khoản...";
         const response = await fetch("/api/auth/register", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({full_name: nameValue, email: emailValue, phone: phoneValue || null, password: passwordValue})
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                full_name: nameValue,
+                email: emailValue,
+                phone: phoneValue || null,
+                password: passwordValue
+            })
         });
         const data = await response.json().catch(() => null);
         if (response.status !== 201) {
             if (response.status === 422 && Array.isArray(data?.detail)) {
-                const fields = {full_name: [fullName, "nameError"], email: [email, "emailError"], phone: [phone, "phoneError"], password: [password, "passwordError"]};
+                const fields = {
+                    full_name: [fullName, "nameError"],
+                    email: [email, "emailError"],
+                    phone: [phone, "phoneError"],
+                    password: [password, "passwordError"]
+                };
                 data.detail.forEach(item => {
                     const field = fields[item.loc?.[1]];
                     if (field) showError(field[0], field[1], item.msg);
                 });
             }
             const detail = typeof data?.detail === "string" ? data.detail : null;
-            throw new Error(detail || (response.status === 409 ? "Email hoặc số điện thoại đã được sử dụng." : response.status === 422 ? "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại." : response.status >= 500 ? "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng ký tài khoản."));
+            throw new Error(detail || (response.status === 409 ?
+                    "Email hoặc số điện thoại đã được sử dụng." : response.status === 422 ?
+                    "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại." : response.status >= 500 ?
+                    "Máy chủ gặp lỗi. Vui lòng thử lại sau." : "Không thể đăng ký tài khoản."
+                    ));
         }
         registered = true;
         showMessage("Đăng ký MiniStay thành công! Đang chuyển tới trang đăng nhập...", "success");
         registerForm.reset();
-        window.scrollTo({top: 0, behavior: "smooth"});
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
         window.setTimeout(() => window.location.assign("login.html"), 1500);
     } catch (error) {
-        showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại." : error.message, "failure");
+        showMessage(error instanceof TypeError ?
+            "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại." : error
+            .message, "failure");
     } finally {
         if (!registered) {
             registerBtn.disabled = false;
@@ -211,8 +231,8 @@ registerForm.addEventListener("submit", async function (event) {
     }
 });
 
-document.querySelectorAll(".toggle-password").forEach(function (button) {
-    button.addEventListener("click", function () {
+document.querySelectorAll(".toggle-password").forEach(function(button) {
+    button.addEventListener("click", function() {
         const targetId = button.getAttribute("data-target");
         const input = document.getElementById(targetId);
 
@@ -228,8 +248,8 @@ document.querySelectorAll(".toggle-password").forEach(function (button) {
     });
 });
 
-document.querySelectorAll(".input-wrapper input").forEach(function (input) {
-    input.addEventListener("input", function () {
+document.querySelectorAll(".input-wrapper input").forEach(function(input) {
+    input.addEventListener("input", function() {
         input.classList.remove("invalid");
 
         const errorElement = input
@@ -240,12 +260,12 @@ document.querySelectorAll(".input-wrapper input").forEach(function (input) {
     });
 });
 
-document.getElementById("termsLink").addEventListener("click", function (event) {
+document.getElementById("termsLink").addEventListener("click", function(event) {
     event.preventDefault();
     alert("Trang điều khoản sử dụng đang được phát triển.");
 });
 
-document.getElementById("privacyLink").addEventListener("click", function (event) {
+document.getElementById("privacyLink").addEventListener("click", function(event) {
     event.preventDefault();
     alert("Trang chính sách bảo mật đang được phát triển.");
 });

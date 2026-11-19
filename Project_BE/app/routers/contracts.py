@@ -1,11 +1,21 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import block_privilege_override, get_current_user, require_permissions
+from app.core.deps import (
+    block_privilege_override,
+    get_current_user,
+    require_permissions,
+)
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import ContractCreate, ContractResponse, DepositUpdate, InvoiceCreate, InvoiceResponse
+from app.schemas.boarding import (
+    ContractCreate,
+    ContractResponse,
+    DepositUpdate,
+    InvoiceCreate,
+    InvoiceResponse,
+)
 from app.services import billing_service, contract_service
 
 router = APIRouter(
@@ -69,7 +79,11 @@ def liquidate_contract(
     return contract_service.liquidate_contract(db, user, contract_id)
 
 
-@router.post("/{contract_id}/invoices", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{contract_id}/invoices",
+    response_model=InvoiceResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_invoice(
     contract_id: int,
     data: InvoiceCreate,

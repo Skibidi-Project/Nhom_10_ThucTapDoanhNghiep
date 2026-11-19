@@ -1,11 +1,21 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import block_privilege_override, get_current_user, require_permissions
+from app.core.deps import (
+    block_privilege_override,
+    get_current_user,
+    require_permissions,
+)
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.building import BuildingCreate, BuildingResponse, BuildingUpdate, FloorRename, FloorResponse
+from app.schemas.building import (
+    BuildingCreate,
+    BuildingResponse,
+    BuildingUpdate,
+    FloorRename,
+    FloorResponse,
+)
 from app.services import building_service
 
 property_router = APIRouter(
@@ -29,7 +39,11 @@ def list_buildings(
     return building_service.list_buildings(db, user, property_id)
 
 
-@property_router.post("/{property_id}/buildings", response_model=BuildingResponse, status_code=status.HTTP_201_CREATED)
+@property_router.post(
+    "/{property_id}/buildings",
+    response_model=BuildingResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_building(
     property_id: int,
     data: BuildingCreate,

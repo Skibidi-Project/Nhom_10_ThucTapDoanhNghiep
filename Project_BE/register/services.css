@@ -338,7 +338,7 @@
     margin: 22px 0 0;
 }
 
-.remove-service-details > div {
+.remove-service-details>div {
     padding: 11px 13px;
     border-radius: 9px;
     background: #f5f8f6;
@@ -360,7 +360,7 @@
     overflow-wrap: anywhere;
 }
 
-.remove-service-details > div:nth-child(2) dd {
+.remove-service-details>div:nth-child(2) dd {
     color: #176b57;
 }
 
@@ -550,6 +550,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .remove-dialog[open],
     .remove-spinner {
         animation-duration: .01ms;

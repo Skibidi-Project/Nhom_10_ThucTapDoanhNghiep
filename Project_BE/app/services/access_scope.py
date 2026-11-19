@@ -3,7 +3,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
-from app.models.boarding import Contract, Invoice, Property, PropertyManager, Room, TenantProfile
+from app.models.boarding import (
+    Contract,
+    Invoice,
+    Property,
+    PropertyManager,
+    Room,
+    TenantProfile,
+)
 from app.models.user import User
 
 
@@ -22,12 +29,17 @@ def can_operate(db: Session, user: User, prop: Property) -> bool:
 
 def assert_can_operate(db: Session, user: User, prop: Property) -> None:
     if not can_operate(db, user, prop):
-        raise HTTPException(status_code=403, detail="Bạn không có quyền thao tác trên khu trọ này.")
+        raise HTTPException(
+            status_code=403, detail="Bạn không có quyền thao tác trên khu trọ này."
+        )
 
 
 def assert_can_manage(user: User, prop: Property) -> None:
     if user.role != Role.LANDLORD.value or prop.owner_id != user.id:
-        raise HTTPException(status_code=403, detail="Chỉ chủ trọ sở hữu khu trọ mới được thực hiện thao tác này.")
+        raise HTTPException(
+            status_code=403,
+            detail="Chỉ chủ trọ sở hữu khu trọ mới được thực hiện thao tác này.",
+        )
 
 
 def get_property(db: Session, property_id: int) -> Property:
@@ -84,7 +96,9 @@ def accessible_landlord_ids(db: Session, user: User) -> set[int]:
 
 def assert_tenant_access(db: Session, user: User, tenant: TenantProfile) -> None:
     if tenant.landlord_id not in accessible_landlord_ids(db, user):
-        raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập hồ sơ khách thuê này.")
+        raise HTTPException(
+            status_code=403, detail="Bạn không có quyền truy cập hồ sơ khách thuê này."
+        )
 
 
 def can_view_invoice(db: Session, user: User, invoice: Invoice) -> bool:
@@ -99,4 +113,6 @@ def can_view_invoice(db: Session, user: User, invoice: Invoice) -> bool:
 
 def assert_can_view_invoice(db: Session, user: User, invoice: Invoice) -> None:
     if not can_view_invoice(db, user, invoice):
-        raise HTTPException(status_code=403, detail="Bạn không có quyền xem hóa đơn này.")
+        raise HTTPException(
+            status_code=403, detail="Bạn không có quyền xem hóa đơn này."
+        )

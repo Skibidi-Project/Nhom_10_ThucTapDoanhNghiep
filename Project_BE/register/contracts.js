@@ -37,15 +37,18 @@ async function apiRequest(path, options = {}) {
     if (options.body && !requestHeaders.has("Content-Type")) {
         requestHeaders.set("Content-Type", "application/json");
     }
-    const response = await fetch(`${API_BASE}${path}`, {...options, headers: requestHeaders});
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: requestHeaders
+    });
     if (response.status === 204) return null;
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof data?.detail === "string"
-            ? data.detail
-            : Array.isArray(data?.detail)
-                ? data.detail.map(item => item.msg).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof data?.detail === "string" ?
+            data.detail :
+            Array.isArray(data?.detail) ?
+            data.detail.map(item => item.msg).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return data;
@@ -89,7 +92,8 @@ function updateRentHint() {
         return;
     }
     if (Number(rentInput.value) !== room.base_rent) {
-        hint.textContent = `Giá niêm yết: ${formatMoney(room.base_rent)}. Giá hợp đồng đang khác giá niêm yết.`;
+        hint.textContent =
+            `Giá niêm yết: ${formatMoney(room.base_rent)}. Giá hợp đồng đang khác giá niêm yết.`;
         hint.className = "field-hint rent-warning";
     } else {
         hint.textContent = `Giá niêm yết: ${formatMoney(room.base_rent)}.`;
@@ -159,9 +163,14 @@ async function confirmDepositReceived(contract) {
     try {
         await apiRequest(`/contracts/${contract.id}/deposit`, {
             method: "PATCH",
-            body: JSON.stringify({status: "held", returned_amount: 0}),
+            body: JSON.stringify({
+                status: "held",
+                returned_amount: 0
+            }),
         });
-        showNotice("\u0110\u00e3 ghi nh\u1eadn ti\u1ec1n c\u1ecdc \u0111ang \u0111\u01b0\u1ee3c gi\u1eef.", "success");
+        showNotice(
+            "\u0110\u00e3 ghi nh\u1eadn ti\u1ec1n c\u1ecdc \u0111ang \u0111\u01b0\u1ee3c gi\u1eef.",
+            "success");
         await loadContracts();
     } catch (error) {
         showNotice(error.message, "error");
@@ -169,9 +178,13 @@ async function confirmDepositReceived(contract) {
 }
 
 async function requestLiquidation(contract) {
-    if (!window.confirm(`Ho\u00e0n t\u1ea5t thanh l\u00fd h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number}? Ph\u00f2ng s\u1ebd \u0111\u01b0\u1ee3c chuy\u1ec3n v\u1ec1 tr\u1ea1ng th\u00e1i tr\u1ed1ng.`)) return;
+    if (!window.confirm(
+            `Ho\u00e0n t\u1ea5t thanh l\u00fd h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number}? Ph\u00f2ng s\u1ebd \u0111\u01b0\u1ee3c chuy\u1ec3n v\u1ec1 tr\u1ea1ng th\u00e1i tr\u1ed1ng.`
+            )) return;
     try {
-        await apiRequest(`/contracts/${contract.id}/liquidate`, {method: "POST"});
+        await apiRequest(`/contracts/${contract.id}/liquidate`, {
+            method: "POST"
+        });
         showNotice("\u0110\u00e3 ho\u00e0n t\u1ea5t thanh l\u00fd h\u1ee3p \u0111\u1ed3ng.", "success");
         await Promise.all([loadContracts(), loadRoomsAndTenants()]);
     } catch (error) {
@@ -212,13 +225,14 @@ function renderContracts(items) {
             createElement(
                 "span",
                 "deposit-state",
-                contract.deposit === 0 && contract.deposit_status === "unpaid"
-                    ? depositStatusLabels.not_applicable
-                    : depositStatusLabels[contract.deposit_status] || contract.deposit_status,
+                contract.deposit === 0 && contract.deposit_status === "unpaid" ?
+                depositStatusLabels.not_applicable :
+                depositStatusLabels[contract.deposit_status] || contract.deposit_status,
             ),
         );
         if (contract.deposit_returned_amount > 0) {
-            depositCell.append(createElement("small", "deposit-returned", `\u0110\u00e3 ho\u00e0n ${formatMoney(contract.deposit_returned_amount)}`));
+            depositCell.append(createElement("small", "deposit-returned",
+                `\u0110\u00e3 ho\u00e0n ${formatMoney(contract.deposit_returned_amount)}`));
         }
 
         const actionsCell = document.createElement("td");
@@ -228,13 +242,19 @@ function renderContracts(items) {
         }));
         if (["created", "active"].includes(contract.status)) {
             if (contract.deposit > 0 && contract.deposit_status === "unpaid") {
-                actions.append(actionButton("X\u00e1c nh\u1eadn nh\u1eadn c\u1ecdc", () => confirmDepositReceived(contract)));
+                actions.append(actionButton("X\u00e1c nh\u1eadn nh\u1eadn c\u1ecdc", () =>
+                    confirmDepositReceived(contract)));
             }
             actions.append(actionButton("Ch\u1edd thanh l\u00fd", async () => {
-                if (!window.confirm(`Chuy\u1ec3n h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number} sang ch\u1edd thanh l\u00fd?`)) return;
+                if (!window.confirm(
+                        `Chuy\u1ec3n h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number} sang ch\u1edd thanh l\u00fd?`
+                        )) return;
                 try {
-                    await apiRequest(`/contracts/${contract.id}/terminate`, {method: "POST"});
-                    showNotice("H\u1ee3p \u0111\u1ed3ng \u0111ang ch\u1edd thanh l\u00fd.", "success");
+                    await apiRequest(`/contracts/${contract.id}/terminate`, {
+                        method: "POST"
+                    });
+                    showNotice("H\u1ee3p \u0111\u1ed3ng \u0111ang ch\u1edd thanh l\u00fd.",
+                        "success");
                     await loadContracts();
                 } catch (error) {
                     showNotice(error.message, "error");
@@ -242,10 +262,12 @@ function renderContracts(items) {
             }));
         } else if (contract.status === "pending_liquidation") {
             if (contract.deposit > 0 && !["returned", "deducted"].includes(contract.deposit_status)) {
-                actions.append(actionButton("Quy\u1ebft to\u00e1n c\u1ecdc", () => openDepositDialog(contract)));
+                actions.append(actionButton("Quy\u1ebft to\u00e1n c\u1ecdc", () => openDepositDialog(
+                    contract)));
             }
             const depositReady = contract.deposit === 0 || contract.deposit_status !== "unpaid";
-            actions.append(actionButton("Ho\u00e0n t\u1ea5t thanh l\u00fd", () => requestLiquidation(contract), !depositReady));
+            actions.append(actionButton("Ho\u00e0n t\u1ea5t thanh l\u00fd", () => requestLiquidation(
+                contract), !depositReady));
         } else {
             actions.append(createElement("span", "muted-action", "\u0110\u00e3 ho\u00e0n t\u1ea5t"));
         }
@@ -254,7 +276,8 @@ function renderContracts(items) {
             createElement("td", "", contract.property_name),
             createElement("td", "", contract.room_number),
             createElement("td", "", contract.tenant_name),
-            createElement("td", "", `${formatDate(contract.start_date)} \u2013 ${formatDate(contract.end_date)}`),
+            createElement("td", "",
+                `${formatDate(contract.start_date)} \u2013 ${formatDate(contract.end_date)}`),
             depositCell,
             createElement("td", "", formatMoney(contract.monthly_rent)),
             createElement("td", "", `${contract.payment_cycle_months} th\u00e1ng/l\u1ea7n`),
@@ -380,7 +403,10 @@ contractForm.addEventListener("submit", async event => {
     error.textContent = "";
     try {
         const body = readContractForm();
-        await apiRequest("/contracts", {method: "POST", body: JSON.stringify(body)});
+        await apiRequest("/contracts", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
         showNotice("Lập hợp đồng thành công.", "success");
         const selectedPropertyId = propertySelect.value;
         contractForm.reset();
@@ -417,7 +443,10 @@ tenantForm.addEventListener("submit", async event => {
         };
         const email = document.getElementById("tenantEmail").value.trim();
         if (email) body.email = email;
-        const created = await apiRequest("/tenants", {method: "POST", body: JSON.stringify(body)});
+        const created = await apiRequest("/tenants", {
+            method: "POST",
+            body: JSON.stringify(body)
+        });
         tenants.push(created);
         setSelectOptions(
             tenantSelect,
@@ -464,7 +493,8 @@ depositForm.addEventListener("submit", async event => {
     const submitButton = document.getElementById("saveDepositBtn");
     const error = document.getElementById("depositFormError");
     const status = settlementStatus.value;
-    const returnedAmount = status === "returned" ? Number(document.getElementById("returnedAmount").value) : 0;
+    const returnedAmount = status === "returned" ? Number(document.getElementById(
+        "returnedAmount").value) : 0;
     error.textContent = "";
     if (status === "returned" && (!Number.isSafeInteger(returnedAmount) || returnedAmount <= 0)) {
         error.textContent = "Nhập số tiền hoàn trả hợp lệ.";
@@ -472,16 +502,18 @@ depositForm.addEventListener("submit", async event => {
     }
     submitButton.disabled = true;
     try {
-        await apiRequest(`/contracts/${document.getElementById("depositContractId").value}/deposit`, {
-            method: "PATCH",
-            body: JSON.stringify({
-                status,
-                returned_amount: returnedAmount,
-                note: document.getElementById("depositNote").value.trim() || null,
-            }),
-        });
+        await apiRequest(
+            `/contracts/${document.getElementById("depositContractId").value}/deposit`, {
+                method: "PATCH",
+                body: JSON.stringify({
+                    status,
+                    returned_amount: returnedAmount,
+                    note: document.getElementById("depositNote").value.trim() || null,
+                }),
+            });
         depositDialog.close();
-        showNotice("Đã lưu quyết toán tiền cọc. Bạn có thể hoàn tất thanh lý hợp đồng.", "success");
+        showNotice("Đã lưu quyết toán tiền cọc. Bạn có thể hoàn tất thanh lý hợp đồng.",
+            "success");
         await loadContracts();
     } catch (requestError) {
         error.textContent = requestError.message;

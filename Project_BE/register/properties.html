@@ -1,99 +1,160 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý cơ sở / khu trọ - MiniStay</title>
-    <link rel="stylesheet" href="properties.css">
-</head>
-<body>
+  <head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>
+      Quản lý cơ sở / khu trọ - MiniStay
+    </title>
+    <link href="properties.css" rel="stylesheet"/>
+  </head>
+  <body>
     <header class="topbar">
-        <div class="topbar-left">
-            <a class="brand" href="properties.html">MiniStay</a>
-            <nav class="guest-actions" id="guestActions" aria-label="Tài khoản">
-                <a class="button button-outline" href="login.html">Đăng nhập</a>
-                <a class="button button-primary" href="index.html">Đăng ký</a>
-            </nav>
-        </div>
-        <div class="topbar-actions">
-            <a class="button button-light" href="tenants.html">Khách thuê</a>
-            <a class="button button-light" href="services.html">Dịch vụ</a>
-            <span id="accountInfo" hidden></span>
-            <button type="button" class="button button-light" id="logoutBtn" hidden>Đăng xuất</button>
-        </div>
+      <div class="topbar-left">
+        <a class="brand" href="properties.html">
+          MiniStay
+        </a>
+        <nav aria-label="Tài khoản" class="guest-actions" id="guestActions">
+          <a class="button button-outline" href="login.html">
+            Đăng nhập
+          </a>
+          <a class="button button-primary" href="index.html">
+            Đăng ký
+          </a>
+        </nav>
+      </div>
+      <div class="topbar-actions">
+        <a class="button button-light" href="tenants.html">
+          Khách thuê
+        </a>
+        <a class="button button-light" href="services.html">
+          Dịch vụ
+        </a>
+        <span hidden="" id="accountInfo">
+        </span>
+        <button class="button button-light" hidden="" id="logoutBtn" type="button">
+          Đăng xuất
+        </button>
+      </div>
     </header>
-
     <main class="container">
-        <section class="intro">
-            <div>
-                <h1>Quản lý cơ sở / khu trọ</h1>
-                <p class="subtitle">Tạo mới, xem, cập nhật và xóa các cơ sở thuộc quyền sở hữu của bạn.</p>
-            </div>
-            <div class="intro-actions">
-                <a class="button button-outline" id="roomsLink" href="rooms.html">Quản lý phòng</a>
-                <a class="button button-outline" id="contractsLink" href="contracts.html" hidden>Quản lý hợp đồng</a>
-                <button type="button" class="button button-primary" id="addPropertyBtn" hidden>+ Thêm cơ sở</button>
-            </div>
-        </section>
-
-        <div id="notice" class="notice" role="status" aria-live="polite"></div>
-
-        <section id="propertySection">
-            <div class="section-heading">
-                <div>
-                    <h2>Danh sách cơ sở</h2>
-                    <p id="propertyCount">0 cơ sở</p>
-                </div>
-                <button type="button" class="button button-outline" id="refreshBtn" hidden>↻ Làm mới</button>
-            </div>
-            <div id="propertyList" class="property-grid"></div>
-            <div id="emptyState" class="empty-state" hidden>
-                <div class="empty-icon">⌂</div>
-                <h3 id="emptyTitle">Đăng nhập để xem danh sách cơ sở</h3>
-                <p id="emptyDescription">Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.</p>
-            </div>
-        </section>
+      <section class="intro">
+        <div>
+          <h1>
+            Quản lý cơ sở / khu trọ
+          </h1>
+          <p class="subtitle">
+            Tạo mới, xem, cập nhật và xóa các cơ sở thuộc quyền sở hữu của bạn.
+          </p>
+        </div>
+        <div class="intro-actions">
+          <a class="button button-outline" href="rooms.html" id="roomsLink">
+            Quản lý phòng
+          </a>
+          <a class="button button-outline" hidden="" href="contracts.html" id="contractsLink">
+            Quản lý hợp đồng
+          </a>
+          <button class="button button-primary" hidden="" id="addPropertyBtn" type="button">
+            + Thêm cơ sở
+          </button>
+        </div>
+      </section>
+      <div aria-live="polite" class="notice" id="notice" role="status">
+      </div>
+      <section id="propertySection">
+        <div class="section-heading">
+          <div>
+            <h2>
+              Danh sách cơ sở
+            </h2>
+            <p id="propertyCount">
+              0 cơ sở
+            </p>
+          </div>
+          <button class="button button-outline" hidden="" id="refreshBtn" type="button">
+            ↻ Làm mới
+          </button>
+        </div>
+        <div class="property-grid" id="propertyList">
+        </div>
+        <div class="empty-state" hidden="" id="emptyState">
+          <div class="empty-icon">
+            ⌂
+          </div>
+          <h3 id="emptyTitle">
+            Đăng nhập để xem danh sách cơ sở
+          </h3>
+          <p id="emptyDescription">
+            Đăng nhập hoặc đăng ký để sử dụng các chức năng quản lý.
+          </p>
+        </div>
+      </section>
     </main>
-
-    <dialog id="propertyDialog" class="property-dialog">
-        <form id="propertyForm" method="dialog">
-            <div class="dialog-heading">
-                <div>
-                    <p class="eyebrow">THÔNG TIN CƠ SỞ</p>
-                    <h2 id="dialogTitle">Thêm cơ sở mới</h2>
-                </div>
-                <button type="button" class="close-btn" id="closeDialogBtn" aria-label="Đóng">×</button>
-            </div>
-            <input type="hidden" id="propertyId">
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label for="propertyName">Tên cơ sở <span>*</span></label>
-                    <input id="propertyName" name="name" type="text" maxlength="150" placeholder="Ví dụ: Khu trọ Bình An" required>
-                </div>
-                <div class="form-group full-width">
-                    <label for="propertyAddress">Địa chỉ <span>*</span></label>
-                    <textarea id="propertyAddress" name="address" rows="2" maxlength="255" placeholder="Số nhà, đường, phường/xã, quận/huyện..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="electricityPrice">Đơn giá điện (đ/kWh)</label>
-                    <input id="electricityPrice" type="number" min="0" step="1" value="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="waterPrice">Đơn giá nước (đ/m³)</label>
-                    <input id="waterPrice" type="number" min="0" step="1" value="0" required>
-                </div>
-                <div class="form-group full-width">
-                    <label for="servicePrice">Phí dịch vụ (đ/tháng)</label>
-                    <input id="servicePrice" type="number" min="0" step="1" value="0" required>
-                </div>
-            </div>
-            <div class="dialog-actions">
-                <button type="button" class="button button-light" id="cancelBtn">Hủy</button>
-                <button type="submit" class="button button-primary" id="saveBtn">Lưu cơ sở</button>
-            </div>
-        </form>
+    <dialog class="property-dialog" id="propertyDialog">
+      <form id="propertyForm" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">
+              THÔNG TIN CƠ SỞ
+            </p>
+            <h2 id="dialogTitle">
+              Thêm cơ sở mới
+            </h2>
+          </div>
+          <button aria-label="Đóng" class="close-btn" id="closeDialogBtn" type="button">
+            ×
+          </button>
+        </div>
+        <input id="propertyId" type="hidden"/>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="propertyName">
+              Tên cơ sở
+              <span>
+                *
+              </span>
+            </label>
+            <input id="propertyName" maxlength="150" name="name" placeholder="Ví dụ: Khu trọ Bình An" required="" type="text"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="propertyAddress">
+              Địa chỉ
+              <span>
+                *
+              </span>
+            </label>
+            <textarea id="propertyAddress" maxlength="255" name="address" placeholder="Số nhà, đường, phường/xã, quận/huyện..." required="" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="electricityPrice">
+              Đơn giá điện (đ/kWh)
+            </label>
+            <input id="electricityPrice" min="0" required="" step="1" type="number" value="0"/>
+          </div>
+          <div class="form-group">
+            <label for="waterPrice">
+              Đơn giá nước (đ/m³)
+            </label>
+            <input id="waterPrice" min="0" required="" step="1" type="number" value="0"/>
+          </div>
+          <div class="form-group full-width">
+            <label for="servicePrice">
+              Phí dịch vụ (đ/tháng)
+            </label>
+            <input id="servicePrice" min="0" required="" step="1" type="number" value="0"/>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="button button-light" id="cancelBtn" type="button">
+            Hủy
+          </button>
+          <button class="button button-primary" id="saveBtn" type="submit">
+            Lưu cơ sở
+          </button>
+        </div>
+      </form>
     </dialog>
-
-    <script src="properties.js"></script>
-</body>
+    <script src="properties.js">
+    </script>
+  </body>
 </html>

@@ -3,7 +3,15 @@ from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
-from app.models.boarding import Contract, Property, PropertyManager, PropertyServicePrice, Room, TenantProfile, UtilityReading
+from app.models.boarding import (
+    Contract,
+    Property,
+    PropertyManager,
+    PropertyServicePrice,
+    Room,
+    TenantProfile,
+    UtilityReading,
+)
 from app.models.building import Building
 from app.models.user import User
 from app.schemas.boarding import (
@@ -16,13 +24,21 @@ from app.schemas.boarding import (
     RoomListResponse,
     RoomUpdate,
 )
-from app.services.access_scope import assert_can_manage, assert_can_operate, get_property, get_room, property_of_room
+from app.services.access_scope import (
+    assert_can_manage,
+    assert_can_operate,
+    get_property,
+    get_room,
+    property_of_room,
+)
 from app.services.db_util import save
 
 
 def create_property(db: Session, user: User, data: PropertyCreate) -> Property:
     prop = Property(
-        owner_id=user.id, name=data.name, address=data.address,
+        owner_id=user.id,
+        name=data.name,
+        address=data.address,
         electricity_unit_price=data.electricity_unit_price,
         water_unit_price=data.water_unit_price,
         service_unit_price=data.service_unit_price,
@@ -42,7 +58,9 @@ def list_properties(db: Session, user: User) -> list[Property]:
             .where(PropertyManager.user_id == user.id)
         )
     else:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền thực hiện chức năng này.")
+        raise HTTPException(
+            status_code=403, detail="Bạn không có quyền thực hiện chức năng này."
+        )
     return list(db.scalars(stmt.order_by(Property.id)))
 
 
@@ -52,10 +70,18 @@ def read_property(db: Session, user: User, property_id: int) -> Property:
     return prop
 
 
-def update_property(db: Session, user: User, property_id: int, data: PropertyUpdate) -> Property:
+def update_property(
+    db: Session, user: User, property_id: int, data: PropertyUpdate
+) -> Property:
     prop = get_property(db, property_id)
     assert_can_manage(user, prop)
-    for field in ("name", "address", "electricity_unit_price", "water_unit_price", "service_unit_price"):
+    for field in (
+        "name",
+        "address",
+        "electricity_unit_price",
+        "water_unit_price",
+        "service_unit_price",
+    ):
         value = getattr(data, field)
         if value is not None:
             setattr(prop, field, value)
@@ -71,23 +97,35 @@ def delete_property(db: Session, user: User, property_id: int) -> None:
         raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn phòng.")
     has_building = db.scalar(select(Building.id).where(Building.property_id == prop.id))
     if has_building is not None:
-        raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn tòa nhà.")
-    db.execute(delete(PropertyServicePrice).where(PropertyServicePrice.property_id == prop.id))
+        raise HTTPException(
+            status_code=409, detail="Không thể xóa khu trọ còn tòa nhà."
+        )
+    db.execute(
+        delete(PropertyServicePrice).where(PropertyServicePrice.property_id == prop.id)
+    )
     db.delete(prop)
     save(db)
 
 
-def assign_manager(db: Session, user: User, property_id: int, data: ManagerAssign) -> PropertyManager:
+def assign_manager(
+    db: Session, user: User, property_id: int, data: ManagerAssign
+) -> PropertyManager:
     prop = get_property(db, property_id)
     assert_can_manage(user, prop)
     manager = db.get(User, data.user_id)
     if manager is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản người quản lý.")
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy tài khoản người quản lý."
+        )
     if manager.role != Role.MANAGER.value:
-        raise HTTPException(status_code=422, detail="Chỉ gán được tài khoản có vai trò người quản lý.")
+        raise HTTPException(
+            status_code=422, detail="Chỉ gán được tài khoản có vai trò người quản lý."
+        )
     existing = db.get(PropertyManager, (prop.id, manager.id))
     if existing is not None:
-        raise HTTPException(status_code=409, detail="Người quản lý đã được gán cho khu trọ này.")
+        raise HTTPException(
+            status_code=409, detail="Người quản lý đã được gán cho khu trọ này."
+        )
     link = PropertyManager(property_id=prop.id, user_id=manager.id)
     db.add(link)
     save(db, link)
@@ -97,9 +135,15 @@ def assign_manager(db: Session, user: User, property_id: int, data: ManagerAssig
 def create_room(db: Session, user: User, property_id: int, data: RoomCreate) -> Room:
     prop = get_property(db, property_id)
     assert_can_operate(db, user, prop)
-    taken = db.scalar(select(Room).where(Room.property_id == prop.id, Room.room_number == data.room_number))
+    taken = db.scalar(
+        select(Room).where(
+            Room.property_id == prop.id, Room.room_number == data.room_number
+        )
+    )
     if taken is not None:
-        raise HTTPException(status_code=409, detail="Số phòng đã tồn tại trong khu trọ.")
+        raise HTTPException(
+            status_code=409, detail="Số phòng đã tồn tại trong khu trọ."
+        )
     room = Room(
         property_id=prop.id,
         room_number=data.room_number,
@@ -115,7 +159,9 @@ def create_room(db: Session, user: User, property_id: int, data: RoomCreate) -> 
 def list_rooms(db: Session, user: User, property_id: int) -> list[Room]:
     prop = get_property(db, property_id)
     assert_can_operate(db, user, prop)
-    return list(db.scalars(select(Room).where(Room.property_id == prop.id).order_by(Room.id)))
+    return list(
+        db.scalars(select(Room).where(Room.property_id == prop.id).order_by(Room.id))
+    )
 
 
 def update_room(db: Session, user: User, room_id: int, data: RoomUpdate) -> Room:
@@ -131,16 +177,25 @@ def update_room(db: Session, user: User, room_id: int, data: RoomUpdate) -> Room
             )
         )
         if taken is not None:
-            raise HTTPException(status_code=409, detail="Số phòng đã tồn tại trong khu trọ.")
+            raise HTTPException(
+                status_code=409, detail="Số phòng đã tồn tại trong khu trọ."
+            )
         room.room_number = data.room_number
     if data.area_sqm is not None:
         room.area_sqm = data.area_sqm
     if data.base_rent is not None:
         room.base_rent = data.base_rent
     if data.status is not None:
-        active = db.scalar(select(Contract.id).where(Contract.room_id == room.id, Contract.status == "active"))
+        active = db.scalar(
+            select(Contract.id).where(
+                Contract.room_id == room.id, Contract.status == "active"
+            )
+        )
         if active is not None:
-            raise HTTPException(status_code=409, detail="Không thể đổi trạng thái phòng đang có hợp đồng hoạt động.")
+            raise HTTPException(
+                status_code=409,
+                detail="Không thể đổi trạng thái phòng đang có hợp đồng hoạt động.",
+            )
         room.status = data.status
     save(db, room)
     return room
@@ -159,16 +214,18 @@ def list_all_rooms(
     if user.role == Role.LANDLORD.value:
         stmt = stmt.where(Property.owner_id == user.id)
     elif user.role == Role.MANAGER.value:
-        stmt = stmt.join(PropertyManager, PropertyManager.property_id == Property.id).where(
-            PropertyManager.user_id == user.id
-        )
+        stmt = stmt.join(
+            PropertyManager, PropertyManager.property_id == Property.id
+        ).where(PropertyManager.user_id == user.id)
 
     if property_id is not None:
         prop = get_property(db, property_id)
         assert_can_operate(db, user, prop)
         stmt = stmt.where(Room.property_id == property_id)
     if search:
-        escaped_search = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        escaped_search = (
+            search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
         stmt = stmt.where(Room.room_number.like(f"%{escaped_search}%", escape="\\"))
     if room_status is not None:
         stmt = stmt.where(Room.status == room_status)
@@ -203,7 +260,9 @@ def read_room(db: Session, user: User, room_id: int) -> RoomDetailResponse:
         select(Contract, TenantProfile.full_name, Property.name)
         .select_from(Room)
         .join(Property, Property.id == Room.property_id)
-        .outerjoin(Contract, and_(Contract.room_id == Room.id, Contract.status == "active"))
+        .outerjoin(
+            Contract, and_(Contract.room_id == Room.id, Contract.status == "active")
+        )
         .outerjoin(TenantProfile, TenantProfile.id == Contract.tenant_id)
         .where(Room.id == room.id)
         .order_by(Contract.id)
@@ -234,12 +293,18 @@ def delete_room(db: Session, user: User, room_id: int) -> None:
     room = get_room(db, room_id)
     assert_can_operate(db, user, property_of_room(db, room))
     active = db.scalar(
-        select(Contract.id).where(Contract.room_id == room.id, Contract.status == "active")
+        select(Contract.id).where(
+            Contract.room_id == room.id, Contract.status == "active"
+        )
     )
     if active is not None:
-        raise HTTPException(status_code=409, detail="Không thể xóa phòng đang có hợp đồng hoạt động.")
+        raise HTTPException(
+            status_code=409, detail="Không thể xóa phòng đang có hợp đồng hoạt động."
+        )
     has_contract = db.scalar(select(Contract.id).where(Contract.room_id == room.id))
-    has_reading = db.scalar(select(UtilityReading.id).where(UtilityReading.room_id == room.id))
+    has_reading = db.scalar(
+        select(UtilityReading.id).where(UtilityReading.room_id == room.id)
+    )
     if has_contract is not None or has_reading is not None:
         raise HTTPException(
             status_code=409,

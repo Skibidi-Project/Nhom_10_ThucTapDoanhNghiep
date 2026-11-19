@@ -1,7 +1,14 @@
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, TypeAdapter, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    TypeAdapter,
+    field_validator,
+)
 
 from app.core.rbac import Role
 
@@ -36,7 +43,9 @@ class UserLogin(BaseModel):
         if "@" in value:
             return str(TypeAdapter(EmailStr).validate_python(value))
         if not re.fullmatch(r"0[0-9]{9}", value):
-            raise ValueError("Identifier phải là email hoặc số điện thoại 10 chữ số bắt đầu bằng 0.")
+            raise ValueError(
+                "Identifier phải là email hoặc số điện thoại 10 chữ số bắt đầu bằng 0."
+            )
         return value
 
 

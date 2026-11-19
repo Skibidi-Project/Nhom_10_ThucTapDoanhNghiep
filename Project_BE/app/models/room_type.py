@@ -12,7 +12,9 @@ class RoomType(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id", ondelete="RESTRICT"), nullable=False)
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id", ondelete="RESTRICT"), nullable=False
+    )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     listed_price: Mapped[int] = mapped_column(Integer, nullable=False)
 
@@ -23,7 +25,9 @@ class RoomTypeAssignment(Base):
     __tablename__ = "room_type_assignments"
     __table_args__ = {"mysql_charset": "utf8mb4"}
 
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", ondelete="RESTRICT"), primary_key=True)
+    room_id: Mapped[int] = mapped_column(
+        ForeignKey("rooms.id", ondelete="RESTRICT"), primary_key=True
+    )
     room_type_id: Mapped[int] = mapped_column(
         ForeignKey("room_types.id", ondelete="RESTRICT"), nullable=False
     )

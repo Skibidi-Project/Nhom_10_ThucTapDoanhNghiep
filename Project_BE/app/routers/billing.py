@@ -1,11 +1,22 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import block_privilege_override, get_current_user, require_permissions
+from app.core.deps import (
+    block_privilege_override,
+    get_current_user,
+    require_permissions,
+)
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import InvoiceResponse, PaymentCreate, PaymentResponse, ReadingCreate, ReadingResponse
+from app.schemas.boarding import (
+    InvoiceDetailResponse,
+    InvoiceResponse,
+    PaymentCreate,
+    PaymentResponse,
+    ReadingCreate,
+    ReadingResponse,
+)
 from app.services import billing_service
 
 invoice_router = APIRouter(
@@ -28,16 +39,20 @@ def read_invoices(
     return billing_service.list_invoices(db, user)
 
 
-@invoice_router.get("/{invoice_id}", response_model=InvoiceResponse)
+@invoice_router.get("/{invoice_id}", response_model=InvoiceDetailResponse)
 def read_invoice(
     invoice_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.INVOICE_READ)),
 ):
-    return billing_service.read_invoice(db, user, invoice_id)
+    return billing_service.invoice_details(db, user, invoice_id)
 
 
-@invoice_router.post("/{invoice_id}/payments", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
+@invoice_router.post(
+    "/{invoice_id}/payments",
+    response_model=PaymentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_payment(
     invoice_id: int,
     data: PaymentCreate,
@@ -56,7 +71,11 @@ def read_readings(
     return billing_service.list_readings(db, user, room_id)
 
 
-@reading_router.post("/{room_id}/readings", response_model=ReadingResponse, status_code=status.HTTP_201_CREATED)
+@reading_router.post(
+    "/{room_id}/readings",
+    response_model=ReadingResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_reading(
     room_id: int,
     data: ReadingCreate,

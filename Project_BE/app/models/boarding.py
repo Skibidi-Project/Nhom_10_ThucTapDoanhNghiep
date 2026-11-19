@@ -1,7 +1,16 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, LargeBinary, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.mysql import MEDIUMBLOB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,10 +25,14 @@ class Property(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     address: Mapped[str] = mapped_column(String(255), nullable=False)
-    electricity_unit_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    electricity_unit_price: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
     water_unit_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     service_unit_price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
 
 
 class PropertyServicePrice(Base):
@@ -38,19 +51,25 @@ class PropertyManager(Base):
     __tablename__ = "property_managers"
     __table_args__ = {"mysql_charset": "utf8mb4"}
 
-    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id"), primary_key=True)
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id"), primary_key=True
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
 
 
 class Room(Base):
     __tablename__ = "rooms"
     __table_args__ = (
-        UniqueConstraint("property_id", "room_number", name="uq_room_number_per_property"),
+        UniqueConstraint(
+            "property_id", "room_number", name="uq_room_number_per_property"
+        ),
         {"mysql_charset": "utf8mb4"},
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id"), nullable=False)
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id"), nullable=False
+    )
     room_number: Mapped[str] = mapped_column(String(20), nullable=False)
     area_sqm: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     base_rent: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -64,14 +83,18 @@ class TenantProfile(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     landlord_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), unique=True, nullable=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), unique=True, nullable=True
+    )
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     id_number: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
     id_issue_date: Mapped[date | None] = mapped_column(Date)
     id_issue_place: Mapped[str | None] = mapped_column(String(255))
     hometown: Mapped[str | None] = mapped_column(String(255))
-    id_photo: Mapped[bytes | None] = mapped_column(LargeBinary().with_variant(MEDIUMBLOB(), "mysql"), deferred=True)
+    id_photo: Mapped[bytes | None] = mapped_column(
+        LargeBinary().with_variant(MEDIUMBLOB(), "mysql"), deferred=True
+    )
     id_photo_type: Mapped[str | None] = mapped_column(String(32))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
@@ -87,18 +110,26 @@ class Contract(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     deposit: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    deposit_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unpaid", server_default="unpaid")
-    deposit_returned_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    deposit_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="unpaid", server_default="unpaid"
+    )
+    deposit_returned_amount: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     deposit_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
     monthly_rent: Mapped[int] = mapped_column(Integer, nullable=False)
-    payment_cycle_months: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    payment_cycle_months: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
 
 
 class UtilityReading(Base):
     __tablename__ = "utility_readings"
     __table_args__ = (
-        UniqueConstraint("room_id", "utility_type", "period", name="uq_reading_room_type_period"),
+        UniqueConstraint(
+            "room_id", "utility_type", "period", name="uq_reading_room_type_period"
+        ),
         {"mysql_charset": "utf8mb4"},
     )
 
@@ -127,13 +158,32 @@ class Invoice(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    contract_id: Mapped[int] = mapped_column(ForeignKey("rental_contracts.id"), nullable=False)
+    contract_id: Mapped[int] = mapped_column(
+        ForeignKey("rental_contracts.id"), nullable=False
+    )
     period: Mapped[str] = mapped_column(String(7), nullable=False)
     rent_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     utility_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     total_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="unpaid")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )
+
+
+class InvoiceItem(Base):
+    __tablename__ = "invoice_items"
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False
+    )
+    description: Mapped[str] = mapped_column(String(120), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit: Mapped[str] = mapped_column(String(30), nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class Payment(Base):
@@ -145,4 +195,6 @@ class Payment(Base):
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
     method: Mapped[str] = mapped_column(String(30), nullable=False, default="cash")
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    paid_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    paid_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, nullable=False
+    )

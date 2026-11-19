@@ -89,15 +89,18 @@ async function apiRequest(path, options = {}) {
         headers.set("Content-Type", "application/json");
     }
 
-    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers
+    });
     if (response.status === 204) return null;
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof data?.detail === "string"
-            ? data.detail
-            : Array.isArray(data?.detail)
-                ? data.detail.map(item => item.msg || item).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof data?.detail === "string" ?
+            data.detail :
+            Array.isArray(data?.detail) ?
+            data.detail.map(item => item.msg || item).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return data;
@@ -126,17 +129,17 @@ function renderTargetSelect(preferredId = null) {
     const isRoomMode = currentMode === "room";
     const targets = isRoomMode ? rooms : contracts;
     targetLabel.textContent = isRoomMode ? "Phòng" : "Hợp đồng";
-    const placeholder = !selectedProperty()
-        ? "Chọn khu trọ trước"
-        : targets.length
-            ? isRoomMode ? "Chọn phòng" : "Chọn hợp đồng chưa kết thúc"
-            : isRoomMode ? "Khu trọ chưa có phòng" : "Không có hợp đồng hợp lệ";
+    const placeholder = !selectedProperty() ?
+        "Chọn khu trọ trước" :
+        targets.length ?
+        isRoomMode ? "Chọn phòng" : "Chọn hợp đồng chưa kết thúc" :
+        isRoomMode ? "Khu trọ chưa có phòng" : "Không có hợp đồng hợp lệ";
     targetSelect.replaceChildren(new Option(placeholder, ""));
 
     for (const target of targets) {
-        const label = isRoomMode
-            ? `Phòng ${target.room_number}`
-            : `Phòng ${target.room_number} · ${target.tenant_name}`;
+        const label = isRoomMode ?
+            `Phòng ${target.room_number}` :
+            `Phòng ${target.room_number} · ${target.tenant_name}`;
         targetSelect.append(new Option(label, String(target.id)));
     }
     targetSelect.disabled = targets.length === 0;
@@ -163,9 +166,9 @@ function renderCatalog() {
     for (const service of serviceCatalog) {
         const directlyAssigned = directAssignments.some(item => item.service_code === service.code);
         const effectiveAssignment = assignments.find(item => item.service_code === service.code);
-        const inherited = currentMode === "contract"
-            && effectiveAssignment?.source === "room"
-            && !directlyAssigned;
+        const inherited = currentMode === "contract" &&
+            effectiveAssignment?.source === "room" &&
+            !directlyAssigned;
 
         const card = createElement("article", "service-card");
         card.append(
@@ -174,13 +177,13 @@ function renderCatalog() {
         );
 
         const footer = createElement("div", "service-card-footer");
-        const status = directlyAssigned
-            ? "Đã gán"
-            : inherited
-                ? "Đang áp dụng từ phòng"
-                : currentTarget()
-                    ? "Có thể gán"
-                    : "Chọn mục tiêu";
+        const status = directlyAssigned ?
+            "Đã gán" :
+            inherited ?
+            "Đang áp dụng từ phòng" :
+            currentTarget() ?
+            "Có thể gán" :
+            "Chọn mục tiêu";
         const statusClass = directlyAssigned || inherited ? "assigned" : "available";
         const action = createElement(
             "button",
@@ -205,9 +208,9 @@ function renderAssignments(rows) {
     rows.forEach((item, index) => {
         const row = document.createElement("tr");
         const assignmentId = item.assignment_id ?? item.id;
-        const source = currentMode === "room"
-            ? "Phòng"
-            : item.source === "room" ? "Phòng (kế thừa)" : "Hợp đồng";
+        const source = currentMode === "room" ?
+            "Phòng" :
+            item.source === "room" ? "Phòng (kế thừa)" : "Hợp đồng";
 
         const editButton = createElement("button", "button button-outline", "Sửa");
         editButton.type = "button";
@@ -256,11 +259,11 @@ async function loadAssignments() {
     assignmentsLoading.hidden = true;
 
     if (!property || !target) {
-        clearAssignments(!property
-            ? "Chọn khu trọ và mục tiêu để xem dịch vụ."
-            : currentMode === "room"
-                ? "Khu trọ chưa có phòng để chọn."
-                : "Khu trọ chưa có hợp đồng hợp lệ để chọn.");
+        clearAssignments(!property ?
+            "Chọn khu trọ và mục tiêu để xem dịch vụ." :
+            currentMode === "room" ?
+            "Khu trọ chưa có phòng để chọn." :
+            "Khu trọ chưa có hợp đồng hợp lệ để chọn.");
         setAssignButtonsDisabled(true);
         renderCatalog();
         return;
@@ -346,8 +349,8 @@ async function loadPropertyData(preferredTargetId = null) {
 
         rooms = roomResult;
         contracts = contractResult.filter(contract =>
-            Number(contract.property_id) === property.id
-            && ["created", "active"].includes(contract.status),
+            Number(contract.property_id) === property.id &&
+            ["created", "active"].includes(contract.status),
         );
         serviceCatalog = catalogResult.map(item => ({
             code: item.code,
@@ -415,22 +418,22 @@ async function openAssignDialog(serviceCode = null, item = null) {
     selectedAssignmentId = item?.assignment_id ?? item?.id ?? null;
     assignDialogTitle.textContent = item ? "Chỉnh sửa dịch vụ đã gán" : "Gán dịch vụ";
     editSourceHint.hidden = !item;
-    editSourceHint.textContent = item?.source === "room" && currentMode === "contract"
-        ? "Dịch vụ này được kế thừa từ phòng; thay đổi sẽ cập nhật gán dịch vụ tại phòng."
-        : "Chọn dịch vụ muốn áp dụng cho mục tiêu hiện tại.";
+    editSourceHint.textContent = item?.source === "room" && currentMode === "contract" ?
+        "Dịch vụ này được kế thừa từ phòng; thay đổi sẽ cập nhật gán dịch vụ tại phòng." :
+        "Chọn dịch vụ muốn áp dụng cho mục tiêu hiện tại.";
 
-    noAvailableServices.textContent = availableServices.length
-        ? ""
-        : "Tất cả dịch vụ trong danh mục đã được gán cho mục tiêu này.";
+    noAvailableServices.textContent = availableServices.length ?
+        "" :
+        "Tất cả dịch vụ trong danh mục đã được gán cho mục tiêu này.";
     noAvailableServices.hidden = availableServices.length > 0;
     serviceCodeSelect.disabled = availableServices.length === 0;
     saveAssignBtn.disabled = availableServices.length === 0;
     formError.textContent = "";
 
     const initialCode = currentCode || serviceCode || "";
-    serviceCodeSelect.value = availableServices.some(service => service.code === initialCode)
-        ? initialCode
-        : "";
+    serviceCodeSelect.value = availableServices.some(service => service.code === initialCode) ?
+        initialCode :
+        "";
     updateSelectedServiceInfo();
     assignDialog.showModal();
 }
@@ -455,7 +458,9 @@ assignForm.addEventListener("submit", async event => {
         if (selectedAssignmentId) {
             await apiRequest(`/service-assignments/${selectedAssignmentId}`, {
                 method: "PUT",
-                body: JSON.stringify({ service_code: service.code }),
+                body: JSON.stringify({
+                    service_code: service.code
+                }),
             });
             showNotice("Đã cập nhật dịch vụ.", "success");
         } else {
@@ -481,9 +486,9 @@ function removalSource(item) {
 
     if (currentMode === "contract" && item.source === "room") {
         const room = rooms.find(candidate => candidate.id === item.room_id);
-        const roomLabel = room
-            ? `Phòng ${room.room_number} · ${propertyName}`
-            : `Phòng ${item.room_id}`;
+        const roomLabel = room ?
+            `Phòng ${room.room_number} · ${propertyName}` :
+            `Phòng ${item.room_id}`;
         return `${roomLabel} (nguồn áp dụng; hợp đồng hiện tại đang kế thừa)`;
     }
 
@@ -497,7 +502,10 @@ function removalSource(item) {
 function openRemoveDialog(assignmentId, item) {
     if (!assignmentId || !item || isRemovingAssignment) return;
 
-    pendingRemoval = { assignmentId, item };
+    pendingRemoval = {
+        assignmentId,
+        item
+    };
     removeServiceName.textContent = item.service_name || serviceName(item.service_code);
     removeServiceCode.textContent = item.service_code || "—";
     removeServiceSource.textContent = removalSource(item);
@@ -520,13 +528,17 @@ function setRemovalLoading(isLoading) {
 async function confirmRemoveAssignment() {
     if (!pendingRemoval || isRemovingAssignment) return;
 
-    const { assignmentId } = pendingRemoval;
+    const {
+        assignmentId
+    } = pendingRemoval;
     setRemovalLoading(true);
     removeError.textContent = "";
     removeError.hidden = true;
 
     try {
-        await apiRequest(`/service-assignments/${assignmentId}`, { method: "DELETE" });
+        await apiRequest(`/service-assignments/${assignmentId}`, {
+            method: "DELETE"
+        });
         removeDialog.close();
         pendingRemoval = null;
         showNotice("Đã gỡ dịch vụ.", "success");
@@ -596,7 +608,8 @@ async function bootstrap() {
             properties.length ? "Chọn khu trọ" : "Chưa có khu trọ được phép quản lý",
             "",
         ));
-        properties.forEach(property => propertySelect.append(new Option(property.name, String(property.id))));
+        properties.forEach(property => propertySelect.append(new Option(property.name, String(property
+            .id))));
         propertySelect.disabled = properties.length === 0;
 
         if (!properties.length) {
@@ -628,7 +641,8 @@ async function bootstrap() {
         }
 
         currentMode = query.contractId ? "contract" : "room";
-        targetButtons.forEach(button => button.classList.toggle("active", button.dataset.mode === currentMode));
+        targetButtons.forEach(button => button.classList.toggle("active", button.dataset.mode ===
+            currentMode));
         propertySelect.value = String(initialPropertyId);
         await loadPropertyData(query.contractId || query.roomId);
     } catch (error) {

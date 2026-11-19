@@ -44,15 +44,18 @@ async function apiRequest(path, options = {}) {
     headers.set("Authorization", `Bearer ${accessToken}`);
     if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
-    const response = await fetch(`${API_BASE}${path}`, {...options, headers});
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers
+    });
     if (response.status === 204) return null;
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof data?.detail === "string"
-            ? data.detail
-            : Array.isArray(data?.detail)
-                ? data.detail.map(item => item.msg).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof data?.detail === "string" ?
+            data.detail :
+            Array.isArray(data?.detail) ?
+            data.detail.map(item => item.msg).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return data;
@@ -70,7 +73,12 @@ function formatMoney(value) {
 }
 
 function statusLabel(status) {
-    return {available: "Đang trống", reserved: "Đã đặt cọc", occupied: "Đang thuê", maintenance: "Bảo trì"}[status] || status;
+    return {
+        available: "Đang trống",
+        reserved: "Đã đặt cọc",
+        occupied: "Đang thuê",
+        maintenance: "Bảo trì"
+    } [status] || status;
 }
 
 function setLoading(loading) {
@@ -105,7 +113,8 @@ function renderRows(items) {
             createElement("td", "", formatMoney(room.base_rent)),
         );
         const statusCell = document.createElement("td");
-        statusCell.append(createElement("span", `status-badge status-${room.status}`, statusLabel(room.status)));
+        statusCell.append(createElement("span", `status-badge status-${room.status}`, statusLabel(room
+            .status)));
         row.append(statusCell);
 
         const actionsCell = document.createElement("td");
@@ -140,7 +149,10 @@ function updatePagination() {
 async function loadRooms() {
     setLoading(true);
     try {
-        const params = new URLSearchParams({page: String(currentPage), page_size: String(PAGE_SIZE)});
+        const params = new URLSearchParams({
+            page: String(currentPage),
+            page_size: String(PAGE_SIZE)
+        });
         const search = searchInput.value.trim();
         if (search) params.set("search", search);
         if (propertyFilter.value) params.set("property_id", propertyFilter.value);
@@ -255,7 +267,11 @@ function readFormData(isEditing) {
         throw new Error("Diện tích phải lớn hơn 0 và tối đa 2 chữ số thập phân.");
     }
 
-    const data = {room_number: roomNumber, base_rent: rent, area_sqm: area};
+    const data = {
+        room_number: roomNumber,
+        base_rent: rent,
+        area_sqm: area
+    };
     if (isEditing) {
         data.status = document.getElementById("roomStatus").value;
     } else {
@@ -274,12 +290,18 @@ roomForm.addEventListener("submit", async event => {
         const data = readFormData(Boolean(roomId));
         if (roomId) {
             delete data.property_id;
-            await apiRequest(`/rooms/${roomId}`, {method: "PUT", body: JSON.stringify(data)});
+            await apiRequest(`/rooms/${roomId}`, {
+                method: "PUT",
+                body: JSON.stringify(data)
+            });
             showNotice("Cập nhật phòng thành công.", "success");
         } else {
             const propertyId = data.property_id;
             delete data.property_id;
-            await apiRequest(`/properties/${propertyId}/rooms`, {method: "POST", body: JSON.stringify(data)});
+            await apiRequest(`/properties/${propertyId}/rooms`, {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
             showNotice("Tạo phòng mới thành công.", "success");
         }
         roomDialog.close();
@@ -292,9 +314,12 @@ roomForm.addEventListener("submit", async event => {
 });
 
 async function deleteRoom(room) {
-    if (!window.confirm(`Bạn có chắc muốn xóa phòng ${room.room_number} tại ${room.property_name}?`)) return;
+    if (!window.confirm(`Bạn có chắc muốn xóa phòng ${room.room_number} tại ${room.property_name}?`))
+        return;
     try {
-        await apiRequest(`/rooms/${room.id}`, {method: "DELETE"});
+        await apiRequest(`/rooms/${room.id}`, {
+            method: "DELETE"
+        });
         showNotice("Đã xóa phòng.", "success");
         await loadRooms();
     } catch (error) {
@@ -315,7 +340,8 @@ async function showRoomDetail(room) {
         const body = document.getElementById("detailBody");
         body.replaceChildren(
             detailRow("Khu trọ", detail.property_name),
-            detailRow("Diện tích", detail.area_sqm == null ? "Chưa cập nhật" : `${detail.area_sqm} m²`),
+            detailRow("Diện tích", detail.area_sqm == null ? "Chưa cập nhật" :
+                `${detail.area_sqm} m²`),
             detailRow("Giá thuê", formatMoney(detail.base_rent)),
             detailRow("Trạng thái", statusLabel(detail.status)),
         );
@@ -325,7 +351,8 @@ async function showRoomDetail(room) {
                 createElement("h3", "", "Hợp đồng đang hoạt động"),
                 detailRow("Mã hợp đồng", `#${detail.active_contract.id}`),
                 detailRow("Khách thuê", detail.active_contract.tenant),
-                detailRow("Thời hạn", `${detail.active_contract.start_date} — ${detail.active_contract.end_date}`),
+                detailRow("Thời hạn",
+                    `${detail.active_contract.start_date} — ${detail.active_contract.end_date}`),
                 detailRow("Tiền thuê/tháng", formatMoney(detail.active_contract.monthly_rent)),
             );
             body.append(contract);

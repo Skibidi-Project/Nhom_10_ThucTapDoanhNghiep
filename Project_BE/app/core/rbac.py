@@ -26,51 +26,70 @@ class Permission(str, Enum):
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
-    Role.ADMIN: frozenset({
-        Permission.USERS_READ,
-        Permission.USERS_ASSIGN_ROLE,
-        Permission.PROFILE_READ,
-        Permission.PROFILE_UPDATE,
-        Permission.RENTAL_READ_OWN,
-    }),
-    Role.LANDLORD: frozenset({
-        Permission.PROFILE_READ,
-        Permission.PROFILE_UPDATE,
-        Permission.RENTAL_READ_OWN,
-        Permission.PROPERTY_MANAGE,
-        Permission.PROPERTY_OPERATE,
-        Permission.TENANT_MANAGE,
-        Permission.CONTRACT_MANAGE,
-        Permission.UTILITY_MANAGE,
-        Permission.INVOICE_MANAGE,
-        Permission.INVOICE_READ,
-    }),
-    Role.MANAGER: frozenset({
-        Permission.PROFILE_READ,
-        Permission.PROFILE_UPDATE,
-        Permission.RENTAL_READ_OWN,
-        Permission.PROPERTY_OPERATE,
-        Permission.TENANT_MANAGE,
-        Permission.CONTRACT_MANAGE,
-        Permission.UTILITY_MANAGE,
-        Permission.INVOICE_MANAGE,
-        Permission.INVOICE_READ,
-    }),
-    Role.TENANT: frozenset({
-        Permission.PROFILE_READ,
-        Permission.PROFILE_UPDATE,
-        Permission.RENTAL_READ_OWN,
-        Permission.INVOICE_READ,
-    }),
+    Role.ADMIN: frozenset(
+        {
+            Permission.USERS_READ,
+            Permission.USERS_ASSIGN_ROLE,
+            Permission.PROFILE_READ,
+            Permission.PROFILE_UPDATE,
+            Permission.RENTAL_READ_OWN,
+        }
+    ),
+    Role.LANDLORD: frozenset(
+        {
+            Permission.PROFILE_READ,
+            Permission.PROFILE_UPDATE,
+            Permission.RENTAL_READ_OWN,
+            Permission.PROPERTY_MANAGE,
+            Permission.PROPERTY_OPERATE,
+            Permission.TENANT_MANAGE,
+            Permission.CONTRACT_MANAGE,
+            Permission.UTILITY_MANAGE,
+            Permission.INVOICE_MANAGE,
+            Permission.INVOICE_READ,
+        }
+    ),
+    Role.MANAGER: frozenset(
+        {
+            Permission.PROFILE_READ,
+            Permission.PROFILE_UPDATE,
+            Permission.RENTAL_READ_OWN,
+            Permission.PROPERTY_OPERATE,
+            Permission.TENANT_MANAGE,
+            Permission.CONTRACT_MANAGE,
+            Permission.UTILITY_MANAGE,
+            Permission.INVOICE_MANAGE,
+            Permission.INVOICE_READ,
+        }
+    ),
+    Role.TENANT: frozenset(
+        {
+            Permission.PROFILE_READ,
+            Permission.PROFILE_UPDATE,
+            Permission.RENTAL_READ_OWN,
+            Permission.INVOICE_READ,
+        }
+    ),
 }
 
-PRIVILEGE_FIELDS = frozenset({
-    "role", "roles", "role_id", "is_admin", "owner_id", "landlord_id", "created_by", "recorded_by",
-})
+PRIVILEGE_FIELDS = frozenset(
+    {
+        "role",
+        "roles",
+        "role_id",
+        "is_admin",
+        "owner_id",
+        "landlord_id",
+        "created_by",
+        "recorded_by",
+    }
+)
 
 UNAUTHENTICATED = "Chưa đăng nhập hoặc token không hợp lệ."
 FORBIDDEN = "Bạn không có quyền thực hiện chức năng này."
-PRIVILEGE_DENIED = "Không được phép tự thay đổi vai trò hoặc gán quyền sở hữu từ client."
+PRIVILEGE_DENIED = (
+    "Không được phép tự thay đổi vai trò hoặc gán quyền sở hữu từ client."
+)
 
 
 def permissions_for(role: str) -> frozenset[Permission]:

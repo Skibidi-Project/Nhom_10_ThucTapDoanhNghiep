@@ -1,4 +1,3 @@
-
 const registerForm = document.getElementById("registerForm");
 const registerBtn = document.getElementById("registerBtn");
 const message = document.getElementById("message");
@@ -19,11 +18,11 @@ function showError(input, errorId, text) {
 }
 
 function clearErrors() {
-    document.querySelectorAll(".error").forEach(function (item) {
+    document.querySelectorAll(".error").forEach(function(item) {
         item.textContent = "";
     });
 
-    document.querySelectorAll(".invalid").forEach(function (item) {
+    document.querySelectorAll(".invalid").forEach(function(item) {
         item.classList.remove("invalid");
     });
 
@@ -179,7 +178,7 @@ function registerUser(nameValue, emailValue, phoneValue) {
     localStorage.setItem("miniStayUsers", JSON.stringify(users));
 }
 
-registerForm.addEventListener("submit", function (event) {
+registerForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
     clearErrors();
@@ -283,8 +282,8 @@ registerForm.addEventListener("submit", function (event) {
     }
 });
 
-document.querySelectorAll(".toggle-password").forEach(function (button) {
-    button.addEventListener("click", function () {
+document.querySelectorAll(".toggle-password").forEach(function(button) {
+    button.addEventListener("click", function() {
         const targetId = button.getAttribute("data-target");
         const input = document.getElementById(targetId);
 
@@ -300,8 +299,8 @@ document.querySelectorAll(".toggle-password").forEach(function (button) {
     });
 });
 
-document.querySelectorAll(".input-wrapper input").forEach(function (input) {
-    input.addEventListener("input", function () {
+document.querySelectorAll(".input-wrapper input").forEach(function(input) {
+    input.addEventListener("input", function() {
         input.classList.remove("invalid");
 
         const errorElement = input
@@ -312,17 +311,17 @@ document.querySelectorAll(".input-wrapper input").forEach(function (input) {
     });
 });
 
-document.getElementById("termsLink").addEventListener("click", function (event) {
+document.getElementById("termsLink").addEventListener("click", function(event) {
     event.preventDefault();
     alert("Trang điều khoản sử dụng đang được phát triển.");
 });
 
-document.getElementById("privacyLink").addEventListener("click", function (event) {
+document.getElementById("privacyLink").addEventListener("click", function(event) {
     event.preventDefault();
     alert("Trang chính sách bảo mật đang được phát triển.");
 });
 
-document.getElementById("loginLink").addEventListener("click", function (event) {
+document.getElementById("loginLink").addEventListener("click", function(event) {
     event.preventDefault();
     alert("Chức năng đăng nhập đang được phát triển.");
 });

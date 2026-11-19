@@ -1,9 +1,16 @@
 import calendar
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 MAX_CONTRACT_YEARS = 10
 MAX_START_DATE_PAST_YEARS = 1
@@ -83,7 +90,12 @@ class RoomUpdate(BaseModel):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value):
-        if value is not None and value not in {"available", "reserved", "occupied", "maintenance"}:
+        if value is not None and value not in {
+            "available",
+            "reserved",
+            "occupied",
+            "maintenance",
+        }:
             raise ValueError("Trạng thái phòng không hợp lệ.")
         return value
 
@@ -221,7 +233,12 @@ class ContractCreate(BaseModel):
         earliest_start = date(
             today.year - MAX_START_DATE_PAST_YEARS,
             today.month,
-            min(today.day, calendar.monthrange(today.year - MAX_START_DATE_PAST_YEARS, today.month)[1]),
+            min(
+                today.day,
+                calendar.monthrange(
+                    today.year - MAX_START_DATE_PAST_YEARS, today.month
+                )[1],
+            ),
         )
         if self.start_date < earliest_start:
             raise ValueError("Ngày bắt đầu không được trước hôm nay quá 1 năm.")
@@ -229,7 +246,10 @@ class ContractCreate(BaseModel):
         latest_end = date(
             end_year,
             self.start_date.month,
-            min(self.start_date.day, calendar.monthrange(end_year, self.start_date.month)[1]),
+            min(
+                self.start_date.day,
+                calendar.monthrange(end_year, self.start_date.month)[1],
+            ),
         )
         if self.end_date > latest_end:
             raise ValueError("Thời hạn hợp đồng không được vượt quá 10 năm.")
@@ -325,6 +345,33 @@ class InvoiceResponse(BaseModel):
     utility_amount: int
     total_amount: int
     status: str
+
+
+class InvoiceLineItem(BaseModel):
+    description: str
+    quantity: int
+    unit: str
+    unit_price: int
+    amount: int
+
+
+class InvoicePaymentDetail(BaseModel):
+    amount: int
+    method: str
+    paid_at: datetime
+
+
+class InvoiceDetailResponse(InvoiceResponse):
+    tenant_name: str
+    tenant_phone: str
+    tenant_email: EmailStr | None
+    property_name: str
+    property_address: str
+    room_number: str
+    line_items: list[InvoiceLineItem]
+    paid_amount: int
+    remaining_amount: int
+    payments: list[InvoicePaymentDetail] = Field(default_factory=list)
 
 
 class PaymentCreate(BaseModel):

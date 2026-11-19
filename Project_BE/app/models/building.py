@@ -12,7 +12,9 @@ class Building(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id"), nullable=False, index=True)
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("properties.id"), nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     floors: Mapped[list["Floor"]] = relationship(
         back_populates="building", cascade="all, delete-orphan", order_by="Floor.number"
@@ -27,7 +29,9 @@ class Floor(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id"), nullable=False, index=True)
+    building_id: Mapped[int] = mapped_column(
+        ForeignKey("buildings.id"), nullable=False, index=True
+    )
     number: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     building: Mapped[Building] = relationship(back_populates="floors")

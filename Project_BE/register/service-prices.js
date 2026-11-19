@@ -73,16 +73,19 @@ async function apiRequest(path, options = {}) {
         headers.set("Content-Type", "application/json");
     }
 
-    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers
+    });
     if (response.status === 204) return null;
 
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-        const detail = typeof data?.detail === "string"
-            ? data.detail
-            : Array.isArray(data?.detail)
-                ? data.detail.map(item => item.msg || item).join("; ")
-                : `Yêu cầu thất bại (HTTP ${response.status}).`;
+        const detail = typeof data?.detail === "string" ?
+            data.detail :
+            Array.isArray(data?.detail) ?
+            data.detail.map(item => item.msg || item).join("; ") :
+            `Yêu cầu thất bại (HTTP ${response.status}).`;
         throw new Error(detail);
     }
     return data;
@@ -115,7 +118,8 @@ function renderServicePrices() {
         const value = createElement(
             "p",
             `price-value${configured ? "" : " unconfigured"}`,
-            configured ? `${formatMoney(service.unit_price)} / ${unitLabel(service.billing_unit)}` : "Chưa cấu hình",
+            configured ? `${formatMoney(service.unit_price)} / ${unitLabel(service.billing_unit)}` :
+            "Chưa cấu hình",
         );
         const units = service.allowed_units.map(unitLabel).join(" hoặc ");
         const unit = createElement(
@@ -233,10 +237,12 @@ async function saveServicePrice(event) {
     priceFormError.hidden = true;
     try {
         const saved = await apiRequest(
-            `/properties/${property.id}/service-prices/${encodeURIComponent(activeService.code)}`,
-            {
+            `/properties/${property.id}/service-prices/${encodeURIComponent(activeService.code)}`, {
                 method: "PUT",
-                body: JSON.stringify({ billing_unit: billingUnit, unit_price: unitPrice }),
+                body: JSON.stringify({
+                    billing_unit: billingUnit,
+                    unit_price: unitPrice
+                }),
             },
         );
         if (!saved || saved.code !== activeService.code) {
@@ -302,7 +308,8 @@ async function bootstrap() {
             properties.length ? "Chọn khu trọ" : "Chưa có khu trọ được phép quản lý",
             "",
         ));
-        properties.forEach(property => propertySelect.append(new Option(property.name, String(property.id))));
+        properties.forEach(property => propertySelect.append(new Option(property.name, String(property
+            .id))));
         propertySelect.disabled = properties.length === 0;
 
         if (!properties.length) {

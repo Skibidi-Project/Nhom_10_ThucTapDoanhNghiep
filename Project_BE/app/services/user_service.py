@@ -19,10 +19,15 @@ def register_user(db: Session, data: UserCreate) -> User:
         if data.phone is not None:
             duplicate = or_(duplicate, User.phone == data.phone)
         if db.scalar(select(User.id).where(duplicate)) is not None:
-            raise HTTPException(status_code=409, detail="Email hoặc số điện thoại đã được sử dụng.")
+            raise HTTPException(
+                status_code=409, detail="Email hoặc số điện thoại đã được sử dụng."
+            )
         user = User(
-            full_name=data.full_name, email=str(data.email), phone=data.phone,
-            password_hash=password_hasher.hash(data.password), role=Role.TENANT.value,
+            full_name=data.full_name,
+            email=str(data.email),
+            phone=data.phone,
+            password_hash=password_hasher.hash(data.password),
+            role=Role.TENANT.value,
         )
         db.add(user)
         db.commit()
@@ -33,11 +38,17 @@ def register_user(db: Session, data: UserCreate) -> User:
         db.rollback()
         code = exc.orig.args[0] if exc.orig.args else None
         if code == 1062:
-            raise HTTPException(status_code=409, detail="Email hoặc số điện thoại đã được sử dụng.") from exc
-        raise HTTPException(status_code=503, detail="Không thể lưu tài khoản vào database.") from exc
+            raise HTTPException(
+                status_code=409, detail="Email hoặc số điện thoại đã được sử dụng."
+            ) from exc
+        raise HTTPException(
+            status_code=503, detail="Không thể lưu tài khoản vào database."
+        ) from exc
     except SQLAlchemyError as exc:
         db.rollback()
-        raise HTTPException(status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau.") from exc
+        raise HTTPException(
+            status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau."
+        ) from exc
 
 
 def login_user(db: Session, data: UserLogin) -> User:
@@ -46,7 +57,9 @@ def login_user(db: Session, data: UserLogin) -> User:
         user = db.scalar(select(User).where(column == data.identifier))
     except SQLAlchemyError as exc:
         db.rollback()
-        raise HTTPException(status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau.") from exc
+        raise HTTPException(
+            status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau."
+        ) from exc
     if user:
         try:
             password_hasher.verify(user.password_hash, data.password)
@@ -61,16 +74,22 @@ def list_users(db: Session) -> list[User]:
         return list(db.scalars(select(User).order_by(User.id)))
     except SQLAlchemyError as exc:
         db.rollback()
-        raise HTTPException(status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau.") from exc
+        raise HTTPException(
+            status_code=503, detail="Không thể truy cập database. Vui lòng thử lại sau."
+        ) from exc
 
 
 def get_account(db: Session, actor: User, user_id: int) -> User:
     if actor.role != Role.ADMIN.value and actor.id != user_id:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền xem tài khoản này.")
+        raise HTTPException(
+            status_code=403, detail="Bạn không có quyền xem tài khoản này."
+        )
     target = db.get(User, user_id)
     if target is None:
         if actor.role != Role.ADMIN.value:
-            raise HTTPException(status_code=403, detail="Bạn không có quyền xem tài khoản này.")
+            raise HTTPException(
+                status_code=403, detail="Bạn không có quyền xem tài khoản này."
+            )
         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản.")
     return target
 
@@ -81,7 +100,9 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> User:
     if data.phone is not None and data.phone != user.phone:
         taken = db.scalar(select(User).where(User.phone == data.phone))
         if taken is not None:
-            raise HTTPException(status_code=409, detail="Số điện thoại đã được sử dụng.")
+            raise HTTPException(
+                status_code=409, detail="Số điện thoại đã được sử dụng."
+            )
         user.phone = data.phone
     save(db, user)
     return user
