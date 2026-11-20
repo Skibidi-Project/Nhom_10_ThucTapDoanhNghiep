@@ -6,7 +6,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.db.database import engine, init_db
-from app.routers import auth, billing, buildings, contracts, properties, room_type, service_assignments, tenants, users
+from app.routers import (
+    auth,
+    billing,
+    buildings,
+    contracts,
+    expenses,
+    properties,
+    room_type,
+    service_assignments,
+    tenants,
+    users,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,6 +41,7 @@ app.include_router(properties.room_router)
 app.include_router(tenants.router)
 app.include_router(contracts.router)
 app.include_router(service_assignments.router)
+app.include_router(expenses.router)
 app.include_router(billing.invoice_router)
 app.include_router(billing.reading_router)
 app.include_router(room_type.router)

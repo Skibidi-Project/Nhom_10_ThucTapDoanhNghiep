@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi phí vận hành - MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="expenses.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-left"><a class="brand" href="properties.html">MiniStay</a></div>
+    <nav class="topbar-actions expense-nav" aria-label="Điều hướng chính">
+        <a class="button button-light" href="tenants.html">Khách thuê</a>
+        <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
+        <a class="button button-light" href="rooms.html">Quản lý phòng</a>
+        <a class="button button-light" href="contracts.html">Hợp đồng</a>
+        <a class="button button-light" href="services.html">Dịch vụ</a>
+        <a class="button button-light" href="payments.html">Thanh toán</a>
+        <a class="button button-light" href="expenses.html" aria-current="page">Chi phí</a>
+    </nav>
+    <div class="account-actions">
+        <span id="accountInfo">Đang xác thực...</span>
+        <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
+    </div>
+</header>
+<main class="container">
+    <section class="intro">
+        <div><h1>Quản lý chi phí vận hành</h1><p class="subtitle">Ghi nhận chi phí phát sinh ngoài dự kiến.</p></div>
+        <button type="button" class="button button-primary add-expense-button" id="addExpenseBtn">Thêm chi phí</button>
+    </section>
+    <p id="noPropertyNotice" class="table-state" hidden>Bạn chưa được giao khu trọ nào nên chưa thể ghi nhận chi phí.</p>
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+    <section id="expenseSection" hidden>
+        <div class="summary-grid">
+            <article class="summary-card"><span class="summary-icon summary-icon-total" aria-hidden="true"></span><div><span>Tổng chi phí</span><strong id="totalSummary">0 đ</strong></div></article>
+            <article class="summary-card"><span class="summary-icon summary-icon-count" aria-hidden="true"></span><div><span>Số khoản chi</span><strong id="countSummary">0</strong></div></article>
+            <article class="summary-card"><span class="summary-icon summary-icon-category" aria-hidden="true"></span><div><span>Danh mục chi nhiều nhất</span><strong id="topCategory">-</strong></div></article>
+        </div>
+        <section class="category-panel" aria-labelledby="categoryWeightsTitle">
+            <div class="section-heading"><h2 id="categoryWeightsTitle">Chi phí theo danh mục</h2></div>
+            <div id="categoryWeights" class="category-weights"></div>
+        </section>
+        <div class="panel expense-filters">
+            <div class="filter-heading"><div><h2>Bộ lọc chi phí</h2><p>Tìm khoản chi theo khu trọ, danh mục hoặc thời gian.</p></div></div>
+            <div class="form-grid">
+                <div class="form-group"><label for="propertyFilter">Khu trọ</label><select id="propertyFilter"><option value="">Tất cả khu trọ</option></select></div>
+                <div class="form-group"><label for="categoryFilter">Danh mục</label><select id="categoryFilter"><option value="">Tất cả</option><option value="repair">Sửa chữa</option><option value="supplies">Vật tư</option><option value="operations">Vận hành</option><option value="cleaning">Vệ sinh</option><option value="other">Khác</option></select></div>
+                <div class="form-group"><label for="dateFromFilter">Từ ngày</label><input type="date" id="dateFromFilter"></div>
+                <div class="form-group"><label for="dateToFilter">Đến ngày</label><input type="date" id="dateToFilter"></div>
+                <div class="form-group full-width"><label for="searchFilter">Tìm kiếm</label><input type="search" id="searchFilter" maxlength="50" placeholder="Nội dung hoặc đơn vị thực hiện"></div>
+            </div>
+            <div class="expense-filter-action"><button type="button" class="button button-light" id="clearFiltersBtn">Xóa bộ lọc</button></div>
+        </div>
+        <p id="expensesLoading" class="table-state">Đang tải chi phí...</p>
+        <p id="expensesError" class="table-state error-state" hidden></p>
+        <p id="expensesEmpty" class="table-state" hidden>Không có khoản chi phù hợp.</p>
+        <div class="table-scroll" id="expensesTableContainer" hidden>
+            <table class="expense-table"><thead><tr><th>Ngày chi</th><th>Khu trọ/Phòng</th><th>Danh mục</th><th>Nội dung</th><th>Số tiền</th><th>Thao tác</th></tr></thead><tbody id="expenseRows"></tbody></table>
+        </div>
+        <div class="expense-footer"><strong id="totalFiltered">Tổng theo bộ lọc: 0 đ</strong><div class="pagination"><button type="button" class="button button-light" id="prevPageBtn">Trước</button><span id="pageInfo"></span><button type="button" class="button button-light" id="nextPageBtn">Sau</button><span id="pageTotal"></span></div></div>
+    </section>
+</main>
+<dialog id="expenseDialog" class="property-dialog">
+    <form id="expenseForm" novalidate>
+        <div class="dialog-heading"><div><h2 id="expenseDialogTitle">Thêm chi phí</h2></div><button type="button" class="close-btn" id="closeExpenseDialogBtn" aria-label="Đóng">×</button></div>
+        <p id="expenseFormSummary" class="form-error" role="alert" hidden></p>
+        <div class="form-grid">
+            <div class="form-group"><label for="expenseProperty">Khu trọ <span>*</span></label><select id="expenseProperty"></select><p class="field-error" id="expensePropertyError"></p></div>
+            <div class="form-group"><label for="expenseRoom">Phòng</label><select id="expenseRoom"><option value="">Chi phí chung</option></select><p class="field-error" id="expenseRoomError"></p></div>
+            <div class="form-group"><label for="expenseCategory">Danh mục <span>*</span></label><select id="expenseCategory"><option value="">Chọn danh mục</option><option value="repair">Sửa chữa</option><option value="supplies">Vật tư</option><option value="operations">Vận hành</option><option value="cleaning">Vệ sinh</option><option value="other">Khác</option></select><p class="field-error" id="expenseCategoryError"></p></div>
+            <div class="form-group"><label for="expenseAmount">Số tiền (đ) <span>*</span></label><input type="number" id="expenseAmount" min="1" max="2000000000" step="1"><p class="field-error" id="expenseAmountError"></p></div>
+            <div class="form-group full-width"><label for="expenseDescription">Nội dung <span>*</span></label><input type="text" id="expenseDescription" maxlength="255"><p class="field-error" id="expenseDescriptionError"></p></div>
+            <div class="form-group full-width"><label for="expenseVendor">Đơn vị thực hiện</label><input type="text" id="expenseVendor" maxlength="120"><p class="field-error" id="expenseVendorError"></p></div>
+            <div class="form-group"><label for="expenseDate">Ngày chi <span>*</span></label><input type="date" id="expenseDate"><p class="field-error" id="expenseDateError"></p></div>
+        </div>
+        <div class="dialog-actions"><button type="button" class="button button-light" id="cancelExpenseBtn">Hủy</button><button type="submit" class="button button-primary" id="saveExpenseBtn">Lưu chi phí</button></div>
+    </form>
+</dialog>
+<dialog id="deleteExpenseDialog" class="property-dialog confirm-dialog">
+    <div class="confirm-body">
+        <div class="dialog-heading"><h2>Xóa khoản chi?</h2><button type="button" class="close-btn" id="closeDeleteDialogBtn" aria-label="Đóng">×</button></div>
+        <p id="deleteExpenseSummary"></p>
+    </div>
+    <div class="dialog-actions"><button type="button" class="button button-light" id="cancelDeleteExpenseBtn">Hủy</button><button type="button" class="button button-danger" id="confirmDeleteExpenseBtn">Xóa khoản chi</button></div>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="expenses.js"></script>
+</body>
+</html>

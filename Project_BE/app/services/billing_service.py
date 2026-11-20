@@ -1,11 +1,20 @@
 import calendar
-from datetime import date
+from datetime import date, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Invoice, InvoiceMonth, Payment, TenantProfile, UtilityReading
+from app.models.boarding import (
+    Contract,
+    Invoice,
+    InvoiceMonth,
+    Payment,
+    Property,
+    Room,
+    TenantProfile,
+    UtilityReading,
+)
 from app.models.user import User
 from app.schemas.boarding import InvoiceCreate, PaymentCreate, ReadingCreate
 from app.services.access_scope import (
@@ -109,13 +118,95 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
     return invoice
 
 
-def list_invoices(db: Session, user: User) -> list[Invoice]:
-    return [item for item in db.scalars(select(Invoice).order_by(Invoice.id)) if can_view_invoice(db, user, item)]
+def _attach_invoice_details(db: Session, invoices: list[Invoice]) -> None:
+    if not invoices:
+        return
+
+    invoice_ids = [invoice.id for invoice in invoices]
+
+    paid_rows = db.execute(
+        select(
+            Payment.invoice_id,
+            func.coalesce(func.sum(Payment.amount), 0),
+        )
+        .where(Payment.invoice_id.in_(invoice_ids))
+        .group_by(Payment.invoice_id)
+    ).all()
+
+    paid_by_invoice = {
+        invoice_id: int(paid or 0)
+        for invoice_id, paid in paid_rows
+    }
+
+    metadata_rows = db.execute(
+        select(
+            Invoice.id,
+            Room.room_number,
+            Property.name,
+            TenantProfile.full_name,
+        )
+        .join(Contract, Contract.id == Invoice.contract_id)
+        .join(Room, Room.id == Contract.room_id)
+        .join(Property, Property.id == Room.property_id)
+        .join(TenantProfile, TenantProfile.id == Contract.tenant_id)
+        .where(Invoice.id.in_(invoice_ids))
+    ).all()
+
+    metadata_by_invoice = {
+        invoice_id: (room_number, property_name, tenant_name)
+        for invoice_id, room_number, property_name, tenant_name in metadata_rows
+    }
+
+    for invoice in invoices:
+        paid_amount = paid_by_invoice.get(invoice.id, 0)
+        remaining_amount = max(invoice.total_amount - paid_amount, 0)
+
+        room_number, property_name, tenant_name = metadata_by_invoice.get(
+            invoice.id, (None, None, None)
+        )
+
+        invoice.paid_amount = paid_amount
+        invoice.remaining_amount = remaining_amount
+        invoice.room_number = room_number
+        invoice.property_name = property_name
+        invoice.tenant_name = tenant_name
+
+def list_invoices(
+    db: Session,
+    user: User,
+    status: str | None = None,
+    period: str | None = None,
+    contract_id: int | None = None,
+) -> list[Invoice]:
+    query = select(Invoice)
+
+    if status is not None:
+        query = query.where(Invoice.status == status)
+
+    if period is not None:
+        query = query.where(Invoice.period == period)
+
+    if contract_id is not None:
+        query = query.where(Invoice.contract_id == contract_id)
+
+    query = query.order_by(Invoice.period.desc(), Invoice.id.desc())
+
+    invoices = [
+        item for item in db.scalars(query)
+        if can_view_invoice(db, user, item)
+    ]
+
+    _attach_invoice_details(db, invoices)
+
+    return invoices
 
 
 def read_invoice(db: Session, user: User, invoice_id: int) -> Invoice:
     invoice = get_invoice(db, invoice_id)
     assert_can_view_invoice(db, user, invoice)
+
+    _attach_invoice_details(db, [invoice])
+
     return invoice
 
 
@@ -123,27 +214,129 @@ def _paid_amount(db: Session, invoice_id: int) -> int:
     paid = db.scalar(select(func.coalesce(func.sum(Payment.amount), 0)).where(Payment.invoice_id == invoice_id))
     return int(paid or 0)
 
+def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
+    paid_amount = _paid_amount(db, invoice.id)
 
-def record_payment(db: Session, user: User, invoice_id: int, data: PaymentCreate) -> Payment:
-    invoice = read_invoice(db, user, invoice_id)
-    if invoice.status == "paid":
-        raise HTTPException(status_code=409, detail="Hóa đơn đã được thanh toán đủ.")
-    remaining = invoice.total_amount - _paid_amount(db, invoice.id)
+    if paid_amount <= 0:
+        invoice.status = "unpaid"
+    elif paid_amount < invoice.total_amount:
+        invoice.status = "partially_paid"
+    else:
+        invoice.status = "paid"
+
+    return invoice.status
+
+
+def _format_vnd(amount: int) -> str:
+    return f"{amount:,}".replace(",", ".") + " đ"
+
+def record_payment(
+    db: Session,
+    user: User,
+    invoice_id: int,
+    data: PaymentCreate,
+) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    prop = property_of_room(db, room)
+
+    assert_can_operate(db, user, prop)
+
+    invoice = db.scalar(
+        select(Invoice)
+        .where(Invoice.id == invoice_id)
+        .with_for_update()
+    )
+
+    if invoice is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Không tìm thấy hóa đơn.",
+        )
+
+    paid_amount = _paid_amount(db, invoice.id)
+
+    if invoice.status == "paid" or paid_amount >= invoice.total_amount:
+        raise HTTPException(
+            status_code=409,
+            detail="Hóa đơn đã được thanh toán đủ.",
+        )
+
+    remaining = invoice.total_amount - paid_amount
+
     if data.amount > remaining:
-        raise HTTPException(status_code=409, detail="Số tiền thanh toán vượt quá số còn nợ.")
-    payment = Payment(invoice_id=invoice.id, amount=data.amount, method=data.method.strip(), recorded_by=user.id)
-    db.add(payment)
-    paid_after = remaining - data.amount
-    invoice.status = "paid" if paid_after == 0 else "partially_paid"
-    save(db, payment, invoice)
-    return payment
+        raise HTTPException(
+            status_code=409,
+            detail=f"Số tiền vượt quá số còn nợ (còn thiếu {_format_vnd(remaining)}).",
+        )
 
+    payment = Payment(
+        invoice_id=invoice.id,
+        amount=data.amount,
+        method=data.method,
+        recorded_by=user.id,
+        paid_at=data.paid_at or datetime.now(),
+        note=data.note,
+    )
+
+    db.add(payment)
+    db.flush()
+
+    recompute_invoice_status(db, invoice)
+
+    save(db, payment, invoice)
+
+    total_paid = _paid_amount(db, invoice.id)
+
+    return {
+        "id": payment.id,
+        "invoice_id": payment.invoice_id,
+        "amount": payment.amount,
+        "method": payment.method,
+        "recorded_by": payment.recorded_by,
+        "paid_at": payment.paid_at,
+        "note": payment.note,
+        "recorded_by_name": user.full_name,
+        "invoice_status": invoice.status,
+        "total_paid": total_paid,
+        "remaining_amount": max(invoice.total_amount - total_paid, 0),
+    }
+
+def list_payments(db: Session, user: User, invoice_id: int) -> list[dict]:
+    invoice = get_invoice(db, invoice_id)
+    assert_can_view_invoice(db, user, invoice)
+
+    rows = db.execute(
+        select(Payment, User.full_name)
+        .join(User, User.id == Payment.recorded_by)
+        .where(Payment.invoice_id == invoice_id)
+        .order_by(Payment.paid_at.desc(), Payment.id.desc())
+    ).all()
+
+    return [
+        {
+            "id": payment.id,
+            "invoice_id": payment.invoice_id,
+            "amount": payment.amount,
+            "method": payment.method,
+            "paid_at": payment.paid_at,
+            "note": payment.note,
+            "recorded_by": payment.recorded_by,
+            "recorded_by_name": recorded_by_name,
+        }
+        for payment, recorded_by_name in rows
+    ]
 
 def list_own_invoices(db: Session, user: User) -> list[Invoice]:
-    return list(db.scalars(
+    invoices = list(db.scalars(
         select(Invoice)
         .join(Contract, Contract.id == Invoice.contract_id)
         .join(TenantProfile, TenantProfile.id == Contract.tenant_id)
         .where(TenantProfile.user_id == user.id)
-        .order_by(Invoice.id)
+        .order_by(Invoice.period.desc(), Invoice.id.desc())
     ))
+
+    _attach_invoice_details(db, invoices)
+
+    return invoices
