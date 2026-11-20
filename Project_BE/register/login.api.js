@@ -77,8 +77,26 @@ form.addEventListener("submit", async event => {
         // password.value = "";
 
         sessionStorage.setItem("us05_access_token", data.access_token);
-        showMessage(data.message, "success");
+        const role = data.user.role;
         password.value = "";
+
+        if (role === "tenant") {
+            showMessage(
+                "Đăng nhập thành công. Tài khoản của bạn đang là khách thuê. Nếu bạn là chủ nhà hoặc quản lý, hãy liên hệ quản trị viên để được cấp quyền, rồi đăng nhập lại.",
+                "success"
+            );
+            return;
+        }
+
+        if (role === "admin") {
+            showMessage(data.message, "success");
+            setTimeout(() => {
+                window.location.assign("admin-users.html");
+            }, 800);
+            return;
+        }
+
+        showMessage(data.message, "success");
         setTimeout(() => {
             window.location.assign("properties.html");
         }, 800);

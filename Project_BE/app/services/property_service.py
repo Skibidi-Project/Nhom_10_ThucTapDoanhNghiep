@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import and_, delete, func, select
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
@@ -7,6 +7,7 @@ from app.models.boarding import Contract, Property, PropertyManager, PropertySer
 from app.models.building import Building
 from app.models.user import User
 from app.schemas.boarding import (
+    AvailableManagerResponse,
     ManagerAssign,
     PropertyCreate,
     PropertyUpdate,
@@ -50,6 +51,35 @@ def read_property(db: Session, user: User, property_id: int) -> Property:
     prop = get_property(db, property_id)
     assert_can_operate(db, user, prop)
     return prop
+
+
+def list_available_managers(
+    db: Session,
+    user: User,
+    property_id: int,
+    q: str | None = None,
+) -> list[AvailableManagerResponse]:
+    prop = get_property(db, property_id)
+    assert_can_manage(user, prop)
+
+    stmt = select(User.id, User.full_name, User.email, User.phone).where(
+        User.role == Role.MANAGER.value
+    )
+    if q and q.strip():
+        term = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{term}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(User.full_name).like(func.lower(pattern), escape="\\"),
+                func.lower(User.email).like(func.lower(pattern), escape="\\"),
+                func.lower(User.phone).like(func.lower(pattern), escape="\\"),
+            )
+        )
+
+    return [
+        AvailableManagerResponse(id=row.id, full_name=row.full_name, email=row.email, phone=row.phone)
+        for row in db.execute(stmt.order_by(User.full_name, User.id))
+    ]
 
 
 def update_property(db: Session, user: User, property_id: int, data: PropertyUpdate) -> Property:

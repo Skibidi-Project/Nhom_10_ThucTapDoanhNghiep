@@ -65,6 +65,17 @@ class UserResponse(BaseModel):
     created_at: datetime
 
 
+class UserListResponse(BaseModel):
+    items: list[UserResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class RoleChangeResponse(UserResponse):
+    revoked_property_count: int | None = None
+
+
 class LoginResponse(BaseModel):
     message: str
     access_token: str

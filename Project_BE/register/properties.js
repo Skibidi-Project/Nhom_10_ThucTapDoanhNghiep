@@ -10,10 +10,18 @@ const notice = document.getElementById("notice");
 const dialog = document.getElementById("propertyDialog");
 const propertyForm = document.getElementById("propertyForm");
 const addPropertyBtn = document.getElementById("addPropertyBtn");
+const managerDialog = document.getElementById("managerDialog");
+const managerForm = document.getElementById("managerForm");
+const managerSelect = document.getElementById("managerSelect");
+const managerListState = document.getElementById("managerListState");
+const managerDetails = document.getElementById("managerDetails");
+const assignManagerBtn = document.getElementById("assignManagerBtn");
 
 let accessToken = sessionStorage.getItem("us05_access_token") || "";
 let currentUser = null;
 let properties = [];
+let selectedProperty = null;
+let managers = [];
 
 function showNotice(message, type = "info") {
     notice.textContent = message;
@@ -42,7 +50,9 @@ async function apiRequest(path, options = {}) {
             : Array.isArray(data?.detail)
                 ? data.detail.map(item => item.msg).join("; ")
                 : `Yêu cầu thất bại (HTTP ${response.status}).`;
-        throw new Error(detail);
+        const error = new Error(detail);
+        error.status = response.status;
+        throw error;
     }
     return data;
 }
@@ -74,10 +84,18 @@ function renderProperties() {
         top.append(heading);
 
         if (currentUser?.role !== "landlord") {
-            top.append(createElement("span", "readonly-tag", "Chỉ xem"));
+            top.append(createElement("span", "readonly-tag", "Được giao quản lý"));
         }
 
         card.append(top, createElement("p", "address", property.address));
+        if (currentUser?.role === "landlord") {
+            const assignmentStatus = createElement(
+                "p",
+                "assignment-status",
+                "Thông tin Manager chưa được API cung cấp."
+            );
+            card.append(assignmentStatus);
+        }
         const prices = createElement("div", "price-list");
         const priceItems = [
             ["Điện", property.electricity_unit_price],
@@ -100,13 +118,16 @@ function renderProperties() {
 
         if (currentUser?.role === "landlord") {
             const actions = createElement("div", "card-actions");
+            const assignButton = createElement("button", "assign-btn", "Giao quản lý");
+            assignButton.type = "button";
+            assignButton.addEventListener("click", () => openManagerDialog(property));
             const editButton = createElement("button", "edit-btn", "Chỉnh sửa");
             editButton.type = "button";
             editButton.addEventListener("click", () => openEditDialog(property));
             const deleteButton = createElement("button", "delete-btn", "Xóa cơ sở");
             deleteButton.type = "button";
             deleteButton.addEventListener("click", () => deleteProperty(property));
-            actions.append(editButton, deleteButton);
+            actions.append(assignButton, editButton, deleteButton);
             card.append(actions);
         }
         propertyList.append(card);
@@ -118,8 +139,10 @@ async function loadProperties() {
     try {
         properties = await apiRequest("/properties");
         renderProperties();
+        return true;
     } catch (error) {
         showNotice(error.message, "error");
+        return false;
     }
 }
 
@@ -159,8 +182,15 @@ async function connect(token) {
     document.getElementById("roomsLink").hidden = false;
     document.getElementById("contractsLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
-    document.getElementById("emptyTitle").textContent = "Chưa có cơ sở nào";
-    document.getElementById("emptyDescription").textContent = "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";
+    document.getElementById("pageSubtitle").textContent = user.role === "manager"
+        ? "Danh sách chỉ gồm các cơ sở được Landlord giao cho bạn quản lý."
+        : "Quản lý các cơ sở thuộc quyền sở hữu của bạn và giao quyền vận hành cho Manager.";
+    document.getElementById("emptyTitle").textContent = user.role === "manager"
+        ? "Bạn chưa được giao quản lý cơ sở nào"
+        : "Chưa có cơ sở nào";
+    document.getElementById("emptyDescription").textContent = user.role === "manager"
+        ? "Các cơ sở sẽ xuất hiện tại đây sau khi Landlord phân công cho bạn."
+        : "Tạo cơ sở đầu tiên để bắt đầu quản lý khu trọ.";
     await loadProperties();
 }
 
@@ -200,6 +230,65 @@ function openEditDialog(property) {
     document.getElementById("waterPrice").value = property.water_unit_price;
     document.getElementById("servicePrice").value = property.service_unit_price;
     dialog.showModal();
+}
+
+function updateManagerSelection() {
+    const manager = managers.find(item => String(item.id) === managerSelect.value);
+    managerDetails.hidden = !manager;
+    managerDetails.textContent = manager
+        ? [manager.full_name, manager.email, manager.phone].filter(Boolean).join(" · ")
+        : "";
+    assignManagerBtn.disabled = !manager || assignManagerBtn.dataset.loading === "true";
+}
+
+async function openManagerDialog(property) {
+    selectedProperty = property;
+    managers = [];
+    document.getElementById("assignmentPropertyName").textContent = property.name;
+    document.getElementById("assignmentPropertyAddress").textContent = property.address;
+    document.getElementById("assignmentPropertyId").textContent = `Mã cơ sở: #${property.id}`;
+    managerSelect.replaceChildren(new Option("Đang tải danh sách Manager...", ""));
+    managerSelect.disabled = true;
+    managerListState.textContent = "";
+    managerListState.className = "manager-list-state";
+    managerDetails.hidden = true;
+    assignManagerBtn.disabled = true;
+    assignManagerBtn.dataset.loading = "false";
+    assignManagerBtn.textContent = "Xác nhận giao quản lý";
+    managerDialog.showModal();
+
+    try {
+        const result = await apiRequest(`/properties/${property.id}/available-managers`);
+        managers = Array.isArray(result) ? result : [];
+        managerSelect.replaceChildren(new Option(
+            managers.length ? "Chọn Manager" : "Chưa có tài khoản Manager",
+            ""
+        ));
+        for (const manager of managers) {
+            const label = [manager.full_name, manager.email, manager.phone].filter(Boolean).join(" · ");
+            managerSelect.append(new Option(label, String(manager.id)));
+        }
+        managerSelect.disabled = managers.length === 0;
+        if (managers.length === 0) {
+            managerListState.textContent = "Chưa có tài khoản Manager để phân công.";
+        }
+    } catch (error) {
+        managerSelect.replaceChildren(new Option("Không thể tải danh sách Manager", ""));
+        managerListState.textContent = error.status === 403
+            ? "Bạn không có quyền xem danh sách Manager của cơ sở này."
+            : `Không tải được danh sách Manager: ${error.message}`;
+        managerListState.classList.add("error");
+    }
+}
+
+function managerAssignmentError(error) {
+    const messages = {
+        403: "Bạn không có quyền giao quản lý cơ sở này.",
+        404: "Không tìm thấy cơ sở hoặc tài khoản Manager.",
+        409: "Manager này đã được giao quản lý cơ sở.",
+        422: "Dữ liệu không hợp lệ hoặc tài khoản được chọn không có vai trò Manager."
+    };
+    return messages[error.status] || error.message;
 }
 
 function readFormData() {
@@ -264,6 +353,35 @@ addPropertyBtn.addEventListener("click", openCreateDialog);
 document.getElementById("refreshBtn").addEventListener("click", loadProperties);
 document.getElementById("closeDialogBtn").addEventListener("click", () => dialog.close());
 document.getElementById("cancelBtn").addEventListener("click", () => dialog.close());
+document.getElementById("closeManagerDialogBtn").addEventListener("click", () => managerDialog.close());
+document.getElementById("cancelManagerBtn").addEventListener("click", () => managerDialog.close());
+managerSelect.addEventListener("change", updateManagerSelection);
+managerForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const managerId = Number(managerSelect.value);
+    if (!selectedProperty || !Number.isSafeInteger(managerId) || managerId <= 0) return;
+
+    assignManagerBtn.disabled = true;
+    assignManagerBtn.dataset.loading = "true";
+    assignManagerBtn.textContent = "Đang gửi yêu cầu...";
+    try {
+        await apiRequest(`/properties/${selectedProperty.id}/managers`, {
+            method: "POST",
+            body: JSON.stringify({user_id: managerId})
+        });
+        managerDialog.close();
+        if (await loadProperties()) {
+            showNotice("Đã giao quyền quản lý cơ sở thành công. Quyền sở hữu không thay đổi.", "success");
+        }
+    } catch (error) {
+        managerDialog.close();
+        showNotice(managerAssignmentError(error), "error");
+    } finally {
+        assignManagerBtn.dataset.loading = "false";
+        assignManagerBtn.textContent = "Xác nhận giao quản lý";
+        updateManagerSelection();
+    }
+});
 logoutBtn.addEventListener("click", disconnect);
 
 if (accessToken) {

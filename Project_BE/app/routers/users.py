@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
@@ -6,7 +6,7 @@ from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.boarding import ContractResponse, InvoiceResponse
-from app.schemas.user import ProfileUpdate, RoleAssign, UserResponse
+from app.schemas.user import ProfileUpdate, RoleAssign, RoleChangeResponse, UserListResponse, UserResponse
 from app.services.billing_service import list_own_invoices
 from app.services.contract_service import list_own_contracts
 from app.services.user_service import assign_role, get_account, list_users, update_profile
@@ -48,12 +48,16 @@ def read_my_invoices(
     return list_own_invoices(db, user)
 
 
-@router.get("", response_model=list[UserResponse])
+@router.get("", response_model=UserListResponse)
 def read_users(
+    q: str | None = Query(default=None, max_length=100),
+    role: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db),
     _: User = Depends(require_permissions(Permission.USERS_READ)),
 ):
-    return list_users(db)
+    return list_users(db, q=q, role=role, page=page, page_size=page_size)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -65,11 +69,14 @@ def read_user(
     return get_account(db, actor, user_id)
 
 
-@router.put("/{user_id}/role", response_model=UserResponse)
+@router.put("/{user_id}/role", response_model=RoleChangeResponse)
 def update_role(
     user_id: int,
     data: RoleAssign,
     db: Session = Depends(get_db),
-    _: User = Depends(require_permissions(Permission.USERS_ASSIGN_ROLE)),
+    actor: User = Depends(require_permissions(Permission.USERS_ASSIGN_ROLE)),
 ):
-    return assign_role(db, user_id, data.role.value)
+    target, revoked = assign_role(db, user_id, data.role.value, actor)
+    response = RoleChangeResponse.model_validate(target)
+    response.revoked_property_count = revoked
+    return response

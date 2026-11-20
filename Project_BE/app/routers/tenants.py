@@ -5,7 +5,7 @@ from app.core.deps import block_privilege_override, get_current_user, require_pe
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import TenantCreate, TenantResponse, TenantUpdate
+from app.schemas.boarding import TenantAccountLink, TenantAccountLinkResponse, TenantCreate, TenantResponse, TenantUpdate
 from app.services import tenant_service
 from app.services.db_util import save
 
@@ -59,6 +59,26 @@ def delete_tenant(
     user: User = Depends(require_permissions(Permission.TENANT_MANAGE)),
 ):
     tenant_service.delete_tenant(db, user, tenant_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{tenant_id}/account", response_model=TenantAccountLinkResponse)
+def link_account(
+    tenant_id: int,
+    data: TenantAccountLink,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.TENANT_MANAGE)),
+):
+    return tenant_service.link_tenant_account(db, user, tenant_id, data.identifier)
+
+
+@router.delete("/{tenant_id}/account", status_code=status.HTTP_204_NO_CONTENT)
+def unlink_account(
+    tenant_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.TENANT_MANAGE)),
+):
+    tenant_service.unlink_tenant_account(db, user, tenant_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

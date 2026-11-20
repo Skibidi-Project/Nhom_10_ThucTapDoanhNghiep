@@ -27,7 +27,7 @@
         <section class="intro">
             <div>
                 <h1>Quản lý cơ sở / khu trọ</h1>
-                <p class="subtitle">Tạo mới, xem, cập nhật và xóa các cơ sở thuộc quyền sở hữu của bạn.</p>
+                <p class="subtitle" id="pageSubtitle">Quản lý các cơ sở thuộc quyền sở hữu của bạn.</p>
             </div>
             <div class="intro-actions">
                 <a class="button button-outline" id="roomsLink" href="rooms.html">Quản lý phòng</a>
@@ -90,6 +90,36 @@
             <div class="dialog-actions">
                 <button type="button" class="button button-light" id="cancelBtn">Hủy</button>
                 <button type="submit" class="button button-primary" id="saveBtn">Lưu cơ sở</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="managerDialog" class="property-dialog manager-dialog">
+        <form id="managerForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">PHÂN CÔNG VẬN HÀNH</p>
+                    <h2>Giao Manager quản lý</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeManagerDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <section class="assignment-property">
+                <h3 id="assignmentPropertyName"></h3>
+                <p id="assignmentPropertyAddress"></p>
+                <span id="assignmentPropertyId" class="property-id"></span>
+            </section>
+            <div class="form-group manager-picker">
+                <label for="managerSelect">Tài khoản Manager</label>
+                <select id="managerSelect" disabled>
+                    <option value="">Đang tải danh sách Manager...</option>
+                </select>
+                <p id="managerListState" class="manager-list-state" role="status" aria-live="polite"></p>
+                <p id="managerDetails" class="manager-details" hidden></p>
+            </div>
+            <p class="assignment-note">Landlord vẫn là chủ sở hữu. Việc phân công chỉ cấp quyền quản lý vận hành.</p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelManagerBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="assignManagerBtn" disabled>Xác nhận giao quản lý</button>
             </div>
         </form>
     </dialog>
