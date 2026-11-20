@@ -1,9 +1,12 @@
 import calendar
-from datetime import date
+from datetime import date, datetime
+from typing import Literal
 from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+
+
 
 MAX_CONTRACT_YEARS = 10
 MAX_START_DATE_PAST_YEARS = 1
@@ -348,10 +351,38 @@ class InvoiceResponse(BaseModel):
     total_amount: int
     status: str
 
+    paid_amount: int | None = None
+    remaining_amount: int | None = None
+    room_number: str | None = None
+    property_name: str | None = None
+    tenant_name: str | None = None
+
 
 class PaymentCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     amount: int = Field(gt=0)
-    method: str = Field(default="cash", min_length=1, max_length=30)
+    method: Literal["cash", "bank_transfer"] = "cash"
+    paid_at: datetime | None = None
+    note: str | None = Field(default=None, max_length=255)
+
+    @field_validator("paid_at")
+    @classmethod
+    def validate_paid_at(cls, value):
+        if value is not None:
+            if value.tzinfo is not None:
+                value = value.replace(tzinfo=None)
+
+            if value > datetime.now():
+                raise ValueError(
+                    "Thời gian thanh toán không được nằm trong tương lai.")
+
+        return value
+
+    @field_validator("note")
+    @classmethod
+    def strip_note(cls, value):
+        return value.strip() or None if value is not None else None
 
 
 class PaymentResponse(BaseModel):
@@ -362,3 +393,16 @@ class PaymentResponse(BaseModel):
     amount: int
     method: str
     recorded_by: int
+    paid_at: datetime
+    note: str | None = None
+
+
+class PaymentResult(PaymentResponse):
+    recorded_by_name: str
+    invoice_status: str
+    total_paid: int
+    remaining_amount: int
+
+
+class PaymentHistoryResponse(PaymentResponse):
+    recorded_by_name: str
