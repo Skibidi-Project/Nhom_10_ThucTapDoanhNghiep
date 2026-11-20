@@ -1,11 +1,19 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import InvoiceResponse, PaymentCreate, PaymentResponse, ReadingCreate, ReadingResponse, ReadingUpdate
+from app.schemas.boarding import (
+    InvoiceResponse,
+    PaymentCreate,
+    PaymentResult,
+    PaymentHistoryResponse,
+    ReadingCreate,
+    ReadingResponse,
+    ReadingUpdate,
+)
 from app.services import billing_service
 from app.services.db_util import execute_write
 
@@ -23,10 +31,19 @@ reading_router = APIRouter(
 
 @invoice_router.get("", response_model=list[InvoiceResponse])
 def read_invoices(
+    status_filter: str | None = Query(default=None, alias="status"),
+    period: str | None = None,
+    contract_id: int | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.INVOICE_READ)),
 ):
-    return billing_service.list_invoices(db, user)
+    return billing_service.list_invoices(
+        db,
+        user,
+        status=status_filter,
+        period=period,
+        contract_id=contract_id,
+    )
 
 
 @invoice_router.get("/{invoice_id}", response_model=InvoiceResponse)
@@ -37,8 +54,16 @@ def read_invoice(
 ):
     return billing_service.read_invoice(db, user, invoice_id)
 
+@invoice_router.get('/{invoice_id}/snapshot')
+def read_invoice_evidence(invoice_id: int, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.INVOICE_READ))):
+    return billing_service.read_invoice_snapshot(db, user, invoice_id)
 
-@invoice_router.post("/{invoice_id}/payments", response_model=PaymentResponse, status_code=status.HTTP_201_CREATED)
+
+@invoice_router.post(
+    "/{invoice_id}/payments",
+    response_model=PaymentResult,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_payment(
     invoice_id: int,
     data: PaymentCreate,
@@ -47,6 +72,17 @@ def create_payment(
 ):
     return execute_write(db, billing_service.record_payment, user, invoice_id, data)
 
+
+@invoice_router.get(
+    "/{invoice_id}/payments",
+    response_model=list[PaymentHistoryResponse],
+)
+def read_payments(
+    invoice_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.INVOICE_READ)),
+):
+    return billing_service.list_payments(db, user, invoice_id)
 
 @reading_router.get("/{room_id}/readings", response_model=list[ReadingResponse])
 def read_readings(

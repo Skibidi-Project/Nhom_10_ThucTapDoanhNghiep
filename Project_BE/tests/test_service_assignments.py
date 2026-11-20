@@ -163,6 +163,80 @@ def test_landlord_manager_can_assign_and_forbidden_roles(client, db_session):
     assert no_token.status_code == 401
 
 
+def test_available_managers_is_scoped_and_returns_only_public_manager_fields(client, db_session):
+    landlord = make_user(db_session, "landlord", "Landlord", "available-owner@example.com", "0900000101")
+    other_landlord = make_user(db_session, "landlord", "Other", "available-other@example.com", "0900000102")
+    manager = make_user(db_session, "manager", "Searchable Manager", "find-manager@example.com", "0900000103")
+    make_user(db_session, "tenant", "Tenant", "available-tenant@example.com", "0900000104")
+    admin = make_user(db_session, "admin", "Admin", "available-admin@example.com", "0900000105")
+    prop = make_property(db_session, landlord.id)
+    make_property(db_session, other_landlord.id, "Other property")
+
+    response = client.get(
+        f"/api/properties/{prop.id}/available-managers",
+        headers=auth_header(landlord),
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [{
+        "id": manager.id,
+        "full_name": "Searchable Manager",
+        "email": "find-manager@example.com",
+        "phone": "0900000103",
+    }]
+    assert "password_hash" not in response.text
+
+    search_response = client.get(
+        f"/api/properties/{prop.id}/available-managers?q=0900000103",
+        headers=auth_header(landlord),
+    )
+    assert search_response.status_code == 200
+    assert [item["id"] for item in search_response.json()] == [manager.id]
+
+    for user in (
+        other_landlord,
+        admin,
+        make_user(db_session, "manager", "Another Manager", "available-manager@example.com", "0900000106"),
+        make_user(db_session, "tenant", "Another Tenant", "available-tenant2@example.com", "0900000107"),
+    ):
+        denied = client.get(
+            f"/api/properties/{prop.id}/available-managers",
+            headers=auth_header(user),
+        )
+        assert denied.status_code == 403
+
+    missing_property = client.get(
+        f"/api/properties/{prop.id + 1000}/available-managers",
+        headers=auth_header(landlord),
+    )
+    assert missing_property.status_code == 404
+
+
+def test_manager_assignment_endpoint_still_assigns_and_rejects_duplicates(client, db_session):
+    landlord = make_user(db_session, "landlord", "Landlord", "assign-owner@example.com", "0900000201")
+    manager = make_user(db_session, "manager", "Manager", "assign-manager@example.com", "0900000202")
+    prop = make_property(db_session, landlord.id)
+
+    assigned = client.post(
+        f"/api/properties/{prop.id}/managers",
+        json={"user_id": manager.id},
+        headers=auth_header(landlord),
+    )
+    assert assigned.status_code == 201
+    assert assigned.json() == {"property_id": prop.id, "user_id": manager.id}
+
+    duplicate = client.post(
+        f"/api/properties/{prop.id}/managers",
+        json={"user_id": manager.id},
+        headers=auth_header(landlord),
+    )
+    assert duplicate.status_code == 409
+    db_session.refresh(prop)
+    db_session.refresh(manager)
+    assert prop.owner_id == landlord.id
+    assert manager.role == "manager"
+
+
 def test_validation_duplicate_and_effective_services(client, db_session):
     landlord = make_user(db_session, "landlord", "Landlord", "landlord2@example.com", "0900000011")
     tenant = make_tenant(db_session, landlord.id)

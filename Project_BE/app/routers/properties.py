@@ -6,6 +6,7 @@ from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.boarding import (
+    AvailableManagerResponse,
     ManagerAssign,
     ManagerAssignmentResponse,
     PropertyCreate,
@@ -38,6 +39,19 @@ def read_properties(
     user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
 ):
     return property_service.list_properties(db, user)
+
+
+@router.get(
+    "/{property_id}/available-managers",
+    response_model=list[AvailableManagerResponse],
+)
+def read_available_managers(
+    property_id: int,
+    q: str | None = Query(default=None, max_length=100),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.PROPERTY_MANAGE)),
+):
+    return property_service.list_available_managers(db, user, property_id, q)
 
 
 @router.post("", response_model=PropertyResponse, status_code=status.HTTP_201_CREATED)

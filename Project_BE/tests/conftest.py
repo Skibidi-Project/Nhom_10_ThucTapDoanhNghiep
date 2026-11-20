@@ -1,9 +1,11 @@
 """Refuse all pytest database writes unless the target is explicitly isolated."""
 import os
 import pytest
+import secrets
 from sqlalchemy.engine import make_url
 
 os.environ.setdefault('DATABASE_URL','sqlite://')
+os.environ.setdefault('JWT_SECRET',secrets.token_urlsafe(48))
 url=make_url(os.environ['DATABASE_URL'])
 if url.get_backend_name() == 'sqlite':
     if url.database not in (None, '', ':memory:'):

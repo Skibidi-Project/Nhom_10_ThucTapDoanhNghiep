@@ -138,6 +138,8 @@ def create_service_assignment(db: Session, user: User, data: ServiceAssignmentWr
         if not _contract_accepts_services(contract):
             raise HTTPException(status_code=409, detail="Chỉ gán dịch vụ cho hợp đồng chưa kết thúc.")
 
+    from app.services.trial_input_guard import touch_property_inputs
+    touch_property_inputs(db, room.property_id, room.id)
     if data.price_override is not None and data.price_override < 0:
         raise HTTPException(status_code=422, detail="Giá riêng không được nhỏ hơn 0.")
 
@@ -199,6 +201,8 @@ def update_service_assignment(db: Session, user: User, assignment_id: int, data:
         room = get_room(db, assignment.room_id)
         assert_can_operate(db, user, property_of_room(db, room))
 
+    from app.services.trial_input_guard import touch_property_inputs
+    touch_property_inputs(db, room.property_id, room.id)
     if data.price_override is not None and data.price_override < 0:
         raise HTTPException(status_code=422, detail="Giá riêng không được nhỏ hơn 0.")
 
@@ -241,6 +245,8 @@ def delete_service_assignment(db: Session, user: User, assignment_id: int) -> No
     else:
         room = get_room(db, assignment.room_id)
         assert_can_operate(db, user, property_of_room(db, room))
+    from app.services.trial_input_guard import touch_property_inputs
+    touch_property_inputs(db, room.property_id, room.id)
     db.delete(assignment)
     save(db)
 

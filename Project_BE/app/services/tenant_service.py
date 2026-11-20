@@ -2,9 +2,11 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.rbac import Role
 from app.models.boarding import Contract, TenantProfile
 from app.models.user import User
-from app.schemas.boarding import TenantCreate, TenantUpdate
+from app.schemas.boarding import TenantAccountLinkResponse, TenantCreate, TenantUpdate
+from app.schemas.user import UserLogin
 from app.services.access_scope import (
     accessible_landlord_ids,
     assert_can_operate,
@@ -93,3 +95,39 @@ def delete_tenant(db: Session, user: User, tenant_id: int) -> None:
         raise HTTPException(status_code=409, detail="Không thể xóa khách thuê đang có hợp đồng hoạt động.")
     db.delete(tenant)
     save(db)
+
+
+def resolve_account_by_identifier(db: Session, identifier: str) -> User:
+    candidate = UserLogin.model_validate({"identifier": identifier, "password": "placeholder"})
+    value = candidate.identifier
+    column = User.email if "@" in value else User.phone
+    user = db.scalar(select(User).where(column == value))
+    if user is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản với email/SĐT này.")
+    return user
+
+
+def link_tenant_account(db: Session, user: User, tenant_id: int, identifier: str) -> TenantAccountLinkResponse:
+    if user.role == Role.TENANT.value:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền thực hiện thao tác này.")
+    tenant = read_tenant(db, user, tenant_id)
+    account = resolve_account_by_identifier(db, identifier)
+    if account.role != Role.TENANT.value:
+        raise HTTPException(status_code=409, detail="Chỉ liên kết được tài khoản có vai trò khách thuê.")
+    if db.scalar(select(TenantProfile.id).where(TenantProfile.user_id == account.id)) is not None:
+        raise HTTPException(status_code=409, detail="Tài khoản này đã được liên kết với một hồ sơ khách thuê.")
+    if tenant.user_id is not None:
+        raise HTTPException(status_code=409, detail="Hồ sơ này đã liên kết tài khoản. Hãy gỡ liên kết trước.")
+    tenant.user_id = account.id
+    save(db, tenant)
+    return TenantAccountLinkResponse(tenant_id=tenant.id, user_id=account.id, full_name=account.full_name, email=account.email)
+
+
+def unlink_tenant_account(db: Session, user: User, tenant_id: int) -> None:
+    if user.role == Role.TENANT.value:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền thực hiện thao tác này.")
+    tenant = read_tenant(db, user, tenant_id)
+    if tenant.user_id is None:
+        raise HTTPException(status_code=404, detail="Hồ sơ khách thuê chưa liên kết tài khoản.")
+    tenant.user_id = None
+    save(db, tenant)

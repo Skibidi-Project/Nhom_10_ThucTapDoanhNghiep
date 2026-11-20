@@ -1,14 +1,72 @@
 import calendar
-from datetime import date
+from datetime import date, datetime
+from typing import Literal
 from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+
+
 MAX_CONTRACT_YEARS = 10
 MAX_START_DATE_PAST_YEARS = 1
 MAX_DEPOSIT_MONTHS = 3
 ALLOWED_PAYMENT_CYCLES = {1, 2, 3, 6, 12}
+
+class TrialHandover(BaseModel):
+    actual_end_date: date
+    reason: str = Field(min_length=1, max_length=500)
+    confirmed: bool
+
+    @field_validator('reason', mode='before')
+    @classmethod
+    def clean_reason(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+class TrialDamage(BaseModel):
+    description: str = Field(min_length=1, max_length=500)
+    amount: int = Field(ge=0, le=2147483647)
+    confirmed: bool = False
+
+    @field_validator('description', mode='before')
+    @classmethod
+    def clean_description(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+class TrialRefund(BaseModel):
+    confirmed: bool
+    method: Literal['cash','bank_transfer'] | None = None
+    reference: str | None = Field(default=None,max_length=255)
+
+class TrialFinalApprovalCreate(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    period_start: date
+    period_end: date
+    charge_type: str = Field(pattern=r'^(rent|electricity|water|service:[a-z0-9_]+)$', max_length=40)
+    reason: str = Field(min_length=1, max_length=500)
+    proposed_method: str = Field(min_length=1, max_length=500)
+    proposed_amount: int = Field(strict=True, ge=0, le=2147483647)
+    reference: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode='after')
+    def valid_interval(self):
+        if self.period_end < self.period_start or self.period_start.strftime('%Y-%m') != self.period_end.strftime('%Y-%m'):
+            raise ValueError('Khoảng tính phải nằm trong cùng một tháng và có thứ tự hợp lệ.')
+        return self
+
+class TrialFinalApprovalDecision(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    approved: bool
+    reason: str = Field(min_length=1, max_length=500)
+
+class TrialMeterHandover(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    handover_at: datetime
+    electricity_reading_id: int = Field(gt=0)
+    water_reading_id: int = Field(gt=0)
+    electricity_expected_version: int = Field(strict=True,ge=0)
+    water_expected_version: int = Field(strict=True,ge=0)
+
 
 class PropertyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=150)
@@ -50,6 +108,13 @@ class PropertyResponse(BaseModel):
 
 class ManagerAssign(BaseModel):
     user_id: int = Field(gt=0)
+
+
+class AvailableManagerResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    phone: str | None
 
 
 class ManagerAssignmentResponse(BaseModel):
@@ -180,6 +245,21 @@ class TenantResponse(BaseModel):
     id_issue_place: str | None
     hometown: str | None
     id_photo_type: str | None
+
+
+class TenantAccountLink(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    identifier: str = Field(min_length=1, max_length=255)
+
+
+class TenantAccountLinkResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    tenant_id: int
+    user_id: int
+    full_name: str
+    email: str
 
 
 class ContractCreate(BaseModel):
@@ -344,10 +424,38 @@ class InvoiceResponse(BaseModel):
     total_amount: int
     status: str
 
+    paid_amount: int | None = None
+    remaining_amount: int | None = None
+    room_number: str | None = None
+    property_name: str | None = None
+    tenant_name: str | None = None
+
 
 class PaymentCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     amount: int = Field(gt=0)
-    method: str = Field(default="cash", min_length=1, max_length=30)
+    method: Literal["cash", "bank_transfer"] = "cash"
+    paid_at: datetime | None = None
+    note: str | None = Field(default=None, max_length=255)
+
+    @field_validator("paid_at")
+    @classmethod
+    def validate_paid_at(cls, value):
+        if value is not None:
+            if value.tzinfo is not None:
+                value = value.replace(tzinfo=None)
+
+            if value > datetime.now():
+                raise ValueError(
+                    "Thời gian thanh toán không được nằm trong tương lai.")
+
+        return value
+
+    @field_validator("note")
+    @classmethod
+    def strip_note(cls, value):
+        return value.strip() or None if value is not None else None
 
 
 class PaymentResponse(BaseModel):
@@ -358,3 +466,16 @@ class PaymentResponse(BaseModel):
     amount: int
     method: str
     recorded_by: int
+    paid_at: datetime
+    note: str | None = None
+
+
+class PaymentResult(PaymentResponse):
+    recorded_by_name: str
+    invoice_status: str
+    total_paid: int
+    remaining_amount: int
+
+
+class PaymentHistoryResponse(PaymentResponse):
+    recorded_by_name: str

@@ -65,8 +65,52 @@ cần đăng nhập. Thời gian created_at là giờ local của server, không
 
 Đăng ký công khai luôn tạo vai trò `tenant`. Trường role, owner_id hoặc các trường
 gán quyền trong body bị từ chối với HTTP 403. Chỉ admin đổi vai trò qua
-`PUT /api/users/{id}/role`. Tài khoản admin đầu tiên được gán trực tiếp trong
-database (`UPDATE users SET role='admin' WHERE email='...';`), không tự nâng qua API.
+`PUT /api/users/{id}/role`.
+
+### Tạo admin đầu tiên
+
+```powershell
+python -m app.scripts.create_admin --email admin@gmail.com --name "Quản trị viên"
+```
+
+Mật khẩu nhập qua prompt hoặc dùng biến môi trường `ADMIN_PASSWORD` để chạy không tương tác.
+Script gọi `init_db()`, kiểm tra email và mật khẩu theo `UserCreate`, tạo tài khoản admin
+đầu tiên và không hiệu chỉnh dữ liệu hiện có trừ khi dùng `--force`. Đây là cách tạo admin
+riêng; nếu dùng bộ tài khoản demo bên dưới thì không cần chạy lệnh này.
+
+### Tài khoản có sẵn để test
+
+Trong PowerShell, chạy từ thư mục `Project_BE` sau khi MySQL đã bật và các thư viện đã cài:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.scripts.seed_accounts
+```
+
+Script tạo các tài khoản chưa có; email đã tồn tại sẽ được bỏ qua, không đổi mật khẩu hoặc vai trò.
+
+Script yêu cầu nhập mật khẩu riêng cho từng tài khoản mới và không thay đổi tài khoản đã tồn tại. Chỉ sử dụng trên database demo cô lập. `DATABASE_URL` phải được cấu hình qua biến môi trường; không còn cấu hình MySQL mặc định trong source.
+
+Lưu ý để test đủ vai trò:
+
+- Manager mới tạo chưa thấy khu trọ nào. Đăng nhập landlord, tạo khu trọ, rồi gán manager bằng
+  `POST /api/properties/{property_id}/managers` với body `{"user_id": <id của manager>}`.
+  Lấy ID ở trang `register/admin-users.html` hoặc gọi `GET /api/users` bằng tài khoản admin.
+- Tenant mới tạo chưa có hợp đồng/hóa đơn. Đăng nhập landlord, tạo hồ sơ khách ở
+  `register/tenants.html`, bấm “Liên kết tài khoản” và nhập `tenant@gmail.com`, sau đó lập hợp đồng
+  cho hồ sơ đó.
+- Admin chỉ quản lý tài khoản, không quản lý khu trọ, phòng hoặc hợp đồng.
+
+**Cảnh báo:** mật khẩu trên được công khai trong README; chỉ dùng cho môi trường phát triển/demo/chấm
+điểm, không dùng cho môi trường thật. Không commit file `.env`.
+
+### Luồng cấp quyền cho tài khoản đăng ký
+
+- Mọi tài khoản công khai đăng ký luôn có vai trò `tenant`.
+- Admin đăng nhập vào `/register/admin-users.html` để quản lý danh sách người dùng.
+- Từ trang quản trị, admin đổi vai trò `tenant` thành `landlord` hoặc `manager`.
+- Chủ nhà hoặc quản lý có thể truy cập khách thuê và liên kết tài khoản user bằng email/SĐT.
+- Khách thuê đăng nhập sẽ nhìn thấy dữ liệu của chính mình và không bị đẩy vào trang quản lý.
+- Không có trạng thái "chờ duyệt"; vai trò chỉ được admin cấp trực tiếp.
 
 Vai trò: `admin`, `landlord` (chủ trọ), `manager` (người quản lý được giao khu trọ),
 `tenant` (người thuê). Chưa đăng nhập: 401. Đã đăng nhập nhưng sai quyền hoặc ngoài

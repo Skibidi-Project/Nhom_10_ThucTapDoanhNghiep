@@ -1,10 +1,10 @@
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Property, PropertyManager, Room, TenantProfile
+from app.models.boarding import Contract, Invoice, Payment, Property, PropertyManager, Room, TenantProfile
 from app.models.user import User
 from app.schemas.boarding import ContractCreate
 from app.services.access_scope import assert_can_operate, get_contract, get_room, get_tenant, property_of_room
@@ -154,6 +154,8 @@ def update_deposit(db: Session, user: User, contract_id: int, data) -> dict:
     contract = get_contract(db, contract_id)
     if not _visible(db, user, contract):
         raise HTTPException(status_code=403, detail="Kh\u00f4ng c\u00f3 quy\u1ec1n c\u1eadp nh\u1eadt h\u1ee3p \u0111\u1ed3ng n\u00e0y.")
+    if data.status in {"returned", "deducted"}:
+        raise HTTPException(status_code=409, detail="Quyết toán cọc chưa được mở trên dữ liệu thật; công nợ phải được thanh toán riêng.")
     _sync_lifecycle(db, contract)
     if contract.status == "expired":
         raise HTTPException(status_code=409, detail="H\u1ee3p \u0111\u1ed3ng \u0111\u00e3 h\u1ebft h\u1ea1n v\u00e0 kh\u00f4ng th\u1ec3 s\u1eeda ti\u1ec1n c\u1ecdc.")
@@ -175,13 +177,25 @@ def liquidate_contract(db: Session, user: User, contract_id: int) -> dict:
     contract = get_contract(db, contract_id)
     if not _visible(db, user, contract):
         raise HTTPException(status_code=403, detail="Không có quyền thanh lý hợp đồng này.")
-    _sync_lifecycle(db, contract)
-    if contract.status != "pending_liquidation":
-        raise HTTPException(status_code=409, detail="Hợp đồng chưa ở trạng thái chờ thanh lý.")
-    if contract.deposit_status == "unpaid" and contract.deposit > 0:
-        raise HTTPException(status_code=409, detail="Cần ghi nhận tình trạng tiền cọc trước khi hoàn tất thanh lý.")
-    contract.status = "expired"
+    raise HTTPException(status_code=409, detail="Chưa thể xác nhận: quy tắc hư hỏng, hoàn cọc và công nợ chưa được phê duyệt.")
+
+
+def liquidation_preview(db: Session, user: User, contract_id: int) -> dict:
+    contract = get_contract(db, contract_id)
+    if not _visible(db, user, contract):
+        raise HTTPException(status_code=403, detail="Không có quyền xem hợp đồng này.")
     room = get_room(db, contract.room_id)
-    room.status = "available"
-    save(db, contract, room)
-    return _contract_payload(contract, room, property_of_room(db, room), get_tenant(db, contract.tenant_id))
+    rows = []
+    for invoice in db.scalars(select(Invoice).where(Invoice.contract_id == contract.id).order_by(Invoice.id)):
+        paid = db.scalar(select(func.coalesce(func.sum(Payment.amount), 0)).where(Payment.invoice_id == invoice.id))
+        rows.append({"id": invoice.id, "period": invoice.period, "total": invoice.total_amount, "paid": int(paid), "balance": invoice.total_amount - int(paid)})
+    from app.services import settlement_trial
+    trial = settlement_trial.allowed(db)
+    state = settlement_trial.snapshot(db, contract_id) if trial else {'settlement': None, 'damages': []}
+    damages = sum(item['amount'] for item in state['damages'] if item['confirmed_by'] is not None)
+    reference_date = state['settlement']['handover_date'] if state['settlement'] else date.today()
+    gaps = settlement_trial.final_period_gaps(db, contract, reference_date, rows) if trial else []
+    evidence = settlement_trial.final_invoice_evidence_is_complete(db, contract, state['settlement']) if trial and state['settlement'] and not gaps else False
+    meter_state = state['settlement'] or ({'handover_date':state['meter_handover']['handover_at'].date()} if state.get('meter_handover') else None)
+    meter_evidence = settlement_trial.final_meter_handover_is_verified(db,contract,meter_state) if trial and meter_state else False
+    return {**_contract_payload(contract, room, property_of_room(db, room), get_tenant(db, contract.tenant_id)), "invoices": rows, "outstanding": sum(row["balance"] for row in rows), 'trial_enabled': trial, **state, 'final_period_gaps': gaps, 'final_evidence_complete': evidence, 'final_meter_complete': meter_evidence, 'estimated_refund': max(0, contract.deposit - damages), 'damage_shortfall': max(0, damages - contract.deposit)}

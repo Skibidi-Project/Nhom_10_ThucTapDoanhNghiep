@@ -11,7 +11,10 @@ TOKEN_HOURS = 24
 
 
 def _secret() -> str:
-    return os.getenv("JWT_SECRET", "dev-change-me")
+    secret = os.getenv("JWT_SECRET", "")
+    if len(secret.encode("utf-8")) < 32:
+        raise RuntimeError("JWT_SECRET phải được đặt qua biến môi trường và có ít nhất 32 byte.")
+    return secret
 
 
 def create_access_token(user_id: int) -> str:

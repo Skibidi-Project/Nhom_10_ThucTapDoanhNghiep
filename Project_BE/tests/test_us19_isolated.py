@@ -14,11 +14,100 @@ from app.models.boarding import Property, Room, TenantProfile, Contract
 from app.core.security import create_access_token
 from app.main import app as application
 
+def test_invoice_snapshot_keeps_original_prices_and_rbac(env):
+    c,h,tenant,rid,pid,cid=env;period=date.today().strftime('%Y-%m')
+    for kind,value in [('electricity',5),('water',3)]:
+        assert c.post(f'/api/rooms/{rid}/readings',headers=h,json={'utility_type':kind,'period':period,'previous_reading':0,'current_reading':value}).status_code==201
+    bill=c.post(f'/api/contracts/{cid}/invoices',headers=h,json={'period':period})
+    assert bill.status_code==201,bill.text
+    url=f'/api/invoices/{bill.json()["id"]}/snapshot'
+    snapshot=c.get(url,headers=h);assert snapshot.status_code==200
+    doc=snapshot.json()['document'];assert snapshot.json()['status']=='complete'
+    assert doc['total_amount']==210 and sum(x['amount'] for x in doc['lines'])==210
+    assert {x['code']:x['unit_price'] for x in doc['lines']}=={'rent':100,'electricity':10,'water':20}
+    dep=application.dependency_overrides[get_db]();db=next(dep)
+    try:
+        prop=db.get(Property,pid);prop.electricity_unit_price=999;db.commit()
+        outsider=User(full_name='Other',email='outsider-snapshot@example.com',role='landlord',password_hash='x');db.add(outsider);db.commit()
+        other={'Authorization':'Bearer '+create_access_token(outsider.id)}
+    finally:dep.close()
+    assert c.get(url,headers=h).json()['document']==doc
+    assert c.get(url,headers=other).status_code==403
+
+def test_legacy_invoice_needs_review_but_payment_works(env):
+    from app.models.boarding import Invoice
+    c,h,_,_,_,cid=env;dep=application.dependency_overrides[get_db]();db=next(dep)
+    try:
+        invoice=Invoice(contract_id=cid,period='2025-01',rent_amount=100,utility_amount=0,total_amount=100,status='unpaid');db.add(invoice);db.commit();invoice_id=invoice.id
+    finally:dep.close()
+    assert c.get(f'/api/invoices/{invoice_id}/snapshot',headers=h).json()['status']=='manual_review_required'
+    assert c.post(f'/api/invoices/{invoice_id}/payments',headers=h,json={'amount':100,'method':'cash'}).status_code==201
+
+def test_invoice_snapshot_failure_rolls_back_invoice(env):
+    from app.db.invoice_snapshot import invoice_snapshot
+    from app.models.boarding import Invoice, InvoiceMonth
+    c,h,_,_,_,cid=env;dep=application.dependency_overrides[get_db]();db=next(dep)
+    try: invoice_snapshot.drop(db.get_bind())
+    finally:dep.close()
+    result=c.post(f'/api/contracts/{cid}/invoices',headers=h,json={'period':date.today().strftime('%Y-%m')})
+    assert result.status_code==503
+    dep=application.dependency_overrides[get_db]();db=next(dep)
+    try: assert db.query(Invoice).count()==0 and db.query(InvoiceMonth).count()==0
+    finally:dep.close()
+
+def test_jwt_secret_required(monkeypatch):
+    from app.core.security import create_access_token
+    monkeypatch.delenv('JWT_SECRET', raising=False)
+    with pytest.raises(RuntimeError): create_access_token(1)
+    monkeypatch.setenv('JWT_SECRET', 'short')
+    with pytest.raises(RuntimeError): create_access_token(1)
+
+def test_us26_expense_scope_and_crud(env):
+    c,owner,tenant,rid,pid,_=env
+    dep=application.dependency_overrides[get_db]();db=next(dep)
+    try:
+        other=User(full_name='Other',email='other-expense@example.com',role='landlord',password_hash='x')
+        db.add(other);db.commit();outsider={'Authorization':'Bearer '+create_access_token(other.id)}
+    finally: dep.close()
+    data={'property_id':pid,'room_id':rid,'category':'repair','description':'Sửa điện','amount':100,'expense_date':date.today().isoformat()}
+    assert c.post('/api/expenses',headers=tenant,json=data).status_code==403
+    assert c.post('/api/expenses',headers=outsider,json=data).status_code==403
+    assert c.post('/api/expenses',headers=owner,json={**data,'amount':-1}).status_code==422
+    result=c.post('/api/expenses',headers=owner,json=data);assert result.status_code==201,result.text
+    expense_id=result.json()['id'];url=f'/api/expenses/{expense_id}'
+    assert c.get(url,headers=outsider).status_code==403
+    assert c.put(url,headers=owner,json={'amount':150}).status_code==200
+    summary=c.get('/api/expenses/summary',headers=owner).json();assert summary['count']==1 and summary['total_amount']==150
+    assert c.get('/api/expenses',headers=owner).json()['total']==1
+    assert c.delete(url,headers=outsider).status_code==403
+    assert c.delete(url,headers=owner).status_code==204
+
+def test_us24_payment_scope_and_history(env):
+    c,h,tenant,_,_,cid=env
+    dep=application.dependency_overrides[get_db](); db=next(dep)
+    try:
+        other=User(full_name='Other landlord',email='other-payment@example.com',role='landlord',password_hash='x')
+        db.add(other);db.commit()
+        outsider={'Authorization':'Bearer '+create_access_token(other.id)}
+    finally:
+        dep.close()
+    bill=c.post(f'/api/contracts/{cid}/invoices',headers=h,json={'period':date.today().strftime('%Y-%m')})
+    assert bill.status_code==201
+    payment_url=f'/api/invoices/{bill.json()["id"]}/payments'
+    assert c.post(payment_url,headers=outsider,json={'amount':100,'method':'cash'}).status_code==403
+    assert c.post(payment_url,headers=tenant,json={'amount':100,'method':'cash'}).status_code==403
+    paid=c.post(payment_url,headers=h,json={'amount':100,'method':'bank_transfer','note':'demo'})
+    assert paid.status_code==201 and paid.json()['remaining_amount']==0
+    history=c.get(payment_url,headers=h)
+    assert history.status_code==200 and len(history.json())==1 and history.json()[0]['note']=='demo'
+    assert c.get(payment_url,headers=outsider).status_code==403
+
 @pytest.fixture
 def env():
     engine=create_engine('sqlite://',connect_args={'check_same_thread':False},poolclass=StaticPool)
     assert engine.url.database in (None, '', ':memory:')
-    Base.metadata.create_all(engine); reading_revision.create(engine)
+    from app.db.invoice_snapshot import invoice_snapshot
+    Base.metadata.create_all(engine); reading_revision.create(engine); invoice_snapshot.create(engine)
     Session=sessionmaker(engine,expire_on_commit=False)
     with Session.begin() as db:
         user=User(full_name='Owner',email='owner@example.com',role='landlord',password_hash='x');tenantuser=User(full_name='Tenant',email='tenant@example.com',role='tenant',password_hash='x');db.add_all([user,tenantuser]);db.flush()

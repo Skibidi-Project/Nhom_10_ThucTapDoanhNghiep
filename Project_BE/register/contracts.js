@@ -169,11 +169,105 @@ async function confirmDepositReceived(contract) {
 }
 
 async function requestLiquidation(contract) {
-    if (!window.confirm(`Ho\u00e0n t\u1ea5t thanh l\u00fd h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number}? Ph\u00f2ng s\u1ebd \u0111\u01b0\u1ee3c chuy\u1ec3n v\u1ec1 tr\u1ea1ng th\u00e1i tr\u1ed1ng.`)) return;
     try {
-        await apiRequest(`/contracts/${contract.id}/liquidate`, {method: "POST"});
-        showNotice("\u0110\u00e3 ho\u00e0n t\u1ea5t thanh l\u00fd h\u1ee3p \u0111\u1ed3ng.", "success");
-        await Promise.all([loadContracts(), loadRoomsAndTenants()]);
+        const data = await apiRequest(`/contracts/${contract.id}/liquidation-preview`);
+        document.getElementById('liquidationSummary').textContent = `${data.property_name} · Phòng ${data.room_number} · ${data.tenant_name} · ${data.start_date} – ${data.end_date}`;
+        document.getElementById('liquidationDeposit').textContent = formatMoney(data.deposit);
+        document.getElementById('liquidationDebt').textContent = formatMoney(data.outstanding);
+        document.getElementById('liquidationDate').value = data.settlement?.handover_date || new Date().toLocaleDateString('en-CA');
+        document.getElementById('liquidationReason').value = data.settlement?.reason || '';
+        const invoiceList = document.getElementById('liquidationInvoices'); invoiceList.replaceChildren();
+        if (!data.invoices.length) invoiceList.textContent = 'Chưa có hóa đơn.';
+        for (const invoice of data.invoices) {
+            const reviewed=(data.invoice_reviews || []).some(r=>r.invoice_id===invoice.id);
+            const row=document.createElement('div'); row.textContent=`${invoice.period}: ${formatMoney(invoice.balance)} còn nợ${reviewed ? ' · Đã đối soát' : ''} `;
+            const show=document.createElement('button'); show.type='button'; show.className='button button-light'; show.textContent='Xem chứng từ';
+            show.onclick=async () => {
+                try {
+                    const evidence=await apiRequest(`/invoices/${invoice.id}/snapshot`);
+                    const details=document.createElement('pre'); details.style.whiteSpace='pre-wrap'; details.textContent=JSON.stringify(evidence.document || {status:evidence.status},null,2); row.append(details); show.disabled=true;
+                    if (data.trial_enabled && evidence.status==='complete' && !(data.invoice_reviews || []).some(r=>r.invoice_id===invoice.id)) {
+                        const approve=document.createElement('button'); approve.type='button'; approve.className='button button-light'; approve.textContent='Xác nhận đối soát';
+                        approve.onclick=async () => { approve.disabled=true; try { await apiRequest(`/contracts/${contract.id}/liquidation-invoices/${invoice.id}/review`,{method:'POST'}); await refresh(); } catch(error) { document.getElementById('liquidationError').textContent=error.message; approve.disabled=false; } };
+                        row.append(approve);
+                    }
+                } catch(error) { document.getElementById('liquidationError').textContent=error.message; }
+            };
+            row.append(show); invoiceList.append(row);
+        }
+        const damageList = document.getElementById('liquidationDamages'); damageList.replaceChildren();
+        document.getElementById('liquidationFinalPeriod').textContent = data.trial_enabled ? (data.final_period_gaps.length ? data.final_period_gaps.join(' · ') : data.final_evidence_complete ? 'Đã có chứng từ đối soát thử nghiệm.' : 'Chưa đủ chứng từ đối soát hoặc chưa rõ quy tắc kết thúc giữa kỳ.') : 'Quyết toán thực tế chưa được mở.';
+        document.getElementById('liquidationResult').textContent = data.trial_enabled ? `BẢN THỬ NGHIỆM — Hoàn cọc dự kiến: ${formatMoney(data.estimated_refund)}; nghĩa vụ hư hỏng riêng: ${formatMoney(data.damage_shortfall)}. ${data.settlement ? (data.settlement.refund_amount === null ? 'Đã bàn giao, chưa hoàn cọc.' : 'Đã ghi nhận quyết toán cọc.') : 'Chưa bàn giao.'}` : 'Quy tắc hư hỏng và hoàn cọc đang chờ duyệt.';
+        document.getElementById('liquidationError').textContent = '';
+        const dialog = document.getElementById('liquidationDialog');
+        const refresh = async () => { dialog.close(); await loadContracts(); await requestLiquidation(contract); };
+        const action = (id, disabled, url, payload) => {
+            const button = document.getElementById(id); button.disabled = disabled;
+            button.onclick = async () => {
+                button.disabled = true;
+                try { await apiRequest(url, {method:'POST', body:JSON.stringify(payload())}); await refresh(); }
+                catch (error) { document.getElementById('liquidationError').textContent = error.message; button.disabled = false; }
+            };
+        };
+        const base = `/contracts/${contract.id}`;
+        const approvalSection = document.getElementById('trialApprovalSection'); approvalSection.hidden = !data.trial_enabled;
+        if (data.trial_enabled) {
+            const approvalList = document.getElementById('trialApprovalList'); approvalList.replaceChildren();
+            const meterDate=document.getElementById('meterHandoverAt');
+            const localNow=new Date(); localNow.setMinutes(localNow.getMinutes()-localNow.getTimezoneOffset()); meterDate.value=localNow.toISOString().slice(0,16);
+            const initialReadings=await apiRequest(`/rooms/${contract.room_id}/readings`);
+            const initialVersions=new Map();
+            for (const r of initialReadings) initialVersions.set(r.id,(await apiRequest(`/rooms/${contract.room_id}/readings/${r.id}/version`)).version);
+            const readings=await apiRequest(`/rooms/${contract.room_id}/readings`);
+            const services=await apiRequest(`${base}/services`);
+            const chargeSelect=document.getElementById('approvalCharge'); chargeSelect.replaceChildren(new Option('Tiền phòng','rent'),new Option('Điện','electricity'),new Option('Nước','water'));
+            for (const service of services.filter(item=>!['electricity','water'].includes(item.service_code))) chargeSelect.add(new Option(service.service_name,`service:${service.service_code}`));
+            for (const [kind,elementId] of [['electricity','finalElectricity'],['water','finalWater']]) {
+                const select=document.getElementById(elementId); select.replaceChildren(); select.add(new Option('Chọn chỉ số',''));
+                for (const r of readings.filter(item=>item.utility_type===kind)) {
+                    const version=await apiRequest(`/rooms/${contract.room_id}/readings/${r.id}/version`);
+                    if (!initialVersions.has(r.id) || initialVersions.get(r.id)!==version.version) throw new Error('Chỉ số vừa thay đổi; hãy mở lại thanh lý.');
+                    const option=new Option(`${r.period}: ${r.previous_reading} → ${r.current_reading}`,r.id); option.dataset.version=version.version; select.add(option);
+                }
+            }
+            const currentDate = document.getElementById('liquidationDate').value;
+            document.getElementById('approvalStart').value = currentDate.slice(0, 8) + '01';
+            document.getElementById('approvalEnd').value = currentDate;
+            const requests = await apiRequest(`${base}/final-approvals`);
+            for (const request of requests) {
+                const section = document.createElement('section');
+                const summary = document.createElement('p'); summary.textContent = `#${request.id} · ${request.charge_type} · ${formatMoney(request.proposed_amount)} · ${request.status} · ${request.proposed_method} · ${request.reason} · ${request.reference || 'Không có căn cứ tham chiếu'}`; section.append(summary);
+                const details = document.createElement('details'); const label=document.createElement('summary'); label.textContent='Xem dữ liệu đầu vào (giá hiện tại chỉ để đối chiếu, không phải giá lịch sử)'; const content=document.createElement('pre'); content.style.whiteSpace='pre-wrap'; content.textContent=JSON.stringify(JSON.parse(request.inputs),null,2); details.append(label,content); section.append(details);
+                if (request.status === 'pending' && currentUser?.role === 'landlord') {
+                    const reason=document.createElement('input'); reason.placeholder='Lý do quyết định'; reason.maxLength=500; reason.setAttribute('aria-label','Lý do quyết định'); section.append(reason);
+                    for (const approved of [true,false]) {
+                        const button=document.createElement('button'); button.type='button'; button.className='button button-light'; button.textContent=approved ? 'Duyệt khoản này' : 'Từ chối khoản này';
+                        button.onclick=async () => { button.disabled=true; try { await apiRequest(`${base}/final-approvals/${request.id}/decision`,{method:'POST',body:JSON.stringify({approved,reason:reason.value})}); await refresh(); } catch(error) { document.getElementById('liquidationError').textContent=error.message;button.disabled=false; } }; section.append(button);
+                    }
+                }
+                approvalList.append(section);
+            }
+            action('approvalCreate',false,`${base}/final-approvals`,() => ({period_start:document.getElementById('approvalStart').value,period_end:document.getElementById('approvalEnd').value,charge_type:document.getElementById('approvalCharge').value,proposed_amount:document.getElementById('approvalAmount').value === '' ? null : Number(document.getElementById('approvalAmount').value),reason:document.getElementById('approvalReason').value,proposed_method:document.getElementById('approvalMethod').value,reference:document.getElementById('approvalReference').value || null}));
+            action('finalMeterButton',!!data.meter_handover,`${base}/final-meter-handover`,() => ({handover_at:meterDate.value,electricity_reading_id:Number(document.getElementById('finalElectricity').value),water_reading_id:Number(document.getElementById('finalWater').value),electricity_expected_version:Number(document.getElementById('finalElectricity').selectedOptions[0]?.dataset.version ?? -1),water_expected_version:Number(document.getElementById('finalWater').selectedOptions[0]?.dataset.version ?? -1)}));
+            document.getElementById('finalMeterButton').textContent = data.final_meter_complete ? 'Đã xác nhận chỉ số bàn giao' : 'Xác nhận chỉ số bàn giao';
+            action('finalInvoiceButton',currentUser?.role !== 'landlord',`${base}/final-invoice`,() => ({}));
+        }
+        if (!data.damages.length) damageList.textContent = 'Chưa ghi hư hỏng.';
+        for (const damage of data.damages) {
+            const row = document.createElement('p');
+            row.textContent = `${damage.description}: ${formatMoney(damage.amount)} (${damage.confirmed_by ? 'đã duyệt' : 'chưa duyệt'}) `;
+            if (!damage.confirmed_by && data.trial_enabled && data.settlement?.refund_amount == null) {
+                const confirm = document.createElement('button'); confirm.type = 'button'; confirm.className = 'button button-light'; confirm.textContent = 'Xác nhận hư hỏng';
+                confirm.onclick = async () => { confirm.disabled = true; try { await apiRequest(`${base}/liquidation-damages/${damage.id}/confirm`, {method:'POST'}); await refresh(); } catch (error) { document.getElementById('liquidationError').textContent = error.message; confirm.disabled = false; } };
+                row.append(confirm);
+            }
+            damageList.append(row);
+        }
+        action('damageButton', !data.trial_enabled || data.settlement?.refund_amount != null, `${base}/liquidation-damages`, () => ({description:document.getElementById('damageDescription').value, amount:Number(document.getElementById('damageCost').value), confirmed:false}));
+        action('handoverButton', !data.trial_enabled || !!data.settlement, `${base}/liquidate`, () => ({actual_end_date:document.getElementById('liquidationDate').value,reason:document.getElementById('liquidationReason').value,confirmed:true}));
+        if (data.trial_enabled && !data.final_meter_complete) document.getElementById('liquidationFinalPeriod').textContent += ' Chưa xác nhận chỉ số bàn giao.';
+        action('refundButton', !data.trial_enabled || !data.settlement || data.settlement.refund_amount !== null || data.outstanding > 0 || data.final_period_gaps.length > 0 || !data.final_evidence_complete || !data.final_meter_complete || data.damages.some(d => !d.confirmed_by), `${base}/liquidation-refund`, () => ({confirmed:true,method:document.getElementById('refundMethod').value,reference:document.getElementById('refundReference').value || null}));
+        document.getElementById('liquidationDialog').showModal();
     } catch (error) {
         showNotice(error.message, "error");
     }
@@ -244,8 +338,9 @@ function renderContracts(items) {
             if (contract.deposit > 0 && !["returned", "deducted"].includes(contract.deposit_status)) {
                 actions.append(actionButton("Quy\u1ebft to\u00e1n c\u1ecdc", () => openDepositDialog(contract)));
             }
-            const depositReady = contract.deposit === 0 || contract.deposit_status !== "unpaid";
-            actions.append(actionButton("Ho\u00e0n t\u1ea5t thanh l\u00fd", () => requestLiquidation(contract), !depositReady));
+            actions.append(actionButton("Thanh lý hợp đồng", () => requestLiquidation(contract)));
+        } else if (contract.status === 'expired') {
+            actions.append(actionButton('Xem quyết toán', () => requestLiquidation(contract)));
         } else {
             actions.append(createElement("span", "muted-action", "\u0110\u00e3 ho\u00e0n t\u1ea5t"));
         }

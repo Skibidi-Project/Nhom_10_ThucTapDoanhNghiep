@@ -42,6 +42,9 @@ def set_service_price(
     if data.billing_unit not in allowed_units:
         raise HTTPException(status_code=422, detail="Đơn vị tính không phù hợp với dịch vụ.")
 
+    from app.services.trial_input_guard import touch_property_inputs
+    touch_property_inputs(db, property_id)
+
     prices = PropertyServicePrice.__table__
     changes = {"billing_unit": data.billing_unit.value, "unit_price": data.unit_price}
     values = {"property_id": property_id, "service_code": code.value, **changes}
@@ -57,6 +60,8 @@ def set_service_price(
 
 
 def clear_service_price(db: Session, property_id: int, code: ServiceCode) -> None:
+    from app.services.trial_input_guard import touch_property_inputs
+    touch_property_inputs(db, property_id)
     room_assignment = db.scalar(
         select(ServiceAssignment.id)
         .join(Room, Room.id == ServiceAssignment.room_id)

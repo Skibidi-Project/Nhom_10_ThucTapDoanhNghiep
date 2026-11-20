@@ -1,0 +1,40 @@
+"""Trial tables outside Base.metadata; never created by production startup."""
+from sqlalchemy import Column, Date, DateTime, Integer, MetaData, String, Table, Text, func
+
+metadata=MetaData()
+settlements=Table('us16_trial_settlements',metadata,
+    Column('contract_id',Integer,primary_key=True),Column('handover_date',Date,nullable=False),
+    Column('reason',String(500),nullable=False),Column('created_by',Integer,nullable=False),
+    Column('created_at',DateTime,nullable=False,server_default=func.current_timestamp()),
+    Column('refund_amount',Integer,nullable=True),Column('damage_shortfall',Integer,nullable=False,default=0),
+    Column('refunded_by',Integer,nullable=True),Column('refunded_at',DateTime,nullable=True),
+    Column('refund_method',String(20),nullable=True),Column('refund_reference',String(255),nullable=True))
+damages=Table('us16_trial_damages',metadata,
+    Column('id',Integer,primary_key=True,autoincrement=True),Column('contract_id',Integer,nullable=False),
+    Column('description',String(500),nullable=False),Column('amount',Integer,nullable=False),
+    Column('created_by',Integer,nullable=False),Column('confirmed_by',Integer,nullable=True),Column('confirmed_at',DateTime,nullable=True),
+    Column('created_at',DateTime,nullable=False,server_default=func.current_timestamp()))
+receivables=Table('us16_trial_receivables',metadata,
+    Column('contract_id',Integer,primary_key=True),Column('amount',Integer,nullable=False),
+    Column('status',String(20),nullable=False),Column('created_by',Integer,nullable=False),
+    Column('created_at',DateTime,nullable=False,server_default=func.current_timestamp()))
+invoice_reviews=Table('us16_trial_invoice_reviews',metadata,
+    Column('invoice_id',Integer,primary_key=True),Column('contract_id',Integer,nullable=False),
+    Column('snapshot_sha256',String(64),nullable=False),Column('reviewed_by',Integer,nullable=False),
+    Column('reviewed_at',DateTime,nullable=False,server_default=func.current_timestamp()))
+final_approvals=Table('us16_trial_final_approvals',metadata,
+    Column('id',Integer,primary_key=True,autoincrement=True),Column('contract_id',Integer,nullable=False),
+    Column('period',String(7),nullable=False),Column('period_start',Date,nullable=False),Column('period_end',Date,nullable=False),
+    Column('charge_type',String(40),nullable=False),Column('inputs',Text,nullable=False),Column('input_sha256',String(64),nullable=False),
+    Column('reason',String(500),nullable=False),Column('proposed_method',String(500),nullable=False),Column('proposed_amount',Integer,nullable=False),
+    Column('reference',String(500),nullable=True),Column('created_by',Integer,nullable=False),
+    Column('created_at',DateTime,nullable=False,server_default=func.current_timestamp()),Column('status',String(20),nullable=False),
+    Column('reviewed_by',Integer,nullable=True),Column('reviewed_at',DateTime,nullable=True),Column('decision_reason',String(500),nullable=True),Column('invoice_id',Integer,nullable=True))
+meter_handovers=Table('us16_trial_meter_handovers',metadata,
+    Column('contract_id',Integer,primary_key=True),Column('handover_at',DateTime,nullable=False),
+    Column('electricity_reading_id',Integer,nullable=False),Column('water_reading_id',Integer,nullable=False),
+    Column('electricity_version',Integer,nullable=False),Column('water_version',Integer,nullable=False),
+    Column('recorded_by',Integer,nullable=False),Column('confirmed_by',Integer,nullable=False),
+    Column('confirmed_at',DateTime,nullable=False,server_default=func.current_timestamp()))
+input_revisions=Table('us16_trial_input_revisions',metadata,
+    Column('property_id',Integer,primary_key=True),Column('version',Integer,nullable=False))

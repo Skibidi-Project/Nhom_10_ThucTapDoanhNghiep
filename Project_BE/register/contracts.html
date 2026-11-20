@@ -201,6 +201,36 @@
         </form>
     </dialog>
 
+    <dialog id="liquidationDialog" class="property-dialog">
+        <form method="dialog"><div class="dialog-heading"><h2>Thanh lý hợp đồng</h2><button class="close-btn" aria-label="Đóng">×</button></div>
+        <p id="liquidationSummary" class="deposit-summary"></p>
+        <div class="form-grid"><div class="form-group"><label>Tiền đặt cọc</label><p id="liquidationDeposit"></p></div><div class="form-group"><label>Công nợ</label><p id="liquidationDebt"></p></div>
+        <div class="form-group"><label for="liquidationDate">Ngày kết thúc thực tế</label><input type="date" id="liquidationDate"></div><div class="form-group"><label for="damageCost">Chi phí hư hỏng</label><input type="number" min="0" id="damageCost"></div><div class="form-group full-width"><label for="damageDescription">Mô tả hư hỏng</label><input id="damageDescription" maxlength="500"></div><div class="form-group full-width"><label for="liquidationReason">Lý do</label><textarea id="liquidationReason" maxlength="500"></textarea></div><div class="form-group"><label for="refundMethod">Phương thức hoàn cọc thử</label><select id="refundMethod"><option value="cash">Tiền mặt</option><option value="bank_transfer">Chuyển khoản</option></select></div><div class="form-group"><label for="refundReference">Mã tham chiếu</label><input id="refundReference" maxlength="255"></div></div>
+        <div id="liquidationInvoices"></div><p id="liquidationFinalPeriod"></p><div id="liquidationDamages"></div><p id="liquidationResult"></p><p id="liquidationError" role="alert"></p>
+        <section id="trialApprovalSection" hidden>
+            <h3>Yêu cầu duyệt cuối kỳ — thử nghiệm</h3>
+            <div class="form-grid">
+                <div class="form-group"><label for="meterHandoverAt">Thời điểm bàn giao</label><input id="meterHandoverAt" type="datetime-local"></div>
+                <div class="form-group"><label for="finalElectricity">Chỉ số điện US-19</label><select id="finalElectricity"></select></div>
+                <div class="form-group"><label for="finalWater">Chỉ số nước US-19</label><select id="finalWater"></select></div>
+            </div>
+            <button id="finalMeterButton" type="button" class="button button-light">Xác nhận chỉ số bàn giao</button>
+            <p>Chọn chỉ số đã ghi tại trang Quản lý phòng. Khoản phòng, điện, nước và từng dịch vụ cần được duyệt trước khi phát hành hóa đơn thử.</p>
+            <div class="form-grid">
+                <div class="form-group"><label for="approvalStart">Từ ngày</label><input id="approvalStart" type="date"></div>
+                <div class="form-group"><label for="approvalEnd">Đến ngày</label><input id="approvalEnd" type="date"></div>
+                <div class="form-group"><label for="approvalCharge">Khoản cần duyệt</label><select id="approvalCharge"><option value="rent">Tiền phòng</option><option value="electricity">Điện</option><option value="water">Nước</option></select></div>
+                <div class="form-group"><label for="approvalAmount">Số tiền đề xuất</label><input id="approvalAmount" type="number" min="0" step="1"></div>
+                <div class="form-group full-width"><label for="approvalReason">Lý do cần duyệt</label><input id="approvalReason" maxlength="500"></div>
+                <div class="form-group full-width"><label for="approvalMethod">Phương pháp đề xuất</label><input id="approvalMethod" maxlength="500"></div>
+                <div class="form-group full-width"><label for="approvalReference">Căn cứ tham chiếu</label><input id="approvalReference" maxlength="500"></div>
+            </div>
+            <button id="approvalCreate" type="button" class="button button-light">Tạo yêu cầu duyệt</button>
+            <button id="finalInvoiceButton" type="button" class="button button-primary">Phát hành hóa đơn cuối kỳ thử</button>
+            <div id="trialApprovalList"></div>
+        </section>
+        <div class="dialog-actions"><button class="button button-light">Đóng</button><button id="damageButton" type="button" class="button button-light" disabled>Ghi hư hỏng</button><button id="handoverButton" type="button" class="button button-primary" disabled>Xác nhận kết thúc thuê</button><button id="refundButton" type="button" class="button button-primary" disabled>Ghi nhận hoàn cọc</button></div></form>
+    </dialog>
     <script src="contracts.js"></script>
 </body>
 </html>
