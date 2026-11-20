@@ -1,6 +1,7 @@
 from app.models.building import Building, Floor
 from app.models.boarding import Contract, Invoice, Payment, Property, PropertyManager, Room, TenantProfile, UtilityReading
 from app.models.contract_extension import ContractExtension
+from app.models.expense import Expense
 from app.models.service_assignment import ServiceAssignment
 from app.models.user import User
 
@@ -18,4 +19,5 @@ __all__ = [
     "Payment",
     "ContractExtension",
     "ServiceAssignment",
+    "Expense",
 ]

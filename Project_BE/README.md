@@ -173,6 +173,35 @@ Chỉ thử đăng ký tài khoản khi đã xác nhận database là môi trư�
 
 Không tự đổi mật khẩu root, sửa MySQL Server hoặc xóa dữ liệu để xử lý lỗi.
 
+## US-26 - Quản lý chi phí vận hành phát sinh
+
+- Giao diện: mở `/register/expenses.html` sau khi đăng nhập bằng tài khoản chủ nhà hoặc quản lý.
+- `POST /api/expenses`: ghi nhận chi phí, body gồm `property_id`, `room_id` tùy chọn,
+  `category`, `description`, `vendor` tùy chọn, `amount`, `expense_date`.
+- `GET /api/expenses`: lọc theo `property_id`, `room_id`, `category`, `date_from`,
+  `date_to`, `search`, `page`, `page_size`; trả tổng tiền của toàn bộ kết quả.
+- `GET /api/expenses/summary`: tổng tiền, số khoản và tổng theo danh mục.
+- `GET /api/expenses/{id}`, `PUT /api/expenses/{id}`, `DELETE /api/expenses/{id}`:
+  xem, sửa, xóa khoản chi.
+
+| Endpoint chi phí | Mô tả |
+|---|---|
+| `POST /api/expenses` | Tạo khoản chi phát sinh |
+| `GET /api/expenses` | Lọc, tìm kiếm, phân trang và tổng tiền toàn bộ kết quả |
+| `GET /api/expenses/summary` | Tổng hợp theo `property_id`, `date_from`, `date_to` |
+| `GET /api/expenses/{id}` | Xem chi tiết khoản chi |
+| `PUT /api/expenses/{id}` | Sửa khoản chi; không cho đổi `property_id` |
+| `DELETE /api/expenses/{id}` | Xóa cứng khoản chi |
+
+- Danh mục cố định: `repair`, `supplies`, `operations`, `cleaning`, `other`.
+- Chủ nhà chỉ thao tác khu trọ mình sở hữu; quản lý chỉ thao tác khu trọ được gán.
+  Tenant/admin nhận 403; chưa đăng nhập nhận 401.
+- Ngày chi không được ở tương lai; phòng bắt buộc thuộc đúng khu trọ đã chọn.
+- Không thể xóa khu trọ hoặc phòng đã tồn tại chi phí; khu trọ/phòng chưa có chi
+  phí vẫn tuân theo kiểm tra dữ liệu cũ.
+- Bảng `expenses` được `Base.metadata.create_all()` tạo tự động khi khởi động.
+- Seed demo tùy chọn: chạy `seed_demo_expenses.sql` thủ công, không tự chạy lên DB.
+
 
 ## US-07 - Quản lý tòa nhà và tầng
 

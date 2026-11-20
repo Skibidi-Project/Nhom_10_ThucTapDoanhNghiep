@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.rbac import Role
 from app.models.boarding import Contract, Property, PropertyManager, PropertyServicePrice, Room, TenantProfile, UtilityReading
 from app.models.building import Building
+from app.models.expense import Expense
 from app.models.user import User
 from app.schemas.boarding import (
     ManagerAssign,
@@ -66,6 +67,9 @@ def update_property(db: Session, user: User, property_id: int, data: PropertyUpd
 def delete_property(db: Session, user: User, property_id: int) -> None:
     prop = get_property(db, property_id)
     assert_can_manage(user, prop)
+    has_expense = db.scalar(select(Expense.id).where(Expense.property_id == prop.id))
+    if has_expense is not None:
+        raise HTTPException(status_code=409, detail="Không thể xóa khu trọ đã có chi phí được ghi nhận.")
     has_room = db.scalar(select(Room.id).where(Room.property_id == prop.id))
     if has_room is not None:
         raise HTTPException(status_code=409, detail="Không thể xóa khu trọ còn phòng.")
@@ -233,6 +237,9 @@ def read_room(db: Session, user: User, room_id: int) -> RoomDetailResponse:
 def delete_room(db: Session, user: User, room_id: int) -> None:
     room = get_room(db, room_id)
     assert_can_operate(db, user, property_of_room(db, room))
+    has_expense = db.scalar(select(Expense.id).where(Expense.room_id == room.id))
+    if has_expense is not None:
+        raise HTTPException(status_code=409, detail="Phòng đã có chi phí ghi nhận, không thể xóa.")
     active = db.scalar(
         select(Contract.id).where(Contract.room_id == room.id, Contract.status == "active")
     )
