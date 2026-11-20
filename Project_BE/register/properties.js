@@ -168,6 +168,14 @@ async function connect(token) {
     if (!accessToken) throw new Error("Vui lòng nhập Access Token.");
 
     const user = await apiRequest("/users/me");
+    if (user?.role === "admin") {
+        sessionStorage.setItem("us05_access_token", accessToken);
+        window.location.replace("admin-users.html");
+        return;
+    }
+    if (user?.role === "tenant") {
+        throw new Error("Tài khoản khách thuê không có quyền quản lý cơ sở. Vui lòng đăng nhập bằng tài khoản chủ nhà hoặc quản lý.");
+    }
     if (!user || !["landlord", "manager"].includes(user.role)) {
         throw new Error("Tài khoản hiện tại không có quyền truy cập chức năng quản lý cơ sở.");
     }

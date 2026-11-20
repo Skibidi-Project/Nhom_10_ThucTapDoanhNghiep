@@ -79,8 +79,12 @@ form.addEventListener("submit", async event => {
         sessionStorage.setItem("us05_access_token", data.access_token);
         const role = data.user.role;
         password.value = "";
-
-        if (role === "tenant") {
+        const destinations = {
+            admin: "admin-users.html",
+            landlord: "properties.html",
+            manager: "properties.html"
+        };
+        if (!destinations[role]) {
             showMessage(
                 "Đăng nhập thành công. Tài khoản của bạn đang là khách thuê. Nếu bạn là chủ nhà hoặc quản lý, hãy liên hệ quản trị viên để được cấp quyền, rồi đăng nhập lại.",
                 "success"
@@ -88,18 +92,8 @@ form.addEventListener("submit", async event => {
             return;
         }
 
-        if (role === "admin") {
-            showMessage(data.message, "success");
-            setTimeout(() => {
-                window.location.assign("admin-users.html");
-            }, 800);
-            return;
-        }
-
         showMessage(data.message, "success");
-        setTimeout(() => {
-            window.location.assign("properties.html");
-        }, 800);
+        setTimeout(() => window.location.assign(destinations[role]), 800);
     } catch (error) {
         showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : error.message, "failure");
     } finally {
