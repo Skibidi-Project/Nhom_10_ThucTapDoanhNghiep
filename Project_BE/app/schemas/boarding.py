@@ -10,7 +10,6 @@ MAX_START_DATE_PAST_YEARS = 1
 MAX_DEPOSIT_MONTHS = 3
 ALLOWED_PAYMENT_CYCLES = {1, 2, 3, 6, 12}
 
-
 class PropertyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=150)
     address: str = Field(min_length=1, max_length=255)
@@ -283,13 +282,32 @@ class UtilityType(str, Enum):
 class ReadingCreate(BaseModel):
     utility_type: UtilityType
     period: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
-    previous_reading: int = Field(ge=0)
-    current_reading: int = Field(ge=0)
+    previous_reading: int = Field(strict=True, ge=0, le=2_147_483_647)
+    current_reading: int = Field(strict=True, ge=0, le=2_147_483_647)
+
+    @field_validator("period")
+    @classmethod
+    def valid_period(cls, value):
+        date.fromisoformat(value + "-01")
+        return value
 
     @model_validator(mode="after")
     def check_index(self):
         if self.current_reading < self.previous_reading:
             raise ValueError("Chỉ số hiện tại phải lớn hơn hoặc bằng chỉ số kỳ trước.")
+        return self
+
+
+class ReadingUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    previous_reading: int = Field(strict=True, ge=0, le=2_147_483_647)
+    current_reading: int = Field(strict=True, ge=0, le=2_147_483_647)
+    expected_version: int = Field(strict=True, ge=0, le=2_147_483_647)
+
+    @model_validator(mode="after")
+    def check_index(self):
+        if self.current_reading < self.previous_reading:
+            raise ValueError("Chỉ số mới phải lớn hơn hoặc bằng chỉ số cũ.")
         return self
 
 

@@ -5,8 +5,9 @@ from app.core.deps import block_privilege_override, get_current_user, require_pe
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import InvoiceResponse, PaymentCreate, PaymentResponse, ReadingCreate, ReadingResponse
+from app.schemas.boarding import InvoiceResponse, PaymentCreate, PaymentResponse, ReadingCreate, ReadingResponse, ReadingUpdate
 from app.services import billing_service
+from app.services.db_util import execute_write
 
 invoice_router = APIRouter(
     prefix="/api/invoices",
@@ -44,7 +45,7 @@ def create_payment(
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.INVOICE_MANAGE)),
 ):
-    return billing_service.record_payment(db, user, invoice_id, data)
+    return execute_write(db, billing_service.record_payment, user, invoice_id, data)
 
 
 @reading_router.get("/{room_id}/readings", response_model=list[ReadingResponse])
@@ -63,4 +64,14 @@ def create_reading(
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.UTILITY_MANAGE)),
 ):
-    return billing_service.create_reading(db, user, room_id, data)
+    return execute_write(db, billing_service.create_reading, user, room_id, data)
+
+
+@reading_router.get("/{room_id}/readings/{reading_id}/version")
+def get_reading_version(room_id: int, reading_id: int, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.UTILITY_MANAGE))):
+    return {"version": billing_service.reading_version(db, user, room_id, reading_id)}
+
+
+@reading_router.put("/{room_id}/readings/{reading_id}", response_model=ReadingResponse)
+def update_reading(room_id: int, reading_id: int, data: ReadingUpdate, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.UTILITY_MANAGE))):
+    return execute_write(db, billing_service.update_reading, user, room_id, reading_id, data)

@@ -2,10 +2,12 @@ import calendar
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, insert, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Invoice, InvoiceMonth, Payment, TenantProfile, UtilityReading
+from app.models.boarding import Contract, Invoice, InvoiceMonth, Payment, Room, TenantProfile, UtilityReading
+from app.db.reading_revision import reading_revision
 from app.models.user import User
 from app.schemas.boarding import InvoiceCreate, PaymentCreate, ReadingCreate
 from app.services.access_scope import (
@@ -27,10 +29,25 @@ PRICES = {
 }
 
 
+def _lock_room(db: Session, room_id: int) -> Room:
+    room = db.scalar(select(Room).where(Room.id == room_id).with_for_update())
+    if room is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy phòng.")
+    return room
+
+
+def _invoice_for_room_period(db: Session, room_id: int, period: str) -> bool:
+    return db.scalar(select(Invoice.id).join(Contract).where(
+        Contract.room_id == room_id, Invoice.period == period
+    ).limit(1).with_for_update()) is not None
+
+
 def create_reading(db: Session, user: User, room_id: int, data: ReadingCreate) -> UtilityReading:
-    room = get_room(db, room_id)
+    room = _lock_room(db, room_id)
     prop = property_of_room(db, room)
     assert_can_operate(db, user, prop)
+    if _invoice_for_room_period(db, room.id, data.period):
+        raise HTTPException(status_code=409, detail="Kỳ này đã có hóa đơn; không thể ghi chỉ số.")
     exists = db.scalar(select(UtilityReading).where(
         UtilityReading.room_id == room.id,
         UtilityReading.utility_type == data.utility_type.value,
@@ -56,10 +73,54 @@ def list_readings(db: Session, user: User, room_id: int) -> list[UtilityReading]
     ))
 
 
+def reading_version(db: Session, user: User, room_id: int, reading_id: int) -> int:
+    room = get_room(db, room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    row = db.scalar(select(UtilityReading).where(UtilityReading.id == reading_id, UtilityReading.room_id == room_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy chỉ số của phòng.")
+    try:
+        version = db.scalar(select(reading_revision.c.version).where(reading_revision.c.reading_id == reading_id))
+        return version if version is not None else 0
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Chưa áp dụng migration phiên bản chỉ số.") from exc
+
+
+def update_reading(db: Session, user: User, room_id: int, reading_id: int, data):
+    try:
+        room = _lock_room(db, room_id)
+        assert_can_operate(db, user, property_of_room(db, room))
+        row = db.scalar(select(UtilityReading).where(UtilityReading.id == reading_id, UtilityReading.room_id == room_id).with_for_update())
+        if row is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy chỉ số của phòng.")
+        if row.utility_type not in {"electricity", "water"}:
+            raise HTTPException(status_code=422, detail="Chỉ hỗ trợ cập nhật chỉ số điện hoặc nước.")
+        if _invoice_for_room_period(db, room.id, row.period):
+            raise HTTPException(status_code=409, detail="Kỳ này đã có hóa đơn; không thể sửa chỉ số.")
+        version = db.scalar(select(reading_revision.c.version).where(reading_revision.c.reading_id == reading_id).with_for_update())
+        if (version or 0) != data.expected_version:
+            raise HTTPException(status_code=409, detail="Chỉ số đã thay đổi; vui lòng tải lại.")
+        row.previous_reading = data.previous_reading
+        row.current_reading = data.current_reading
+        if version is None:
+            db.execute(insert(reading_revision).values(reading_id=reading_id, version=1))
+        else:
+            db.execute(update(reading_revision).where(reading_revision.c.reading_id == reading_id).values(version=version + 1))
+        save(db, row)
+        return row
+    except HTTPException:
+        db.rollback()
+        raise
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(status_code=503, detail="Không thể cập nhật; kiểm tra migration chỉ số.") from exc
+
+
 def _utility_amount(db: Session, contract: Contract, period: str, prop) -> int:
     readings = {row.utility_type: row for row in db.scalars(select(UtilityReading).where(
         UtilityReading.room_id == contract.room_id, UtilityReading.period == period
-    ))}
+    ).with_for_update())}
     services = get_effective_services(db, contract)
     total = 0
     if not services:
@@ -78,12 +139,17 @@ def _utility_amount(db: Session, contract: Contract, period: str, prop) -> int:
                 raise HTTPException(status_code=409, detail=f"Thiếu chỉ số {service.service_name} kỳ {period}.")
             quantity = reading.current_reading - reading.previous_reading
         total += quantity * service.effective_price
+    assigned = {service.service_code.value for service in services}
+    for code in ("electricity", "water"):
+        if code not in assigned and (reading := readings.get(code)) is not None:
+            total += (reading.current_reading - reading.previous_reading) * getattr(prop, PRICES[code])
     return total
 
 
 def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreate) -> Invoice:
     contract = get_contract(db, contract_id)
-    room = get_room(db, contract.room_id)
+    room = _lock_room(db, contract.room_id)
+    contract = db.scalar(select(Contract).where(Contract.id == contract_id).with_for_update().execution_options(populate_existing=True))
     prop = property_of_room(db, room)
     assert_can_operate(db, user, prop)
     if contract.status != "active":
@@ -93,8 +159,7 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
     last = date(year, month, calendar.monthrange(year, month)[1])
     if contract.start_date > last or contract.end_date < first:
         raise HTTPException(status_code=409, detail="Hợp đồng không có hiệu lực trong tháng này.")
-    exists = db.scalar(select(Invoice).join(Contract).where(Contract.room_id == room.id, Invoice.period == data.period))
-    if exists is not None:
+    if _invoice_for_room_period(db, room.id, data.period):
         raise HTTPException(status_code=409, detail="Hóa đơn của kỳ này đã tồn tại.")
     utility_amount = _utility_amount(db, contract, data.period, prop)
     if contract.monthly_rent + utility_amount > 2_147_483_647:
@@ -126,9 +191,13 @@ def _paid_amount(db: Session, invoice_id: int) -> int:
 
 def record_payment(db: Session, user: User, invoice_id: int, data: PaymentCreate) -> Payment:
     invoice = read_invoice(db, user, invoice_id)
+    contract = db.get(Contract, invoice.contract_id)
+    _lock_room(db, contract.room_id)
+    invoice = db.scalar(select(Invoice).where(Invoice.id == invoice_id).with_for_update().execution_options(populate_existing=True))
     if invoice.status == "paid":
         raise HTTPException(status_code=409, detail="Hóa đơn đã được thanh toán đủ.")
-    remaining = invoice.total_amount - _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    remaining = invoice.total_amount - sum(payment.amount for payment in payments)
     if data.amount > remaining:
         raise HTTPException(status_code=409, detail="Số tiền thanh toán vượt quá số còn nợ.")
     payment = Payment(invoice_id=invoice.id, amount=data.amount, method=data.method.strip(), recorded_by=user.id)

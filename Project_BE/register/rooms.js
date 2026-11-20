@@ -119,6 +119,9 @@ function renderRows(items) {
         appendAction(actions, "Dịch vụ", () => {
             window.location.href = `services.html?room_id=${encodeURIComponent(room.id)}`;
         });
+        appendAction(actions, "Ghi chỉ số điện/nước", () => {
+            window.location.href = `readings.html?room_id=${encodeURIComponent(room.id)}`;
+        });
         if (room.status !== "occupied") {
             appendAction(actions, "Sửa", () => openEditDialog(room));
             appendAction(actions, "Xóa", () => deleteRoom(room), "danger");
