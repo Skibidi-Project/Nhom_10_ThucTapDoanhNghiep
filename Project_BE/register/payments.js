@@ -22,6 +22,7 @@ const paymentPreview = document.getElementById("paymentPreview");
 const savePaymentBtn = document.getElementById("savePaymentBtn");
 const paymentFormError = document.getElementById("paymentFormError");
 const historyDialog = document.getElementById("historyDialog");
+const contractId = new URLSearchParams(window.location.search).get("contract_id");
 
 let accessToken = sessionStorage.getItem("us05_access_token") || "";
 let currentUser = null;
@@ -120,7 +121,14 @@ async function loadInvoices() {
     paymentsEmpty.hidden = true;
     paymentsTableContainer.hidden = true;
     try {
+        if (contractId !== null && (!/^[1-9]\d*$/.test(contractId) || !Number.isSafeInteger(Number(contractId)))) {
+            throw new Error("Mã hợp đồng không hợp lệ.");
+        }
         const params = new URLSearchParams();
+        if (contractId !== null) {
+            params.set("contract_id", contractId);
+            document.getElementById("contractScope").hidden = false;
+        }
         if (statusFilter.value) params.set("status", statusFilter.value);
         if (periodFilter.value) params.set("period", periodFilter.value);
         const query = params.toString();

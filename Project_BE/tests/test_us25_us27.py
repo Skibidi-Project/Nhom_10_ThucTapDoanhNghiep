@@ -103,3 +103,20 @@ def test_due_date_commit_failure_rolls_back(env, monkeypatch):
     dep=app.dependency_overrides[get_db](); db=next(dep)
     assert not db.scalars(select(InvoiceDueDateHistory)).all()
     dep.close()
+
+
+def test_invoice_contract_filter_cannot_expose_another_property(env):
+    from sqlalchemy import select
+    c,(owner,other,*_),iid,_=env
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    other_user=db.scalar(select(User).where(User.email=='other@example.com'))
+    room=db.scalar(select(Room).where(Room.room_number=='4'))
+    tenant=TenantProfile(landlord_id=other_user.id,created_by=other_user.id,full_name='Other',phone='0900000001',id_number='123456789013')
+    db.add(tenant);db.flush()
+    contract=Contract(room_id=room.id,tenant_id=tenant.id,created_by=other_user.id,start_date=date.today(),end_date=date.today()+timedelta(days=30),monthly_rent=100,deposit=0,status='active')
+    db.add(contract);db.flush()
+    db.add(Invoice(contract_id=contract.id,period='2020-01',rent_amount=100,utility_amount=0,total_amount=100,status='unpaid'));db.commit();other_contract=contract.id
+    dep.close()
+    assert c.get(f'/api/invoices?contract_id={other_contract}',headers=owner).json()==[]
+    result=c.get(f'/api/invoices?contract_id={other_contract}',headers=other).json()
+    assert len(result)==1 and result[0]['contract_id']==other_contract

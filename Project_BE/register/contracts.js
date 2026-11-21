@@ -226,6 +226,9 @@ function renderContracts(items) {
         actions.append(actionButton("Dịch vụ", () => {
             window.location.href = `services.html?contract_id=${encodeURIComponent(contract.id)}`;
         }));
+        actions.append(actionButton("Hóa đơn / Thanh toán", () => {
+            window.location.href = `payments.html?contract_id=${encodeURIComponent(contract.id)}`;
+        }));
         if (["created", "active"].includes(contract.status)) {
             if (contract.deposit > 0 && contract.deposit_status === "unpaid") {
                 actions.append(actionButton("X\u00e1c nh\u1eadn nh\u1eadn c\u1ecdc", () => confirmDepositReceived(contract)));
