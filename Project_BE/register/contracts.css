@@ -68,6 +68,36 @@
     margin-bottom: 16px;
 }
 
+.contract-list-controls,
+.contract-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.contract-list-controls input,
+.contract-list-controls select,
+.contract-pagination select {
+    min-height: 42px;
+    max-width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    background: #fff;
+    color: #25313b;
+    font-size: 14px;
+}
+
+.contract-list-controls input {
+    width: min(320px, 100%);
+}
+
+.contract-pagination {
+    margin-top: 14px;
+}
+
 .contract-table {
     width: 100%;
     min-width: 1260px;
@@ -166,6 +196,18 @@
 }
 
 @media (max-width: 720px) {
+    .contract-list-controls,
+    .contract-pagination {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .contract-list-controls input,
+    .contract-list-controls select,
+    .contract-pagination select {
+        width: 100%;
+    }
+
     .contract-form-grid {
         grid-template-columns: 1fr;
     }

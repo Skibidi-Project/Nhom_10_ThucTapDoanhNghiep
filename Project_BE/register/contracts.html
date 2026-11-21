@@ -102,11 +102,25 @@
                         <h2>Danh sách hợp đồng</h2>
                         <p>Các hợp đồng trong phạm vi khu trọ bạn được quản lý.</p>
                     </div>
-                    <button type="button" class="button button-outline" id="refreshContractsBtn">↻ Làm mới</button>
+                    <div class="contract-list-controls">
+                        <input id="contractSearch" type="search" maxlength="50" placeholder="Tìm theo số phòng hoặc tên khách" aria-label="Tìm hợp đồng">
+                        <select id="contractPropertyFilter" aria-label="Lọc theo khu trọ">
+                            <option value="">Tất cả khu trọ</option>
+                        </select>
+                        <select id="contractStatusFilter" aria-label="Lọc theo trạng thái">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="created">Mới tạo</option>
+                            <option value="active">Đang hiệu lực</option>
+                            <option value="pending_liquidation">Chờ thanh lý</option>
+                            <option value="expired">Đã hết hạn</option>
+                        </select>
+                        <button type="button" class="button button-outline" id="clearContractFiltersBtn" hidden>Xóa bộ lọc</button>
+                        <button type="button" class="button button-outline" id="refreshContractsBtn">↻ Làm mới</button>
+                    </div>
                 </div>
                 <p id="contractsLoading" class="table-state">Đang tải danh sách hợp đồng...</p>
                 <p id="contractsError" class="table-state error-state" hidden></p>
-                <p id="contractsEmpty" class="table-state" hidden>Chưa có hợp đồng. Lập hợp đồng mới ở biểu mẫu phía trên để bắt đầu theo dõi tiền cọc và trạng thái tại đây.</p>
+                <p id="contractsEmpty" class="table-state" hidden><span id="contractsEmptyMessage">Chưa có hợp đồng. Lập hợp đồng mới ở biểu mẫu phía trên để bắt đầu theo dõi tiền cọc và trạng thái tại đây.</span> <button type="button" class="button button-outline" id="clearContractFiltersEmptyBtn" hidden>Xóa bộ lọc</button></p>
                 <div class="table-scroll" id="contractsTableContainer" hidden>
                     <table class="contract-table">
                         <thead>
@@ -124,6 +138,19 @@
                         </thead>
                         <tbody id="contractRows"></tbody>
                     </table>
+                </div>
+                <div class="contract-pagination" id="contractPagination" hidden>
+                    <button type="button" class="button button-outline" id="contractPreviousBtn">Trước</button>
+                    <span id="contractPageInfo">Trang 1/1</span>
+                    <button type="button" class="button button-outline" id="contractNextBtn">Sau</button>
+                    <span id="contractTotal">0 hợp đồng</span>
+                    <label for="contractPageSize">Số dòng</label>
+                    <select id="contractPageSize">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
                 </div>
             </section>
         </section>

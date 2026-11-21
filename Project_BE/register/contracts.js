@@ -11,7 +11,17 @@ const contractRows = document.getElementById("contractRows");
 const contractsLoading = document.getElementById("contractsLoading");
 const contractsError = document.getElementById("contractsError");
 const contractsEmpty = document.getElementById("contractsEmpty");
+const contractsEmptyMessage = document.getElementById("contractsEmptyMessage");
 const contractsTableContainer = document.getElementById("contractsTableContainer");
+const contractSearch = document.getElementById("contractSearch");
+const contractPropertyFilter = document.getElementById("contractPropertyFilter");
+const contractStatusFilter = document.getElementById("contractStatusFilter");
+const contractPageSize = document.getElementById("contractPageSize");
+const contractPagination = document.getElementById("contractPagination");
+const contractPreviousBtn = document.getElementById("contractPreviousBtn");
+const contractNextBtn = document.getElementById("contractNextBtn");
+const clearContractFiltersBtn = document.getElementById("clearContractFiltersBtn");
+const clearContractFiltersEmptyBtn = document.getElementById("clearContractFiltersEmptyBtn");
 const tenantDialog = document.getElementById("tenantDialog");
 const tenantForm = document.getElementById("tenantForm");
 
@@ -20,6 +30,9 @@ let currentUser = null;
 let properties = [];
 let rooms = [];
 let tenants = [];
+let contractPage = 1;
+let contractRequestId = 0;
+let contractSearchTimer = null;
 
 function showNotice(message, type = "info") {
     notice.textContent = message;
@@ -136,7 +149,7 @@ const contractStatusLabels = {
     created: "M\u1edbi t\u1ea1o",
     active: "\u0110ang hi\u1ec7u l\u1ef1c",
     pending_liquidation: "Ch\u1edd thanh l\u00fd",
-    expired: "H\u1ebft h\u1ea1n",
+    expired: "\u0110\u00e3 h\u1ebft h\u1ea1n",
     terminated: "\u0110\u00e3 ch\u1ea5m d\u1ee9t",
 };
 const depositStatusLabels = {
@@ -268,18 +281,51 @@ function renderContracts(items) {
     }
 }
 
-async function loadContracts() {
+async function loadContracts(resetPage = false) {
+    if (resetPage) contractPage = 1;
+    const requestId = ++contractRequestId;
+    const params = new URLSearchParams({
+        page: String(contractPage),
+        page_size: contractPageSize.value || "10",
+    });
+    const search = contractSearch.value.trim();
+    if (search) params.set("q", search);
+    if (contractPropertyFilter.value) params.set("property_id", contractPropertyFilter.value);
+    if (contractStatusFilter.value) params.set("status", contractStatusFilter.value);
+
     contractsLoading.hidden = false;
     contractsError.hidden = true;
     contractsEmpty.hidden = true;
     contractsTableContainer.hidden = true;
+    contractPagination.hidden = true;
     try {
-        const items = await apiRequest("/contracts");
+        const result = await apiRequest(`/contracts?${params}`);
+        if (requestId !== contractRequestId) return;
+        const items = result.items || [];
+        if (items.length === 0 && result.total > 0 && contractPage > 1) {
+            contractPage = Math.max(1, Math.ceil(result.total / result.page_size));
+            await loadContracts();
+            return;
+        }
         renderContracts(items);
         contractsLoading.hidden = true;
         contractsTableContainer.hidden = items.length === 0;
         contractsEmpty.hidden = items.length !== 0;
+        const isFiltered = Boolean(search || contractPropertyFilter.value || contractStatusFilter.value);
+        contractsEmptyMessage.textContent = isFiltered
+            ? "Không có hợp đồng phù hợp với bộ lọc."
+            : "Chưa có hợp đồng. Lập hợp đồng mới ở biểu mẫu phía trên để bắt đầu theo dõi tiền cọc và trạng thái tại đây.";
+        clearContractFiltersBtn.hidden = !isFiltered;
+        clearContractFiltersEmptyBtn.hidden = !isFiltered;
+
+        const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
+        contractPagination.hidden = result.total === 0;
+        document.getElementById("contractPageInfo").textContent = `Trang ${result.page}/${totalPages}`;
+        document.getElementById("contractTotal").textContent = `${result.total} hợp đồng`;
+        contractPreviousBtn.disabled = result.page <= 1;
+        contractNextBtn.disabled = result.page >= totalPages;
     } catch (error) {
+        if (requestId !== contractRequestId) return;
         contractsLoading.hidden = true;
         contractsError.textContent = error.message;
         contractsError.hidden = false;
@@ -291,6 +337,12 @@ async function loadProperties() {
     setSelectOptions(
         propertySelect,
         properties.length ? "Chọn khu trọ" : "Chưa có khu trọ được quản lý",
+        properties,
+        property => property.name,
+    );
+    setSelectOptions(
+        contractPropertyFilter,
+        "Tất cả khu trọ",
         properties,
         property => property.name,
     );
@@ -389,7 +441,7 @@ contractForm.addEventListener("submit", async event => {
         contractForm.reset();
         propertySelect.value = selectedPropertyId;
         document.getElementById("deposit").value = "0";
-        await Promise.all([loadContracts(), loadRoomsAndTenants()]);
+        await Promise.all([loadContracts(true), loadRoomsAndTenants()]);
     } catch (requestError) {
         error.textContent = requestError.message;
     } finally {
@@ -447,7 +499,38 @@ roomSelect.addEventListener("change", () => {
     updateRentHint();
 });
 document.getElementById("monthlyRent").addEventListener("input", updateRentHint);
-document.getElementById("refreshContractsBtn").addEventListener("click", loadContracts);
+document.getElementById("refreshContractsBtn").addEventListener("click", () => loadContracts());
+function clearContractFilters() {
+    contractSearch.value = "";
+    contractPropertyFilter.value = "";
+    contractStatusFilter.value = "";
+    loadContracts(true);
+}
+
+function reloadContractsFromFirstPage() {
+    loadContracts(true);
+}
+
+contractSearch.addEventListener("input", () => {
+    contractRequestId++;
+    clearTimeout(contractSearchTimer);
+    contractSearchTimer = setTimeout(() => loadContracts(true), 300);
+});
+contractPropertyFilter.addEventListener("change", reloadContractsFromFirstPage);
+contractStatusFilter.addEventListener("change", reloadContractsFromFirstPage);
+contractPageSize.addEventListener("change", reloadContractsFromFirstPage);
+contractPreviousBtn.addEventListener("click", () => {
+    if (contractPage > 1) {
+        contractPage--;
+        loadContracts();
+    }
+});
+contractNextBtn.addEventListener("click", () => {
+    contractPage++;
+    loadContracts();
+});
+clearContractFiltersBtn.addEventListener("click", clearContractFilters);
+clearContractFiltersEmptyBtn.addEventListener("click", clearContractFilters);
 document.getElementById("closeTenantDialogBtn").addEventListener("click", () => tenantDialog.close());
 document.getElementById("cancelTenantBtn").addEventListener("click", () => tenantDialog.close());
 const depositDialog = document.getElementById("depositDialog");
