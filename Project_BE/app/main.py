@@ -19,6 +19,7 @@ from app.routers import (
     service_assignments,
     tenants,
     users,
+    utility_pricing,
 )
 
 
@@ -45,6 +46,15 @@ async def lifespan(app: FastAPI):
             uniques = inspector.get_unique_constraints('payments')
             if not _payment_idempotency_schema_ready(payment_columns, uniques):
                 raise RuntimeError('US-24 idempotency migration is required before starting this existing database.')
+        if inspector.has_table('invoices'):
+            required = {
+                'utility_price_history': {'id','property_id','room_id','contract_id','utility','unit_price','valid_from','valid_to','evidence','created_by','created_at'},
+                'invoice_utility_snapshots': {'id','invoice_id','utility','price_id','source','previous_reading','current_reading','unit_price','amount'},
+                'invoice_service_snapshots': {'id','invoice_id','service_code','source','quantity','unit_price','billing_unit','amount'},
+            }
+            for table, columns in required.items():
+                if not inspector.has_table(table) or not columns.issubset({c['name'] for c in inspector.get_columns(table)}):
+                    raise RuntimeError('US-20 pricing migration is required before starting this existing database.')
     init_db()
     try:
         yield
@@ -66,6 +76,7 @@ async def revalidate_register_assets(request, call_next):
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(utility_pricing.router)
 app.include_router(buildings.property_router)
 app.include_router(buildings.router)
 app.include_router(properties.router)

@@ -7,11 +7,14 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.boarding import (
     Contract,
     Invoice,
     InvoiceDueDateHistory,
+    InvoiceUtilitySnapshot,
+    InvoiceServiceSnapshot,
     InvoiceMonth,
     Payment,
     Property,
@@ -104,6 +107,7 @@ def _utility_amount(db: Session, contract: Contract, period: str, prop) -> int:
 
 
 def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreate) -> Invoice:
+    from app.services.utility_pricing_service import calculate
     contract = get_contract(db, contract_id)
     room = get_room(db, contract.room_id)
     prop = property_of_room(db, room)
@@ -118,7 +122,8 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
     exists = db.scalar(select(Invoice).join(Contract).where(Contract.room_id == room.id, Invoice.period == data.period))
     if exists is not None:
         raise HTTPException(status_code=409, detail="Hóa đơn của kỳ này đã tồn tại.")
-    utility_amount = _utility_amount(db, contract, data.period, prop)
+    breakdown = calculate(db,user,contract_id,data.period,lock=True)
+    utility_amount = breakdown['invoice_utility_total']
     if contract.monthly_rent + utility_amount > 2_147_483_647:
         raise HTTPException(status_code=422, detail="Tổng tiền vượt giới hạn lưu trữ.")
     db.add(InvoiceMonth(room_id=room.id, period=data.period))
@@ -127,6 +132,15 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
         utility_amount=utility_amount, total_amount=contract.monthly_rent + utility_amount, status="unpaid",
     )
     db.add(invoice)
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(409,'Hóa đơn của kỳ này đã tồn tại.') from exc
+    for item in breakdown['items']:
+        db.add(InvoiceUtilitySnapshot(invoice_id=invoice.id,utility=item['utility'],price_id=item['price_id'],source=item['source'],previous_reading=item['previous_reading'],current_reading=item['current_reading'],unit_price=item['unit_price'],amount=item['amount']))
+    for item in breakdown['fixed_items']:
+        db.add(InvoiceServiceSnapshot(invoice_id=invoice.id,**item))
     save(db, invoice)
     return invoice
 

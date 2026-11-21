@@ -41,12 +41,27 @@ with migration_engine.begin() as c:
     for statement in sql.split(';'):
         if statement.strip():c.execute(text(statement))
     assert c.execute(text('SELECT idempotency_key FROM payments WHERE id=1')).scalar_one() is None
+    c.execute(text('CREATE TABLE properties (id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB'))
+    c.execute(text('CREATE TABLE rooms (id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB'))
+    c.execute(text('CREATE TABLE rental_contracts (id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB'))
+    sql=(Path(__file__).resolve().parents[1]/'migrations/us20_dated_prices_mysql.sql').read_text(encoding='utf-8-sig')
+    sql='\n'.join(line for line in sql.splitlines() if not line.strip().startswith('--'))
+    for statement in sql.split(';'):
+        if statement.strip():c.execute(text(statement))
+    c.execute(text('INSERT INTO properties(id) VALUES (1)'))
+    c.execute(text("INSERT INTO utility_price_history(property_id,utility,unit_price,valid_from,valid_to,evidence,created_by,created_at) VALUES (1,'electricity',3500,'2026-01-01','2026-12-31','test',1,NOW())"))
+    assert c.execute(text('SELECT COUNT(*) FROM utility_price_history')).scalar_one()==1
+    rollback=(Path(__file__).resolve().parents[1]/'migrations/us20_dated_prices_mysql_rollback.sql').read_text(encoding='utf-8-sig')
+    rollback='\n'.join(line for line in rollback.splitlines() if not line.strip().startswith('--'))
+    for statement in rollback.split(';'):
+        if statement.strip():c.execute(text(statement))
+    assert c.execute(text('SELECT COUNT(*) FROM invoices')).scalar_one()==1
 migration_engine.dispose()
 os.environ['DATABASE_URL']=url.set(database=name).render_as_string(hide_password=False);os.environ['JWT_SECRET']=secrets.token_urlsafe(48)
 from app.db.database import Base
 import app.models,app.models.room_type
 from app.models.user import User
-from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment
+from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,UtilityReading,InvoiceUtilitySnapshot
 from app.core.security import create_access_token
 from app.main import app
 from fastapi.testclient import TestClient
@@ -57,10 +72,43 @@ with Session(engine) as db,db.begin():
     u=User(full_name='Test',email='owner@test.invalid',role='landlord',password_hash='x');db.add(u);db.flush()
     p=Property(owner_id=u.id,name='T',address='T');db.add(p);db.flush()
     r=Room(property_id=p.id,room_number='T',base_rent=100,status='occupied');t=TenantProfile(landlord_id=u.id,created_by=u.id,full_name='T',phone='0900000000',id_number='123456789012');db.add_all([r,t]);db.flush()
-    contract=Contract(room_id=r.id,tenant_id=t.id,created_by=u.id,start_date=date.today()-timedelta(days=1),end_date=date.today()+timedelta(days=30),monthly_rent=100,deposit=0,status='active');db.add(contract);db.flush()
-    invoice=Invoice(contract_id=contract.id,period=date.today().strftime('%Y-%m'),rent_amount=100,utility_amount=0,total_amount=100,status='unpaid');db.add(invoice);db.flush();uid,iid=u.id,invoice.id
+    contract=Contract(room_id=r.id,tenant_id=t.id,created_by=u.id,start_date=date.today()-timedelta(days=45),end_date=date.today()+timedelta(days=30),monthly_rent=100,deposit=0,status='active');db.add(contract);db.flush()
+    invoice=Invoice(contract_id=contract.id,period=date.today().strftime('%Y-%m'),rent_amount=100,utility_amount=0,total_amount=100,status='unpaid');db.add(invoice);db.flush();uid,iid,cid,pid,rid=u.id,invoice.id,contract.id,p.id,r.id
+    previous=date.today().replace(day=1)-timedelta(days=1);period=previous.strftime('%Y-%m')
+    for kind in ('electricity','water'): db.add(UtilityReading(room_id=rid,utility_type=kind,period=period,previous_reading=10,current_reading=20,recorded_by=uid))
 headers={'Authorization':'Bearer '+create_access_token(uid)};barrier=Barrier(2)
 c=TestClient(app)
+price_barrier=Barrier(2)
+def add_same_price():
+    price_barrier.wait(timeout=10)
+    return TestClient(app).post('/api/utility-pricing/history',headers=headers,json={'property_id':pid,'utility':'electricity','unit_price':4,'valid_from':'2040-01-01','valid_to':'2040-01-31','evidence':'concurrent test'})
+with ThreadPoolExecutor(max_workers=2) as pool:
+    a=pool.submit(add_same_price);b=pool.submit(add_same_price);rates=sorted([a.result().status_code,b.result().status_code])
+assert rates==[201,409],rates
+for kind,value in [('electricity',4),('water',3)]:
+    response=c.post('/api/utility-pricing/history',headers=headers,json={'property_id':pid,'utility':kind,'unit_price':value,'valid_from':period+'-01','valid_to':previous.isoformat(),'evidence':'test agreement'})
+    assert response.status_code==201,response.text
+preview=c.get(f'/api/utility-pricing/preview?contract_id={cid}&period={period}',headers=headers)
+assert preview.status_code==200 and preview.json()['total']==70,preview.text
+issued=c.post(f'/api/contracts/{cid}/invoices',headers=headers,json={'period':period})
+assert issued.status_code==201 and issued.json()['utility_amount']==70,issued.text
+with Session(engine) as db:
+    assert sum(x.amount for x in db.scalars(select(InvoiceUtilitySnapshot).where(InvoiceUtilitySnapshot.invoice_id==issued.json()['id'])))==70
+assert c.post(f'/api/contracts/{cid}/invoices',headers=headers,json={'period':period}).status_code==409
+import calendar
+next_month=(date.today().replace(day=1)+timedelta(days=32)).replace(day=1);next_period=next_month.strftime('%Y-%m');last_day=next_month.replace(day=calendar.monthrange(next_month.year,next_month.month)[1])
+with Session(engine) as db,db.begin():
+    for kind in ('electricity','water'):db.add(UtilityReading(room_id=rid,utility_type=kind,period=next_period,previous_reading=20,current_reading=30,recorded_by=uid))
+for kind,value in [('electricity',4),('water',3)]:
+    response=c.post('/api/utility-pricing/history',headers=headers,json={'property_id':pid,'utility':kind,'unit_price':value,'valid_from':next_month.isoformat(),'valid_to':last_day.isoformat(),'evidence':'test agreement'})
+    assert response.status_code==201,response.text
+invoice_barrier=Barrier(2)
+def issue_same_invoice():
+    invoice_barrier.wait(timeout=10)
+    return TestClient(app).post(f'/api/contracts/{cid}/invoices',headers=headers,json={'period':next_period})
+with ThreadPoolExecutor(max_workers=2) as pool:
+    a=pool.submit(issue_same_invoice);b=pool.submit(issue_same_invoice);out=[a.result(),b.result()]
+assert sorted(r.status_code for r in out)==[201,409],[(r.status_code,r.text) for r in out]
 assert c.put(f'/api/invoices/{iid}/due-date',headers=headers,json={'due_date':(date.today()-timedelta(days=1)).isoformat(),'reason':'Test agreement'}).json()['effective_status']=='overdue'
 def pay(amount):
     barrier.wait();return TestClient(app).post(f'/api/invoices/{iid}/payments',headers={**headers,'Idempotency-Key':'same-test-key'},json={'amount':amount,'method':'cash'})

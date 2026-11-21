@@ -13,7 +13,7 @@ if url.get_backend_name()!='sqlite' or not url.database or Path(url.database).re
 from app.db.database import Base,engine
 import app.models,app.models.room_type
 from app.models.user import User
-from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth,InvoiceDueDateHistory,UtilityReading
+from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth,InvoiceDueDateHistory,UtilityReading,UtilityPriceHistory
 email='landlord.us25.demo@example.com';pwd=getpass.getpass('Mật khẩu tài khoản demo: ')
 if len(pwd)<8:raise SystemExit('Mật khẩu tối thiểu 8 ký tự.')
 inspector=inspect(engine)
@@ -63,5 +63,16 @@ with Session(engine) as db,db.begin():
         current_period=date.today().strftime('%Y-%m')
         if not db.scalar(select(UtilityReading).where(UtilityReading.room_id==rooms[0].id,UtilityReading.period==current_period,UtilityReading.utility_type==kind)):
             db.add(UtilityReading(room_id=rooms[0].id,period=current_period,utility_type=kind,previous_reading=previous,current_reading=current,recorded_by=u.id))
+    # Explicit synthetic agreement and readings for a future demo period only.
+    import calendar
+    first=date.today().replace(day=1)
+    next_month=(first+timedelta(days=32)).replace(day=1)
+    last=next_month.replace(day=calendar.monthrange(next_month.year,next_month.month)[1])
+    demo_period=next_month.strftime('%Y-%m')
+    for kind,unit,previous,current in [('electricity',3500,150,200),('water',15000,16,22)]:
+        if not db.scalar(select(UtilityPriceHistory.id).where(UtilityPriceHistory.property_id==prop.id,UtilityPriceHistory.utility==kind,UtilityPriceHistory.room_id.is_(None),UtilityPriceHistory.contract_id.is_(None),UtilityPriceHistory.valid_from==next_month,UtilityPriceHistory.valid_to==last)):
+            db.add(UtilityPriceHistory(property_id=prop.id,utility=kind,unit_price=unit,valid_from=next_month,valid_to=last,evidence='Explicit demo agreement',created_by=u.id))
+        if not db.scalar(select(UtilityReading.id).where(UtilityReading.room_id==rooms[0].id,UtilityReading.period==demo_period,UtilityReading.utility_type==kind)):
+            db.add(UtilityReading(room_id=rooms[0].id,period=demo_period,utility_type=kind,previous_reading=previous,current_reading=current,recorded_by=u.id))
 print('Email demo:',email,'| Khu trọ: MiniStay Dashboard Demo')
 engine.dispose()

@@ -30,3 +30,11 @@ Khi kiểm tra migration US-24, đã tăng cường startup để xác thực c�
 Người dùng đã chấp thuận thứ tự giá riêng hợp đồng → giá riêng phòng → giá mặc định khu trọ cho nhánh thử nghiệm. Đã tạo bộ chọn thuần `app/services/dated_utility_pricing.py`: mỗi giá phải có khoảng hiệu lực rõ ràng, ưu tiên từng ngày trong cả kỳ, từ chối thiếu lịch sử, các bản ghi cùng mức chồng lấn hoặc giá được chọn thay đổi giữa kỳ. Không dùng giá hiện tại để giả lập quá khứ. Kết quả kiểm thử bộ chọn không chứng minh toàn bộ tích hợp.
 
 **Chưa nối bộ chọn này vào US-22 hoặc giao diện US-20.** Schema hiện tại chưa có lịch sử hiệu lực, mã nhận diện nguồn và dữ liệu/chứng từ cần thiết; Billing cũ vẫn có thể lấy giá hiện tại khi lập hóa đơn kỳ cũ. Không được coi luồng cũ đáp ứng quy tắc mới. Cần thiết kế, triển khai và test lưu lịch sử có kiểm soát, migration, quyền cấu hình và snapshot giá theo hóa đơn mới; đồng bộ bộ chọn vào US-20/US-22; xử lý dịch vụ chưa gán, fixed/variable, đồng thời và UI. Chưa có quy tắc chia tiêu thụ khi giá thay đổi giữa kỳ, trường hợp đó phải tiếp tục bị chặn. Không push bản này như tích hợp hoàn chỉnh.
+
+## US-20 tích hợp thử nghiệm
+
+Đã áp dụng thứ tự hợp đồng → phòng → khu trọ qua bảng `utility_price_history` có kỳ hiệu lực và chứng cứ. Giá chỉ thêm mới qua API, gán sai cơ sở/chồng lấn bị từ chối; không tự suy đoán giá cũ. Bộ chọn dùng cả kỳ, chặn thiếu giá hoặc khi giá được chọn thay đổi giữa kỳ. Giá nước theo đầu người và dịch vụ biến đổi ngoài quy tắc chỉ số đang bị chặn thay vì tự suy diễn.
+
+API `POST/GET /api/utility-pricing/history` và `GET /api/utility-pricing/preview` kiểm tra RBAC/phạm vi. US-22 gọi cùng bộ tính preview, bỏ điện/nước trong gán dịch vụ để tránh tính hai lần và lưu snapshot điện/nước vào `invoice_utility_snapshots` trong transaction hóa đơn. Dịch vụ cố định khác tính theo gán hiện có và lưu snapshot giá, số lượng, đơn vị và thành tiền. Hóa đơn cũ không thay đổi; hóa đơn mới yêu cầu đủ lịch sử giá và cả hai chỉ số. Chưa tích hợp chỉnh sửa chỉ số US-19.
+
+Migration `migrations/us20_dated_prices_mysql.sql` và rollback cần nhóm review trước production; không chạy trên products_db. Giá thay đổi giữa kỳ, chia kỳ hợp đồng và các phương thức nước ngoài m3 cần nhóm xác nhận. Xem TEST_RESULTS.md cho giới hạn kiểm thử.

@@ -206,10 +206,21 @@ def test_us22_invoice_creation_utilities_duplicate_and_scope(env):
         db.add(UtilityReading(room_id=contract.room_id,utility_type=kind,period=period,previous_reading=old,current_reading=new,recorded_by=contract.created_by))
     db.commit();cid=contract.id;dep.close()
     url=f'/api/contracts/{cid}/invoices'
+    import calendar
+    last=calendar.monthrange(*map(int,period.split('-')))[1]
+    for kind,amount in [('electricity',2),('water',3)]:
+        r=c.post('/api/utility-pricing/history',headers=owner,json={'property_id':pid,'utility':kind,'unit_price':amount,'valid_from':period+'-01','valid_to':period+f'-{last:02}','evidence':'Test agreement'})
+        assert r.status_code==201
     assert c.post(url,headers=tenant,json={'period':period}).status_code==403
     assert c.post(url,headers=other,json={'period':period}).status_code==403
+    preview=c.get(f'/api/utility-pricing/preview?contract_id={cid}&period={period}',headers=manager)
+    assert preview.status_code==200 and preview.json()['total']==35
     result=c.post(url,headers=manager,json={'period':period});assert result.status_code==201
     assert result.json()['rent_amount']==100 and result.json()['utility_amount']==35 and result.json()['total_amount']==135
+    from app.models.boarding import InvoiceUtilitySnapshot
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    snaps=list(db.scalars(select(InvoiceUtilitySnapshot).where(InvoiceUtilitySnapshot.invoice_id==result.json()['id'])))
+    assert len(snaps)==2 and sum(s.amount for s in snaps)==preview.json()['total'];dep.close()
     assert c.post(url,headers=owner,json={'period':period}).status_code==409
 
 
@@ -260,3 +271,70 @@ def test_startup_rejects_misconfigured_payment_uniqueness():
     assert not _payment_idempotency_schema_ready(columns,[{'name':'uq_payment_idempotency','column_names':['idempotency_key']}])
     assert not _payment_idempotency_schema_ready({'idempotency_key'},[{'name':'uq_payment_idempotency','column_names':['invoice_id','recorded_by','idempotency_key']}])
     assert _payment_idempotency_schema_ready(columns,[{'name':'uq_payment_idempotency','column_names':['invoice_id','recorded_by','idempotency_key']}])
+
+
+def test_us20_history_preview_missing_overlap_and_access(env):
+    import calendar
+    from sqlalchemy import select
+    from app.models.boarding import UtilityReading
+    c,(owner,other,manager,tenant,_),_,pid=env
+    dep=app.dependency_overrides[get_db]();db=next(dep);contract=db.scalar(select(Contract));cid=contract.id;rid=contract.room_id
+    prev=date.today().replace(day=1)-timedelta(days=1);period=prev.strftime('%Y-%m');last=calendar.monthrange(prev.year,prev.month)[1]
+    for kind in ('electricity','water'):db.add(UtilityReading(room_id=rid,utility_type=kind,period=period,previous_reading=10,current_reading=20,recorded_by=contract.created_by))
+    db.commit();dep.close()
+    url=f'/api/utility-pricing/preview?contract_id={cid}&period={period}'
+    assert c.get(url,headers=owner).status_code==409
+    assert c.get(url,headers=other).status_code==403
+    assert c.get(url,headers=tenant).status_code==403
+    base={'property_id':pid,'valid_from':period+'-01','valid_to':period+f'-{last:02}','evidence':'test agreement'}
+    for kind,value in [('electricity',3500),('water',1000)]:
+        assert c.post('/api/utility-pricing/history',headers=owner,json={**base,'utility':kind,'unit_price':value}).status_code==201
+    room_price={**base,'utility':'electricity','unit_price':3800,'room_id':rid}
+    assert c.post('/api/utility-pricing/history',headers=owner,json=room_price).status_code==201
+    room_preview=c.get(url,headers=owner).json()
+    assert next(x for x in room_preview['items'] if x['utility']=='electricity')['source']=='room'
+    payload={**base,'utility':'electricity','unit_price':4000,'contract_id':cid}
+    assert c.post('/api/utility-pricing/history',headers=manager,json=payload).status_code==201
+    assert c.post('/api/utility-pricing/history',headers=manager,json=payload).status_code==409
+    assert c.post('/api/utility-pricing/history',headers=other,json=payload).status_code==403
+    result=c.get(url,headers=owner);assert result.status_code==200
+    items={i['utility']:i for i in result.json()['items']}
+    assert items['electricity']['source']=='contract' and items['electricity']['amount']==40000
+    assert items['water']['source']=='property' and items['water']['amount']==10000
+    from app.models.boarding import PropertyServicePrice
+    from app.models.service_assignment import ServiceAssignment
+    dep=app.dependency_overrides[get_db]();db=next(dep);uid=db.scalar(select(User.id).where(User.email=='owner@example.com'))
+    db.add_all([PropertyServicePrice(property_id=pid,service_code='electricity',billing_unit='kwh',unit_price=999),PropertyServicePrice(property_id=pid,service_code='wifi',billing_unit='room_month',unit_price=150),ServiceAssignment(contract_id=cid,service_code='electricity',quantity=1,assigned_by=uid),ServiceAssignment(contract_id=cid,service_code='wifi',quantity=2,assigned_by=uid)])
+    db.commit();dep.close()
+    bill=c.post(f'/api/contracts/{cid}/invoices',headers=owner,json={'period':period})
+    assert bill.status_code==201 and result.json()['total']==50000 and bill.json()['utility_amount']==50300
+    from app.models.boarding import InvoiceUtilitySnapshot,InvoiceServiceSnapshot
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    fixed=db.scalar(select(InvoiceServiceSnapshot).where(InvoiceServiceSnapshot.invoice_id==bill.json()['id']))
+    assert (fixed.service_code,fixed.quantity,fixed.unit_price,fixed.amount)==('wifi',2,150,300)
+    electric=db.scalar(select(InvoiceUtilitySnapshot).where(InvoiceUtilitySnapshot.invoice_id==bill.json()['id'],InvoiceUtilitySnapshot.utility=='electricity'))
+    assert electric.unit_price==4000 and electric.amount==40000
+    db.get(PropertyServicePrice,(pid,'wifi')).unit_price=999;db.commit();db.refresh(fixed)
+    assert fixed.unit_price==150 and fixed.amount==300;dep.close()
+    assert c.post('/api/utility-pricing/history',headers=owner,json={**base,'utility':'electricity','room_id':rid,'unit_price':5000}).status_code==409
+    assert c.post(f'/api/contracts/{cid}/invoices',headers=owner,json={'period':period}).status_code==409
+
+
+def test_us20_midmonth_change_blocks_invoice_without_partial_write(env):
+    import calendar
+    from sqlalchemy import select
+    from app.models.boarding import UtilityReading,InvoiceUtilitySnapshot
+    c,(owner,*_),_,pid=env
+    dep=app.dependency_overrides[get_db]();db=next(dep);contract=db.scalar(select(Contract));cid=contract.id;rid=contract.room_id
+    prev=date.today().replace(day=1)-timedelta(days=1);period=prev.strftime('%Y-%m');last=calendar.monthrange(prev.year,prev.month)[1]
+    for kind in ('electricity','water'):db.add(UtilityReading(room_id=rid,utility_type=kind,period=period,previous_reading=10,current_reading=20,recorded_by=contract.created_by))
+    db.commit();dep.close()
+    base={'property_id':pid,'valid_from':period+'-01','valid_to':period+f'-{last:02}','evidence':'test agreement'}
+    for kind in ('electricity','water'):
+        assert c.post('/api/utility-pricing/history',headers=owner,json={**base,'utility':kind,'unit_price':2}).status_code==201
+    assert c.post('/api/utility-pricing/history',headers=owner,json={**base,'utility':'electricity','unit_price':4,'contract_id':cid,'valid_from':period+'-15'}).status_code==201
+    assert c.get(f'/api/utility-pricing/preview?contract_id={cid}&period={period}',headers=owner).status_code==409
+    assert c.post(f'/api/contracts/{cid}/invoices',headers=owner,json={'period':period}).status_code==409
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    assert db.scalar(select(Invoice.id).where(Invoice.contract_id==cid,Invoice.period==period)) is None
+    assert db.scalars(select(InvoiceUtilitySnapshot)).all()==[];dep.close()

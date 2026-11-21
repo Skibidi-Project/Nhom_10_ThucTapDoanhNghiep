@@ -1,7 +1,7 @@
 ﻿(() => {
     const links = [
         ['dashboard.html', 'Tổng quan'], ['properties.html', 'Quản lý cơ sở'],
-        ['rooms.html', 'Quản lý phòng'], ['contracts.html', 'Quản lý hợp đồng'],
+        ['rooms.html', 'Quản lý phòng'], ['contracts.html', 'Quản lý hợp đồng'], ['utility-pricing.html', 'Điện/nước'],
         ['invoices.html', 'Chốt hóa đơn'], ['payments.html', 'Hóa đơn & Thanh toán'], ['services.html', 'Dịch vụ'],
         ['tenants.html', 'Khách thuê'], ['expenses.html', 'Chi phí'], ['account.html', 'Tài khoản'],
     ];

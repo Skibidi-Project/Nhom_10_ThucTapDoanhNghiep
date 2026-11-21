@@ -28,3 +28,10 @@
 - Bộ chọn thuần chưa nối database, API, UI hay US-22. Vì vậy các test trên không chứng minh tích hợp US-20, migration giá hoặc nhất quán hóa đơn.
 - MySQL test riêng: PASS regression migration US-24/25, FK/unique, rollback/deadlock và thanh toán đồng thời; chưa test schema hoặc concurrency lịch sử giá.
 - Chrome US-20 và kiểm thử giá end-to-end: **SKIP**, do chưa có tích hợp. Không chạy migration hoặc test ghi trên products_db.
+
+## US-20 nối US-22 — kiểm thử thực tế
+
+- Pytest **29 PASS**, 0 FAIL; một warning deprecation. Có test API tạo lịch sử giá, overlap, RBAC, preview với giá riêng hợp đồng và giá khu trọ, phát hành invoice, snapshot, chống trùng và tính dịch vụ cố định một lần.
+- MySQL InnoDB database riêng **PASS** migration US-20, insert giá, rollback migration trên schema thử, preview/invoice/snapshot, hai request ghi giá cùng khoảng và hai request phát hành cùng kỳ; cùng regression US-24 và các kiểm tra FK/unique/rollback/deadlock. Chưa kiểm thử mọi tổ hợp multi-process hoặc dữ liệu production.
+- Chrome **PASS desktop 1366, tablet 768, mobile 390**: login, cấu hình giá và ghi chỉ số thử qua API, vào Điện/nước từ menu, preview, chốt hóa đơn, đối chiếu tiền, thanh toán, dashboard; regression US-24 idempotency. Test tạo dữ liệu qua API, không phải thao tác ghi chỉ số US-19 trên UI.
+- Giá đổi giữa kỳ, thiếu giá hoặc thiếu chỉ số: bị chặn. Chưa tích hợp sửa chỉ số US-19; chưa nghiệm thu toàn bộ US-16/19, full role/đơn vị nước theo người, hoặc mọi trường hợp concurrency đa tiến trình.

@@ -111,6 +111,49 @@ class UtilityReading(Base):
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
 
+class UtilityPriceHistory(Base):
+    __tablename__ = 'utility_price_history'
+    __table_args__ = {'mysql_charset': 'utf8mb4'}
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    property_id: Mapped[int] = mapped_column(ForeignKey('properties.id'), nullable=False)
+    room_id: Mapped[int | None] = mapped_column(ForeignKey('rooms.id'), nullable=True)
+    contract_id: Mapped[int | None] = mapped_column(ForeignKey('rental_contracts.id'), nullable=True)
+    utility: Mapped[str] = mapped_column(String(20), nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    valid_from: Mapped[date] = mapped_column(Date, nullable=False)
+    valid_to: Mapped[date] = mapped_column(Date, nullable=False)
+    evidence: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_by: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+
+class InvoiceUtilitySnapshot(Base):
+    __tablename__ = 'invoice_utility_snapshots'
+    __table_args__ = (UniqueConstraint('invoice_id','utility',name='uq_invoice_utility_snapshot'), {'mysql_charset': 'utf8mb4'})
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey('invoices.id'), nullable=False)
+    utility: Mapped[str] = mapped_column(String(20), nullable=False)
+    price_id: Mapped[int] = mapped_column(ForeignKey('utility_price_history.id'), nullable=False)
+    source: Mapped[str] = mapped_column(String(20), nullable=False)
+    previous_reading: Mapped[int] = mapped_column(Integer, nullable=False)
+    current_reading: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class InvoiceServiceSnapshot(Base):
+    __tablename__ = 'invoice_service_snapshots'
+    __table_args__ = (UniqueConstraint('invoice_id','service_code',name='uq_invoice_service_snapshot'), {'mysql_charset': 'utf8mb4'})
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey('invoices.id'), nullable=False)
+    service_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    source: Mapped[str] = mapped_column(String(20), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    billing_unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class InvoiceMonth(Base):
     __tablename__ = "invoice_months"
     __table_args__ = {"mysql_charset": "utf8mb4"}
