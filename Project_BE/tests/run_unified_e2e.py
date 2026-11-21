@@ -26,6 +26,7 @@ with sync_playwright() as p:
   fits()
   assert page.locator('#invoicesLink').is_visible()
   nav.get_by_role('link',name='Quản lý phòng').click();page.wait_for_url('**/rooms.html');row=page.locator('#roomRows tr').filter(has_text='D01');row.wait_for();row.get_by_role('button',name='Lịch sử điện/nước').click();page.locator('#utilityHistoryRows tr').first.wait_for();history=page.locator('#utilityHistoryRows').inner_text();assert 'Điện' in history and 'Nước' in history;assert page.locator('#utilityChartSection').is_visible();page.locator('#closeUtilityHistoryBtn').click()
+  page.locator('.unified-nav').get_by_role('link',name='Quản lý hợp đồng').click();page.wait_for_url('**/contracts.html');page.locator('#contractRows tr').filter(has_text='D01').wait_for()
   page.locator('.unified-nav').get_by_role('link',name='Hóa đơn & Thanh toán').click();page.wait_for_url('**/payments.html');row=page.locator('#paymentRows tr').filter(has_text=period);row.wait_for();row.get_by_role('button',name='Ghi nhận thanh toán').click();page.locator('#paymentAmount').fill('400');page.locator('#savePaymentBtn').click();page.locator('#paymentDialog').wait_for(state='hidden');assert 'Thanh toán một phần' in row.inner_text();row.get_by_role('button',name='Cập nhật trạng thái').click();page.get_by_text('Đã cập nhật trạng thái theo thanh toán.').wait_for()
   fits()
   page.locator('.unified-nav').get_by_role('link',name='Tổng quan').click();page.wait_for_url('**/dashboard.html');page.locator('.stat').first.wait_for();assert page.locator('.stat strong').nth(1).inner_text()=='3'

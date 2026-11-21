@@ -265,10 +265,18 @@ async function savePayment(event) {
             paid_at: `${paymentPaidAt.value}T00:00:00`,
             note: paymentNote.value,
         };
+        const attemptStorageKey = `us24_payment_attempt_${activeInvoice.id}`;
+        let attemptKey = sessionStorage.getItem(attemptStorageKey);
+        if (!attemptKey) {
+            attemptKey = crypto.randomUUID();
+            sessionStorage.setItem(attemptStorageKey, attemptKey);
+        }
         const result = await apiRequest(`/invoices/${activeInvoice.id}/payments`, {
             method: "POST",
+            headers: {"Idempotency-Key": attemptKey},
             body: JSON.stringify(body),
         });
+        sessionStorage.removeItem(attemptStorageKey);
         activeInvoice.paid_amount = result.total_paid;
         activeInvoice.remaining_amount = result.remaining_amount;
         activeInvoice.status = result.invoice_status;

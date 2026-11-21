@@ -19,6 +19,12 @@ if len(pwd)<8:raise SystemExit('Mật khẩu tối thiểu 8 ký tự.')
 inspector=inspect(engine)
 if inspector.has_table('invoices') and 'due_date' not in {c['name'] for c in inspector.get_columns('invoices')}:
     with engine.begin() as conn: conn.execute(text('ALTER TABLE invoices ADD COLUMN due_date DATE NULL'))
+if inspector.has_table('payments'):
+    columns={c['name'] for c in inspector.get_columns('payments')}
+    with engine.begin() as conn:
+        if 'idempotency_key' not in columns: conn.execute(text('ALTER TABLE payments ADD COLUMN idempotency_key VARCHAR(128) NULL'))
+        if 'request_fingerprint' not in columns: conn.execute(text('ALTER TABLE payments ADD COLUMN request_fingerprint VARCHAR(64) NULL'))
+        conn.execute(text('CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_idempotency ON payments(invoice_id, recorded_by, idempotency_key)'))
 Base.metadata.create_all(engine);inspector=inspect(engine)
 for table in Base.metadata.sorted_tables:
     if {c.name for c in table.columns}-{c['name'] for c in inspector.get_columns(table.name)}:raise SystemExit('Schema demo không tương thích: '+table.name)

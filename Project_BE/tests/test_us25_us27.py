@@ -211,3 +211,44 @@ def test_us22_invoice_creation_utilities_duplicate_and_scope(env):
     result=c.post(url,headers=manager,json={'period':period});assert result.status_code==201
     assert result.json()['rent_amount']==100 and result.json()['utility_amount']==35 and result.json()['total_amount']==135
     assert c.post(url,headers=owner,json={'period':period}).status_code==409
+
+
+def test_payment_idempotency_replay_conflict_and_authorization(env):
+    c,(owner,other,manager,tenant,_),iid,_=env
+    url=f'/api/invoices/{iid}/payments'
+    headers={**owner,'Idempotency-Key':'attempt-001'}
+    body={'amount':30,'method':'cash'}
+    first=c.post(url,headers=headers,json=body);assert first.status_code==201
+    assert c.post(url,headers={**other,'Idempotency-Key':'attempt-001'},json=body).status_code==403
+    assert c.post(url,headers={**tenant,'Idempotency-Key':'attempt-001'},json=body).status_code==403
+    replay=c.post(url,headers=headers,json=body);assert replay.status_code==201 and replay.json()['id']==first.json()['id']
+    assert c.post(url,headers=headers,json={'amount':31,'method':'cash'}).status_code==409
+    assert c.post(url,headers=owner,json={'amount':70,'method':'cash'}).status_code==201
+    replay=c.post(url,headers=headers,json=body);assert replay.status_code==201 and replay.json()['remaining_amount']==0
+    assert len(c.get(url,headers=owner).json())==2
+    assert c.post(url,headers={**owner,'Idempotency-Key':'bad key'},json=body).status_code==422
+
+
+def test_billing_existing_price_paths_and_assignment_precedence(env):
+    from sqlalchemy import select
+    from app.models.boarding import PropertyServicePrice,UtilityReading
+    from app.models.service_assignment import ServiceAssignment
+    from app.services.billing_service import _utility_amount
+    from fastapi import HTTPException
+    _,_,_,pid=env
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    prop=db.get(Property,pid);prop.electricity_unit_price=2
+    contract=db.scalar(select(Contract));uid=contract.created_by
+    db.add(UtilityReading(room_id=contract.room_id,utility_type='electricity',period='2026-01',previous_reading=10,current_reading=20,recorded_by=uid));db.flush()
+    assert _utility_amount(db,contract,'2026-01',prop)==20
+    room_assignment=ServiceAssignment(room_id=contract.room_id,service_code='electricity',quantity=1,assigned_by=uid)
+    db.add(room_assignment);db.flush()
+    with pytest.raises(HTTPException) as exc:_utility_amount(db,contract,'2026-01',prop)
+    assert exc.value.status_code==409
+    db.add(PropertyServicePrice(property_id=pid,service_code='electricity',billing_unit='kwh',unit_price=3));db.flush()
+    assert _utility_amount(db,contract,'2026-01',prop)==30
+    room_assignment.price_override=4;db.flush()
+    assert _utility_amount(db,contract,'2026-01',prop)==40
+    db.add(ServiceAssignment(contract_id=contract.id,service_code='electricity',quantity=1,price_override=5,assigned_by=uid));db.flush()
+    assert _utility_amount(db,contract,'2026-01',prop)==50
+    dep.close()

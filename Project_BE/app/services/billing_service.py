@@ -1,4 +1,6 @@
 import calendar
+import hashlib
+import json
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -276,6 +278,7 @@ def record_payment(
     user: User,
     invoice_id: int,
     data: PaymentCreate,
+    idempotency_key: str | None = None,
 ) -> dict:
     invoice = get_invoice(db, invoice_id)
     contract = get_contract(db, invoice.contract_id)
@@ -299,6 +302,21 @@ def record_payment(
     payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
     paid_amount = sum(payment.amount for payment in payments)
 
+    fingerprint = hashlib.sha256(json.dumps(data.model_dump(mode='json'), sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')).hexdigest()
+    key_digest = hashlib.sha256(idempotency_key.encode('ascii')).hexdigest() if idempotency_key is not None else None
+    if idempotency_key is not None:
+        existing = next((p for p in payments if p.recorded_by == user.id and p.idempotency_key == key_digest), None)
+        if existing is not None:
+            if existing.request_fingerprint != fingerprint:
+                raise HTTPException(409, 'Khóa idempotency đã được sử dụng với nội dung khác.')
+            return {
+                'id': existing.id, 'invoice_id': existing.invoice_id, 'amount': existing.amount,
+                'method': existing.method, 'recorded_by': existing.recorded_by, 'paid_at': existing.paid_at,
+                'note': existing.note, 'recorded_by_name': user.full_name, 'invoice_status': invoice.status,
+                'effective_status': effective_status(invoice.total_amount, paid_amount, invoice.due_date),
+                'total_paid': paid_amount, 'remaining_amount': max(invoice.total_amount-paid_amount, 0),
+            }
+
     if invoice.status == "paid" or paid_amount >= invoice.total_amount:
         raise HTTPException(
             status_code=409,
@@ -320,6 +338,8 @@ def record_payment(
         recorded_by=user.id,
         paid_at=data.paid_at or datetime.now(),
         note=data.note,
+        idempotency_key=key_digest,
+        request_fingerprint=fingerprint if idempotency_key is not None else None,
     )
 
     db.add(payment)

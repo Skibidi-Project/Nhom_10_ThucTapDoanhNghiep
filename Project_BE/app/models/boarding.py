@@ -150,7 +150,7 @@ class InvoiceDueDateHistory(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
-    __table_args__ = {"mysql_charset": "utf8mb4"}
+    __table_args__ = (UniqueConstraint("invoice_id", "recorded_by", "idempotency_key", name="uq_payment_idempotency"), {"mysql_charset": "utf8mb4"})
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), nullable=False)
@@ -159,3 +159,5 @@ class Payment(Base):
     recorded_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     paid_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    request_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)

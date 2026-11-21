@@ -30,6 +30,11 @@ async def lifespan(app: FastAPI):
             columns = {column['name'] for column in inspector.get_columns('invoices')}
             if 'due_date' not in columns or not inspector.has_table('invoice_due_date_history'):
                 raise RuntimeError('US-25 migration is required before starting this existing database.')
+        if inspector.has_table('payments'):
+            payment_columns = {column['name'] for column in inspector.get_columns('payments')}
+            uniques = inspector.get_unique_constraints('payments')
+            if not {'idempotency_key', 'request_fingerprint'}.issubset(payment_columns) or not any(u['name'] == 'uq_payment_idempotency' for u in uniques):
+                raise RuntimeError('US-24 idempotency migration is required before starting this existing database.')
     init_db()
     try:
         yield
