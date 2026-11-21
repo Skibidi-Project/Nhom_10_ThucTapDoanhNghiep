@@ -350,6 +350,8 @@ class InvoiceResponse(BaseModel):
     utility_amount: int
     total_amount: int
     status: str
+    due_date: date | None = None
+    effective_status: str | None = None
 
     paid_amount: int | None = None
     remaining_amount: int | None = None
@@ -402,6 +404,13 @@ class PaymentResult(PaymentResponse):
     invoice_status: str
     total_paid: int
     remaining_amount: int
+    effective_status: str | None = None
+
+
+class InvoiceDueDateUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    due_date: date
+    reason: str = Field(min_length=3, max_length=500)
 
 
 class PaymentHistoryResponse(PaymentResponse):

@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect
 
 from app.db.database import engine, init_db
 from app.routers import (
@@ -22,6 +23,13 @@ from app.routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Existing MySQL databases must be migrated explicitly before startup DDL.
+    if engine.dialect.name == 'mysql':
+        inspector = inspect(engine)
+        if inspector.has_table('invoices'):
+            columns = {column['name'] for column in inspector.get_columns('invoices')}
+            if 'due_date' not in columns or not inspector.has_table('invoice_due_date_history'):
+                raise RuntimeError('US-25 migration is required before starting this existing database.')
     init_db()
     try:
         yield

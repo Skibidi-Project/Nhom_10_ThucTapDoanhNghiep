@@ -133,7 +133,19 @@ class Invoice(Base):
     utility_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     total_amount: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="unpaid")
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+
+class InvoiceDueDateHistory(Base):
+    __tablename__ = "invoice_due_date_history"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id"), nullable=False, index=True)
+    old_due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    new_due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    changed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class Payment(Base):

@@ -1,21 +1,12 @@
-# Demo US-25 và US-27
-
-Chạy trong PowerShell:
+﻿# Demo US-25 và US-27
 
 ```powershell
 cd C:\Users\nmthu\Documents\MiniStay_US20_New\MiniStay_US25_US27\Project_BE
 .\START_DEMO.ps1
 ```
 
-Script chỉ dùng SQLite tại `%TEMP%\ministay_us25_us27_demo.sqlite3`, kiểm tra schema, yêu cầu nhập mật khẩu mới tối thiểu 8 ký tự (và xác nhận khi tạo tài khoản). Lần sau nhập cùng mật khẩu. Dữ liệu demo được giữ lại sau mỗi lần chạy. Dừng bằng Ctrl+C; mỗi lần khởi động tạo JWT secret mới, vì vậy cần đăng nhập lại.
+Script dùng SQLite riêng `%TEMP%\ministay_us25_us27_demo.sqlite3`; nhập mật khẩu cho tài khoản `landlord.us25.demo@example.com` (nhập lại khi tạo). Nếu cổng 8025 đã được sử dụng, chạy `$env:MINISTAY_DEMO_PORT='8026'` trước lệnh trên và dùng cổng đó. Script không sử dụng products_db.
 
-- Đăng nhập: http://127.0.0.1:8025/register/login.html
-- Tài khoản: `landlord.us25.demo@example.com`; mật khẩu do người chạy nhập, không in trong log.
-- API: http://127.0.0.1:8025/docs
-- US-27: từ Quản lý cơ sở chọn Thống kê, hoặc http://127.0.0.1:8025/register/dashboard.html.
-- US-25: mở giao diện thanh toán/hóa đơn, chọn hóa đơn và bấm Cập nhật trạng thái; thao tác này đối chiếu các giao dịch, không cho chọn trạng thái tùy ý.
-- Dữ liệu ban đầu: một khu trọ, ba phòng (một đang thuê, một trống, một bảo trì), một hóa đơn kỳ hiện tại 1.000.000 đ và một khoản thu 300.000 đ. Dashboard kỳ hiện tại thể hiện số đã lập 1.000.000 đ, đã thu 300.000 đ và nợ 700.000 đ. Sau khi thêm thanh toán, các số sẽ thay đổi theo dữ liệu thật.
+Mở http://127.0.0.1:8025/register/login.html rồi đến trang thanh toán. Demo có hóa đơn chưa trả, trả một phần, đã trả và quá hạn. Nút đặt hạn yêu cầu ngày và căn cứ; các thay đổi được lưu lịch sử. Lọc trạng thái Quá hạn để xem các khoản còn nợ sau ngày hạn theo giờ Việt Nam. Mở Thống kê từ trang cơ sở để xem dashboard. Dừng server bằng Ctrl+C. Dữ liệu demo đã thao tác được giữ lại khi khởi động lại.
 
-Giới hạn: backlog yêu cầu trạng thái quá hạn nhưng main chưa có hạn thanh toán và tài liệu chưa định nghĩa quy tắc tính hạn. Không tự gán quá hạn. Chi tiết acceptance criteria, quy tắc cập nhật thủ công, phạm vi thời gian và quyền admin cần nhóm xác nhận. Chrome headless đã kiểm tra một luồng thanh toán và dashboard trên desktop/mobile; chưa bao phủ mọi role và quá hạn.
-
-Phương án lưu hạn và chứng từ chưa áp dụng: xem OVERDUE_DESIGN.md.
+Khi chạy với MySQL đã có schema, phải sao lưu và áp dụng migration `migrations/us25_due_date_mysql.sql` theo quy trình của nhóm trước khi khởi động. SQL chỉ chạy một lần, không tự kết nối. Kiểm tra cột và bảng hiện có trước khi áp dụng; MySQL DDL tự commit, cần kế hoạch khôi phục backup nếu chạy lỗi giữa chừng. `migrations/us25_due_date_mysql_rollback.sql` xóa cột và toàn bộ lịch sử hạn, chỉ dùng sau sao lưu và phê duyệt. Startup main còn DDL cũ và có thể tạo bảng, nên không chạy thử với products_db. Chạy `pip install -r requirements.txt` nếu thiếu tzdata.

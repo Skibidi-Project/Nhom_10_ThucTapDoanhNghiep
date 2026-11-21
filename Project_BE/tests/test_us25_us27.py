@@ -50,3 +50,56 @@ def test_status_reconciliation_and_payment_scope(env):
     assert c.post(f'/api/invoices/{iid}/payments',headers=h,json={'amount':70,'method':'cash'}).json()['invoice_status']=='paid'
     assert c.post(url,headers=h).json()['status']=='paid'
     assert len(c.get(f'/api/invoices/{iid}/payments',headers=h).json())==2
+
+
+def test_due_date_authorization_audit_and_effective_status(env):
+    from app.models.boarding import InvoiceDueDateHistory
+    from sqlalchemy import select
+    c,(h,other,manager,tenant,admin),iid,_=env
+    url=f'/api/invoices/{iid}/due-date'
+    yesterday=(date.today()-timedelta(days=1)).isoformat()
+    payload={'due_date':yesterday,'reason':'Contract clause 3'}
+    assert c.put(url,headers=tenant,json=payload).status_code==403
+    assert c.put(url,headers=other,json=payload).status_code==403
+    assert c.put(url,headers=h,json={'due_date':yesterday,'reason':'  '}).status_code==422
+    assert c.put(url,headers=manager,json=payload).json()['effective_status']=='overdue'
+    assert c.put(url,headers=manager,json=payload).status_code==200
+    inv=c.get(f'/api/invoices/{iid}',headers=h).json()
+    assert inv['status']=='unpaid' and inv['effective_status']=='overdue' and inv['remaining_amount']==100
+    assert c.post(f'/api/invoices/{iid}/payments',headers=h,json={'amount':40,'method':'cash'}).json()['effective_status']=='overdue'
+    inv=c.get(f'/api/invoices/{iid}',headers=h).json()
+    assert inv['paid_amount']==40 and inv['remaining_amount']==60 and inv['effective_status']=='overdue'
+    assert len(c.get('/api/invoices?status=overdue',headers=h).json())==1
+    assert c.post(f'/api/invoices/{iid}/payments',headers=h,json={'amount':60,'method':'cash'}).json()['effective_status']=='paid'
+    dep=app.dependency_overrides[get_db]()
+    db=next(dep)
+    assert len(db.scalars(select(InvoiceDueDateHistory)).all())==1
+    dep.close()
+
+
+def test_vietnam_date_boundaries():
+    from datetime import datetime,timezone
+    from app.services.billing_service import effective_status
+    due=date(2026,1,31)
+    assert effective_status(100,0,None,datetime(2026,2,1,tzinfo=timezone.utc))=='unpaid'
+    assert effective_status(100,20,due,datetime(2026,1,31,16,59,tzinfo=timezone.utc))=='partially_paid'
+    assert effective_status(100,20,due,datetime(2026,1,31,17,0,tzinfo=timezone.utc))=='overdue'
+    assert effective_status(100,100,due,datetime(2026,2,1,tzinfo=timezone.utc))=='paid'
+
+
+def test_due_date_commit_failure_rolls_back(env, monkeypatch):
+    from sqlalchemy.exc import SQLAlchemyError
+    from sqlalchemy.orm import Session
+    from app.models.boarding import InvoiceDueDateHistory
+    from sqlalchemy import select
+    c,(h,*_),iid,_=env
+    def fail_commit(self):
+        raise SQLAlchemyError('simulated failure')
+    with monkeypatch.context() as m:
+        m.setattr(Session,'commit',fail_commit)
+        result=c.put(f'/api/invoices/{iid}/due-date',headers=h,json={'due_date':'2026-01-01','reason':'contract'})
+        assert result.status_code==503
+    assert c.get(f'/api/invoices/{iid}',headers=h).json()['due_date'] is None
+    dep=app.dependency_overrides[get_db](); db=next(dep)
+    assert not db.scalars(select(InvoiceDueDateHistory)).all()
+    dep.close()

@@ -1,9 +1,7 @@
-﻿# Phương án hạn thanh toán cần duyệt
+﻿# Hạn thanh toán US-25
 
-Schema hiện tại không có ngày đến hạn hóa đơn; ngày kết thúc hợp đồng không phải chứng cứ về hạn thanh toán. Không suy ra hạn từ kỳ hoặc thời hạn hợp đồng.
+Hóa đơn có `due_date` nullable; hóa đơn cũ không tự gán hạn. Landlord hoặc manager có quyền INVOICE_MANAGE và quyền khu trọ có thể đặt hạn kèm lý do/căn cứ. Lịch sử ghi hạn cũ, hạn mới, lý do, người thực hiện và thời điểm UTC trong cùng transaction. Tenant và người ngoài phạm vi không được sửa.
 
-Trước khi triển khai production, nhóm cần duyệt nguồn chứng từ, ai được ghi/sửa hạn và quy tắc khi thay đổi hạn sau phát hành. Phương án chuẩn bị: một cột ngày đến hạn nullable trên hóa đơn và bảng lịch sử thay đổi chứa hạn cũ/mới, người thực hiện, thời điểm, lý do và tham chiếu chứng từ; migration riêng có kiểm tra schema và rollback. API ghi hạn phải kiểm tra quyền hóa đơn và quyền với khu trọ, kiểm tra ngày, khóa hóa đơn trong transaction và ghi lịch sử cùng transaction. Không nhận hạn tự sinh khi thiếu căn cứ.
+Trạng thái thanh toán `status` cũ được giữ cho tương thích; `effective_status` dựa vào tổng thanh toán, số tiền và ngày hạn. Đã thanh toán đủ ưu tiên cao nhất; còn nợ và ngày hiện tại tại Asia/Ho_Chi_Minh lớn hơn hạn là quá hạn; còn lại là một phần hoặc chưa thanh toán. Hạn null không bị coi là quá hạn. Một hóa đơn trả một phần quá hạn vẫn hiển thị số đã trả và số còn nợ.
 
-Quá hạn nên là thuộc tính hiển thị độc lập với trạng thái thanh toán: còn nợ và ngày hiện tại theo Asia/Ho_Chi_Minh lớn hơn ngày đến hạn. Ngày đến hạn được tính hết ngày; thanh toán một phần vẫn giữ nhãn một phần đồng thời hiển thị quá hạn. Hóa đơn cũ chưa có hạn hiển thị thiếu dữ liệu, không bị coi là quá hạn. Cách tính này là đề xuất an toàn để duyệt, chưa phải quy tắc production được phê duyệt.
-
-Cần test ranh giới 23:59/00:00 giờ Việt Nam, thiếu hạn, thanh toán đủ/một phần, cập nhật đồng thời và RBAC trước khi áp dụng. Chưa chạy DDL/migration, chưa có API ghi hạn hay chức năng quá hạn.
+Migration và rollback trong `migrations/`; đọc hướng dẫn sao lưu và giới hạn DDL ở DEMO_README.md. Chưa áp dụng migration trên products_db. Nhóm cần review schema, quyền, chứng từ và rollout trước production.

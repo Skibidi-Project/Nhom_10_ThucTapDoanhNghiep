@@ -15,7 +15,26 @@ if url.get_backend_name()!='mysql' or url.host not in ('localhost','127.0.0.1') 
 name='ministay_us25_test_'+uuid.uuid4().hex[:12]
 engine=create_engine(url.set(database=None))
 with engine.begin() as c:c.execute(text('CREATE DATABASE `'+name+'` CHARACTER SET utf8mb4'))
-engine.dispose(); os.environ['DATABASE_URL']=url.set(database=name).render_as_string(hide_password=False);os.environ['JWT_SECRET']=secrets.token_urlsafe(48)
+engine.dispose()
+# Exercise the actual migration against a separate pre-existing minimal schema.
+migration_name='ministay_us25_test_'+uuid.uuid4().hex[:12]
+engine=create_engine(url.set(database=None))
+with engine.begin() as c:c.execute(text('CREATE DATABASE `'+migration_name+'` CHARACTER SET utf8mb4'))
+engine.dispose(); migration_engine=create_engine(url.set(database=migration_name))
+with migration_engine.begin() as c:
+    c.execute(text('CREATE TABLE users (id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB'))
+    c.execute(text('CREATE TABLE invoices (id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB'))
+    c.execute(text('INSERT INTO invoices (id) VALUES (1)'))
+    sql=(Path(__file__).resolve().parents[1]/'migrations/us25_due_date_mysql.sql').read_text(encoding='utf-8-sig')
+    sql='\n'.join(line for line in sql.splitlines() if not line.strip().startswith('--'))
+    for statement in sql.split(';'):
+        if statement.strip():c.execute(text(statement))
+    assert c.execute(text('SELECT due_date FROM invoices WHERE id=1')).one()[0] is None
+    c.execute(text("INSERT INTO users (id) VALUES (1)"))
+    c.execute(text("INSERT INTO invoice_due_date_history (invoice_id,new_due_date,reason,changed_by,changed_at) VALUES (1,'2026-01-01','agreement',1,NOW())"))
+    assert c.execute(text('SELECT COUNT(*) FROM invoice_due_date_history')).scalar_one()==1
+migration_engine.dispose()
+os.environ['DATABASE_URL']=url.set(database=name).render_as_string(hide_password=False);os.environ['JWT_SECRET']=secrets.token_urlsafe(48)
 from app.db.database import Base
 import app.models,app.models.room_type
 from app.models.user import User
@@ -31,6 +50,8 @@ with Session(engine) as db,db.begin():
     contract=Contract(room_id=r.id,tenant_id=t.id,created_by=u.id,start_date=date.today()-timedelta(days=1),end_date=date.today()+timedelta(days=30),monthly_rent=100,deposit=0,status='active');db.add(contract);db.flush()
     invoice=Invoice(contract_id=contract.id,period=date.today().strftime('%Y-%m'),rent_amount=100,utility_amount=0,total_amount=100,status='unpaid');db.add(invoice);db.flush();uid,iid=u.id,invoice.id
 headers={'Authorization':'Bearer '+create_access_token(uid)};barrier=Barrier(2)
+c=TestClient(app)
+assert c.put(f'/api/invoices/{iid}/due-date',headers=headers,json={'due_date':(date.today()-timedelta(days=1)).isoformat(),'reason':'Test agreement'}).json()['effective_status']=='overdue'
 def pay(amount):
     barrier.wait();return TestClient(app).post(f'/api/invoices/{iid}/payments',headers=headers,json={'amount':amount,'method':'cash'})
 with ThreadPoolExecutor(max_workers=2) as pool:
@@ -40,5 +61,5 @@ with Session(engine) as db:
     assert db.get(Invoice,iid).status=='paid' and sum(p.amount for p in db.scalars(select(Payment).where(Payment.invoice_id==iid)))==100
 c=TestClient(app);d=c.get('/api/dashboard/summary',headers=headers);assert d.status_code==200 and d.json()['outstanding']==0 and d.json()['revenue_received']==100
 assert c.post(f'/api/invoices/{iid}/payments',headers=headers,json={'amount':1,'method':'cash'}).status_code==409
-print('PASS MySQL InnoDB: concurrent partial payments, status, debt and dashboard; isolated database:',name)
+print('PASS MySQL InnoDB: migration, old data preserved, due date, concurrent payments, status and dashboard; isolated databases:',name,migration_name)
 engine.dispose()

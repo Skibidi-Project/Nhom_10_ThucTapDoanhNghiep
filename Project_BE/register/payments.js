@@ -83,6 +83,7 @@ const invoiceStatusLabels = {
     unpaid: "Chưa thanh toán",
     partially_paid: "Thanh toán một phần",
     paid: "Đã thanh toán",
+    overdue: "Quá hạn",
 };
 
 function logout() {
@@ -163,11 +164,11 @@ function renderInvoices() {
         const statusCell = createElement("td");
         const badge = createElement(
             "span",
-            `payment-status payment-status-${invoice.status}`,
-            invoiceStatusLabels[invoice.status] || invoice.status,
+            `payment-status payment-status-${invoice.effective_status || invoice.status}`,
+            invoiceStatusLabels[invoice.effective_status || invoice.status] || invoice.status,
         );
         statusCell.append(badge);
-        statusCell.append(createElement("div", "payment-due-missing", "Ch\u01b0a c\u00f3 h\u1ea1n thanh to\u00e1n"));
+        statusCell.append(createElement("div", "payment-due-missing", invoice.due_date ? `Hạn: ${formatDate(invoice.due_date)}` : "Chưa có hạn thanh toán"));
         row.append(statusCell);
 
         const actions = createElement("td", "payment-actions");
@@ -185,7 +186,17 @@ function renderInvoices() {
             try { await apiRequest(`/invoices/${invoice.id}/reconcile-status`, {method:"POST"}); await loadUserAndInvoices(); showNotice("Đã cập nhật trạng thái theo thanh toán.", "success"); }
             catch (error) { showNotice(error.message, "error"); reconcileButton.disabled = false; }
         });
-        actions.append(recordButton, historyButton, reconcileButton);
+        const dueButton = createElement("button", "button button-outline payment-action", "Đặt hạn thanh toán");
+        dueButton.type = "button";
+        dueButton.addEventListener("click", async () => {
+            const due = prompt("Ngày đến hạn (YYYY-MM-DD):", invoice.due_date || "");
+            if (due === null) return;
+            const reason = prompt("Căn cứ hoặc lý do đặt hạn:");
+            if (reason === null) return;
+            try { await apiRequest(`/invoices/${invoice.id}/due-date`, {method:"PUT",body:JSON.stringify({due_date:due,reason})}); await loadInvoices(); showNotice("Đã cập nhật hạn thanh toán.", "success"); }
+            catch (error) { showNotice(error.message, "error"); }
+        });
+        actions.append(recordButton, historyButton, reconcileButton, dueButton);
         row.append(actions);
         paymentRows.append(row);
     }
@@ -251,6 +262,7 @@ async function savePayment(event) {
         activeInvoice.paid_amount = result.total_paid;
         activeInvoice.remaining_amount = result.remaining_amount;
         activeInvoice.status = result.invoice_status;
+        activeInvoice.effective_status = result.effective_status;
         paymentDialog.close();
         renderInvoices();
         showNotice("Đã ghi nhận thanh toán thành công.", "success");

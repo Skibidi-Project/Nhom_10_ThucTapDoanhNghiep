@@ -3,7 +3,7 @@ from datetime import date,datetime,timedelta
 from pathlib import Path
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError,InvalidHashError
-from sqlalchemy import inspect,select
+from sqlalchemy import inspect,select,text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
@@ -13,9 +13,12 @@ if url.get_backend_name()!='sqlite' or not url.database or Path(url.database).re
 from app.db.database import Base,engine
 import app.models,app.models.room_type
 from app.models.user import User
-from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth
+from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth,InvoiceDueDateHistory
 email='landlord.us25.demo@example.com';pwd=getpass.getpass('Mật khẩu tài khoản demo: ')
 if len(pwd)<8:raise SystemExit('Mật khẩu tối thiểu 8 ký tự.')
+inspector=inspect(engine)
+if inspector.has_table('invoices') and 'due_date' not in {c['name'] for c in inspector.get_columns('invoices')}:
+    with engine.begin() as conn: conn.execute(text('ALTER TABLE invoices ADD COLUMN due_date DATE NULL'))
 Base.metadata.create_all(engine);inspector=inspect(engine)
 for table in Base.metadata.sorted_tables:
     if {c.name for c in table.columns}-{c['name'] for c in inspector.get_columns(table.name)}:raise SystemExit('Schema demo không tương thích: '+table.name)
@@ -44,5 +47,11 @@ with Session(engine) as db,db.begin():
     period=date.today().strftime('%Y-%m');invoice=db.scalar(select(Invoice).where(Invoice.contract_id==contract.id,Invoice.period==period))
     if not invoice:
         db.add(InvoiceMonth(room_id=rooms[0].id,period=period));invoice=Invoice(contract_id=contract.id,period=period,rent_amount=1000000,utility_amount=0,total_amount=1000000,status='partially_paid');db.add(invoice);db.flush();db.add(Payment(invoice_id=invoice.id,amount=300000,method='cash',recorded_by=u.id,paid_at=datetime.now()))
+    for period,status,paid,due in [('2001-01','unpaid',0,date.today()+timedelta(days=5)),('2001-02','paid',1000000,date.today()-timedelta(days=2)),('2001-03','partially_paid',400000,date.today()-timedelta(days=1))]:
+        existing=db.scalar(select(Invoice).where(Invoice.contract_id==contract.id,Invoice.period==period))
+        if existing is None:
+            example=Invoice(contract_id=contract.id,period=period,rent_amount=1000000,utility_amount=0,total_amount=1000000,status=status,due_date=due);db.add(example);db.flush()
+            db.add(InvoiceDueDateHistory(invoice_id=example.id,new_due_date=due,reason='Demo agreement',changed_by=u.id))
+            if paid:db.add(Payment(invoice_id=example.id,amount=paid,method='cash',recorded_by=u.id,paid_at=datetime.now()))
 print('Email demo:',email,'| Khu trọ: MiniStay Dashboard Demo')
 engine.dispose()

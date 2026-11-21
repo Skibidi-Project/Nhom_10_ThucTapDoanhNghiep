@@ -1,4 +1,6 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
+$port = if ($env:MINISTAY_DEMO_PORT) { [int]$env:MINISTAY_DEMO_PORT } else { 8025 }
+if ($port -lt 1024 -or $port -gt 65535) { throw 'Cổng demo không hợp lệ.' }
 $Python = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\.venv\Scripts\python.exe'))
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) { throw 'Không tìm thấy .venv.' }
 $tempDir = [System.IO.Path]::GetFullPath($env:TEMP)
@@ -12,7 +14,8 @@ Push-Location $PSScriptRoot
 try {
     & $Python (Join-Path $PSScriptRoot 'demo_setup.py')
     if ($LASTEXITCODE -ne 0) { throw 'Không thể chuẩn bị schema demo.' }
-    Write-Host 'Đăng nhập: http://127.0.0.1:8025/register/login.html'
-    Write-Host 'API docs: http://127.0.0.1:8025/docs'
-    & $Python -m uvicorn app.main:app --host 127.0.0.1 --port 8025
+    Write-Host "Đăng nhập: http://127.0.0.1:$port/register/login.html"
+    Write-Host "API docs: http://127.0.0.1:$port/docs"
+    & $Python -m uvicorn app.main:app --host 127.0.0.1 --port $port
+    if ($LASTEXITCODE -ne 0) { throw 'Không thể khởi động server demo.' }
 } finally { Pop-Location }
