@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.rbac import Role
 from app.models.boarding import Property, PropertyManager, TenantProfile
 from app.models.user import User
-from app.schemas.user import ProfileUpdate, UserCreate, UserLogin
+from app.schemas.user import PasswordChange, ProfileUpdate, UserCreate, UserLogin
 from app.services.db_util import save
 
 password_hasher = PasswordHasher()
@@ -113,6 +113,17 @@ def update_profile(db: Session, user: User, data: ProfileUpdate) -> User:
         user.phone = data.phone
     save(db, user)
     return user
+
+
+def change_password(db: Session, user: User, data: PasswordChange) -> None:
+    try:
+        password_hasher.verify(user.password_hash, data.current_password)
+    except (VerifyMismatchError, VerificationError, InvalidHashError) as exc:
+        raise HTTPException(status_code=400, detail="Mật khẩu hiện tại không đúng.") from exc
+    if data.current_password == data.new_password:
+        raise HTTPException(status_code=422, detail="Mật khẩu mới phải khác mật khẩu hiện tại.")
+    user.password_hash = password_hasher.hash(data.new_password)
+    save(db, user)
 
 
 def assign_role(db: Session, user_id: int, role: str, actor: User | None = None):

@@ -1,0 +1,22 @@
+.account-shell { width: min(100%, 1040px); position: relative; z-index: 1; }
+.account-header { display:flex; justify-content:space-between; align-items:center; padding:18px 24px; margin-bottom:18px; border:1px solid rgba(255,255,255,.2); border-radius:16px; background:rgba(15,23,42,.55); }
+.account-brand { color:#fff; font-size:22px; font-weight:800; text-decoration:none; }
+.account-logout { border:1px solid rgba(255,255,255,.35); border-radius:9px; padding:9px 14px; background:transparent; color:white; cursor:pointer; }
+.account-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.account-card { padding:32px; border:1px solid rgba(255,255,255,.23); border-radius:20px; background:rgba(15,23,42,.72); backdrop-filter:blur(20px); box-shadow:0 20px 50px rgba(0,0,0,.2); }
+.account-card h1,.account-card h2 { color:#fff; font-size:25px; margin-bottom:8px; }
+.profile-panel summary { list-style:none; display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; padding:16px; border:1px solid rgba(94,234,212,.4); border-radius:12px; color:#fff; background:rgba(20,184,166,.14); font-size:16px; font-weight:700; }
+.profile-panel summary::-webkit-details-marker { display:none; }
+.profile-panel summary::after { content:"＋"; color:#5eead4; font-size:20px; }
+.profile-panel[open] summary::after { content:"−"; }
+.profile-panel .account-description { margin-top:16px; }
+.account-description { color:#cbd5e1; font-size:13px; line-height:1.6; margin-bottom:22px; }
+.profile-details { display:grid; grid-template-columns:110px 1fr; gap:0; margin:0 0 26px; }
+.profile-details dt,.profile-details dd { padding:13px 0; border-bottom:1px solid rgba(255,255,255,.12); font-size:13px; overflow-wrap:anywhere; }
+.profile-details dt { color:#94a3b8; }.profile-details dd { color:#f8fafc; margin:0; font-weight:600; }
+.account-message { display:none; margin-bottom:16px; padding:12px; border-radius:9px; font-size:13px; line-height:1.5; }
+.account-message.success { display:block; color:#bbf7d0; background:rgba(22,163,74,.2); }
+.account-message.failure { display:block; color:#fecaca; background:rgba(220,38,38,.2); }
+.account-dashboard { text-decoration:none; }
+.account-card .login-text { margin-top:16px; }
+@media(max-width:760px) { .account-grid { grid-template-columns:1fr; }.account-card { padding:25px 20px; } }

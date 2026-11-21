@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài khoản | MiniStay</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="account.css">
+</head>
+<body>
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+    <main class="account-shell">
+        <header class="account-header">
+            <a class="account-brand" href="properties.html">MiniStay</a>
+            <button type="button" class="account-logout" id="logoutBtn">Đăng xuất</button>
+        </header>
+        <div class="account-grid">
+            <section class="account-card">
+                <div class="form-tag">HỒ SƠ CỦA BẠN</div>
+                <details class="profile-panel">
+                    <summary>Xem thông tin cá nhân</summary>
+                    <p class="account-description">Thông tin tài khoản đang đăng nhập.</p>
+                    <div id="profileMessage" class="account-message" role="status" aria-live="polite"></div>
+                    <dl id="profileDetails" class="profile-details"></dl>
+                </details>
+                <a id="dashboardLink" class="register-btn account-dashboard" href="properties.html">Đến trang quản lý <span>→</span></a>
+            </section>
+
+            <section class="account-card">
+                <div class="form-tag">BẢO MẬT</div>
+                <h2>Đổi mật khẩu</h2>
+                <p class="account-description">Nhập mật khẩu hiện tại để xác nhận, sau đó tạo mật khẩu mới.</p>
+                <div id="passwordMessage" class="account-message" role="status" aria-live="polite"></div>
+                <form id="passwordForm" novalidate>
+                    <div class="form-group">
+                        <label for="currentPassword">Mật khẩu hiện tại</label>
+                        <div class="input-wrapper"><input id="currentPassword" type="password" autocomplete="current-password" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Mật khẩu mới</label>
+                        <div class="input-wrapper"><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+                        <p class="password-hint">Ít nhất 8 ký tự.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                        <div class="input-wrapper"><input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></div>
+                    </div>
+                    <button type="submit" class="register-btn" id="changePasswordBtn">Cập nhật mật khẩu</button>
+                </form>
+                <p class="password-hint">Bạn cần nhập mật khẩu hiện tại để xác nhận thay đổi.</p>
+            </section>
+        </div>
+    </main>
+    <script src="account.js"></script>
+</body>
+</html>

@@ -6,10 +6,10 @@ from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.boarding import ContractResponse, InvoiceResponse
-from app.schemas.user import ProfileUpdate, RoleAssign, RoleChangeResponse, UserListResponse, UserResponse
+from app.schemas.user import PasswordChange, ProfileUpdate, RoleAssign, RoleChangeResponse, UserListResponse, UserResponse
 from app.services.billing_service import list_own_invoices
 from app.services.contract_service import list_own_contracts
-from app.services.user_service import assign_role, get_account, list_users, update_profile
+from app.services.user_service import assign_role, change_password, get_account, list_users, update_profile
 
 router = APIRouter(
     prefix="/api/users",
@@ -30,6 +30,15 @@ def update_me(
     user: User = Depends(require_permissions(Permission.PROFILE_UPDATE)),
 ):
     return update_profile(db, user, data)
+
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def update_my_password(
+    data: PasswordChange,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.PROFILE_UPDATE)),
+):
+    change_password(db, user, data)
 
 
 @router.get("/me/contracts", response_model=list[ContractResponse])
