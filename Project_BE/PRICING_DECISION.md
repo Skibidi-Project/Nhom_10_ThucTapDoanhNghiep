@@ -29,3 +29,7 @@
 3. **Chỉ dùng giá khu trọ:** đơn giản nhưng bỏ qua giá riêng đã tồn tại, có nguy cơ trái điều khoản; không khuyến nghị áp dụng nếu chưa được xác nhận.
 
 Nhóm cần duyệt: thứ tự contract/room; một loại không được gán có thu không; giá tại ngày nào hoặc theo kỳ nào; cách xử lý thiếu/đổi giá, hợp đồng chồng kỳ và đơn vị; cách snapshot; phân quyền chỉnh giá; và cách đối soát hóa đơn cũ. Sau phê duyệt, US-20 và US-22 phải gọi chung một logic, test không tính trùng, khóa dữ liệu khi lập hóa đơn và giữ nguyên hóa đơn lịch sử. **Chưa tích hợp phép tính tiền US-20 vào Billing chính.**
+
+## Cập nhật quy tắc thử nghiệm
+
+Người dùng đã chấp thuận thứ tự **hợp đồng → phòng → khu trọ** nếu giá hợp lệ tại kỳ tính tiền. Điều còn thiếu không phải là phê duyệt thứ tự: schema hiện chưa có khoảng hiệu lực hoặc lịch sử đáng tin cậy, chưa thể dùng dữ liệu hiện tại để khẳng định giá kỳ cũ. Chưa được phê duyệt phương pháp chia tiêu thụ khi giá đổi giữa kỳ. Các phần code Billing cũ nêu trên vẫn chưa áp dụng quy tắc thử nghiệm và không an toàn để tuyên bố là đồng nhất US-20/US-22.

@@ -12,3 +12,5 @@ Dữ liệu demo được giữ giữa các lần chạy; nếu account đã t�
 Không kết nối products_db để test. MySQL cũ cần migration `migrations/us25_due_date_mysql.sql` được duyệt trước startup; backup, kiểm tra schema trước khi áp dụng một lần vì MySQL DDL tự commit. Rollback `migrations/us25_due_date_mysql_rollback.sql` xóa cột và lịch sử nên cần sao lưu, duyệt và lưu trữ trước. Cài dependencies bằng `.venv\Scripts\python.exe -m pip install -r requirements.txt` nếu thiếu. Xem INTEGRATION_STATUS.md để biết phần chưa tích hợp.
 
 US-24: giao diện tự gửi khóa idempotency. Nếu lỗi mạng, hãy thử lại cùng dữ liệu; không đổi số tiền/phương thức cho đến khi đã xác minh kết quả. Client API cũ không gửi header không có bảo vệ retry. MySQL cần được review và áp dụng `migrations/us24_payment_idempotency_mysql.sql` sau sao lưu, cùng migration US-25 nếu chưa áp dụng. Rollback xóa khóa đã lưu và không được dùng tùy tiện.
+
+US-20: chỉ có bộ chọn giá thử nghiệm độc lập, chưa có lịch sử giá và chưa nối US-22 hoặc giao diện. Không dùng demo để chứng nhận tính tiền US-20 theo kỳ.

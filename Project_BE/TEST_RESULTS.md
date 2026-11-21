@@ -21,3 +21,10 @@
 - MySQL InnoDB riêng **PASS** startup trên schema test, migration US-24/25, giữ dữ liệu cũ, FK/unique, rollback, deadlock, hai request cùng khóa/cùng nội dung, xung đột nội dung, số dư và dashboard. Request đồng thời được chạy qua FastAPI TestClient trong tiến trình với MySQL thật; chưa chạy concurrent HTTP qua mạng hoặc nhiều process.
 - Chrome headless desktop 1366, tablet 768, mobile 390 **PASS** login, cơ sở/phòng/hợp đồng, lịch sử US-21, US-22 tạo hóa đơn, thanh toán US-24, US-25 và dashboard; mất phản hồi sau khi server ghi rồi thử lại cùng khóa tạo đúng một dòng.
 - US-20: **BLOCKED** quyết định giá của nhóm. Client không gửi khóa idempotency, người khác hoặc khóa mới vẫn có thể ghi trùng một giao dịch thực tế; không tuyên bố chống trùng tuyệt đối. US-16/19, toàn bộ luồng role và concurrency đa tiến trình: **SKIP**.
+
+## Bộ chọn giá theo kỳ thử nghiệm
+
+- Pytest **27 PASS**, 0 FAIL, một cảnh báo deprecation. Sáu test mới xác minh thứ tự đã duyệt, fallback, điện/nước riêng, giá 0, giá hết hạn/tương lai, thiếu lịch sử, giao nhau và thay đổi giữa kỳ.
+- Bộ chọn thuần chưa nối database, API, UI hay US-22. Vì vậy các test trên không chứng minh tích hợp US-20, migration giá hoặc nhất quán hóa đơn.
+- MySQL test riêng: PASS regression migration US-24/25, FK/unique, rollback/deadlock và thanh toán đồng thời; chưa test schema hoặc concurrency lịch sử giá.
+- Chrome US-20 và kiểm thử giá end-to-end: **SKIP**, do chưa có tích hợp. Không chạy migration hoặc test ghi trên products_db.

@@ -24,3 +24,9 @@
 Ma trận nguồn giá, bằng chứng SRS/SDD/code, hiệu lực và các lựa chọn cần phê duyệt: xem `PRICING_DECISION.md`. Giá theo kỳ và thứ tự khi nhiều mức ghi đè cùng tồn tại chưa có đủ căn cứ; không tích hợp phép tính US-20 hoặc thay đổi hóa đơn cũ.
 
 Khi kiểm tra migration US-24, đã tăng cường startup để xác thực cả tên và bộ cột unique index `(invoice_id, recorded_by, idempotency_key)`; chỉ trùng tên không đủ bảo đảm an toàn. Migration US-24/25 chưa chạy trên products_db; DDL MySQL tự commit, xem hướng dẫn backup, kiểm tra schema và rollback trong DEMO_README.md. Header idempotency tùy chọn; client cũ, khóa mới cho cùng giao dịch, hoặc giao dịch do người khác gửi lại không được tự nhận diện là trùng.
+
+## Chấp thuận thử nghiệm US-20 và trạng thái thực thi
+
+Người dùng đã chấp thuận thứ tự giá riêng hợp đồng → giá riêng phòng → giá mặc định khu trọ cho nhánh thử nghiệm. Đã tạo bộ chọn thuần `app/services/dated_utility_pricing.py`: mỗi giá phải có khoảng hiệu lực rõ ràng, ưu tiên từng ngày trong cả kỳ, từ chối thiếu lịch sử, các bản ghi cùng mức chồng lấn hoặc giá được chọn thay đổi giữa kỳ. Không dùng giá hiện tại để giả lập quá khứ. Kết quả kiểm thử bộ chọn không chứng minh toàn bộ tích hợp.
+
+**Chưa nối bộ chọn này vào US-22 hoặc giao diện US-20.** Schema hiện tại chưa có lịch sử hiệu lực, mã nhận diện nguồn và dữ liệu/chứng từ cần thiết; Billing cũ vẫn có thể lấy giá hiện tại khi lập hóa đơn kỳ cũ. Không được coi luồng cũ đáp ứng quy tắc mới. Cần thiết kế, triển khai và test lưu lịch sử có kiểm soát, migration, quyền cấu hình và snapshot giá theo hóa đơn mới; đồng bộ bộ chọn vào US-20/US-22; xử lý dịch vụ chưa gán, fixed/variable, đồng thời và UI. Chưa có quy tắc chia tiêu thụ khi giá thay đổi giữa kỳ, trường hợp đó phải tiếp tục bị chặn. Không push bản này như tích hợp hoàn chỉnh.
