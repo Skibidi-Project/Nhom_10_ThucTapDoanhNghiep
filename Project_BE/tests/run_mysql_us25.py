@@ -51,6 +51,8 @@ from app.core.security import create_access_token
 from app.main import app
 from fastapi.testclient import TestClient
 engine=create_engine(os.environ['DATABASE_URL']);Base.metadata.create_all(engine)
+with TestClient(app) as startup_client:
+    assert startup_client.get('/openapi.json').status_code==200
 with Session(engine) as db,db.begin():
     u=User(full_name='Test',email='owner@test.invalid',role='landlord',password_hash='x');db.add(u);db.flush()
     p=Property(owner_id=u.id,name='T',address='T');db.add(p);db.flush()

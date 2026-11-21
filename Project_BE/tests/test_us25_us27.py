@@ -252,3 +252,11 @@ def test_billing_existing_price_paths_and_assignment_precedence(env):
     db.add(ServiceAssignment(contract_id=contract.id,service_code='electricity',quantity=1,price_override=5,assigned_by=uid));db.flush()
     assert _utility_amount(db,contract,'2026-01',prop)==50
     dep.close()
+
+
+def test_startup_rejects_misconfigured_payment_uniqueness():
+    from app.main import _payment_idempotency_schema_ready
+    columns={'idempotency_key','request_fingerprint'}
+    assert not _payment_idempotency_schema_ready(columns,[{'name':'uq_payment_idempotency','column_names':['idempotency_key']}])
+    assert not _payment_idempotency_schema_ready({'idempotency_key'},[{'name':'uq_payment_idempotency','column_names':['invoice_id','recorded_by','idempotency_key']}])
+    assert _payment_idempotency_schema_ready(columns,[{'name':'uq_payment_idempotency','column_names':['invoice_id','recorded_by','idempotency_key']}])

@@ -21,6 +21,16 @@ from app.routers import (
     users,
 )
 
+
+def _payment_idempotency_schema_ready(columns: set[str], uniques: list[dict]) -> bool:
+    expected = {'invoice_id', 'recorded_by', 'idempotency_key'}
+    return {'idempotency_key', 'request_fingerprint'}.issubset(columns) and any(
+        unique.get('name') == 'uq_payment_idempotency'
+        and set(unique.get('column_names') or []) == expected
+        for unique in uniques
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Existing MySQL databases must be migrated explicitly before startup DDL.
@@ -33,7 +43,7 @@ async def lifespan(app: FastAPI):
         if inspector.has_table('payments'):
             payment_columns = {column['name'] for column in inspector.get_columns('payments')}
             uniques = inspector.get_unique_constraints('payments')
-            if not {'idempotency_key', 'request_fingerprint'}.issubset(payment_columns) or not any(u['name'] == 'uq_payment_idempotency' for u in uniques):
+            if not _payment_idempotency_schema_ready(payment_columns, uniques):
                 raise RuntimeError('US-24 idempotency migration is required before starting this existing database.')
     init_db()
     try:

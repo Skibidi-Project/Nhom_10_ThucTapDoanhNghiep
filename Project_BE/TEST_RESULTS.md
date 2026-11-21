@@ -14,3 +14,10 @@
 - MySQL InnoDB test riêng: **PASS** migration trên schema có dữ liệu, hai request đồng thời cùng khóa/cùng nội dung nhận cùng payment id và chỉ một dòng, khác nội dung trả 409; sau đó thanh toán tiếp, FK/unique/rollback/deadlock và dashboard. Không ghi products_db. Các request đồng thời chạy qua FastAPI TestClient trong tiến trình với MySQL thật.
 - Chrome backend SQLite riêng: **PASS** giả lập mất phản hồi sau khi backend ghi thật; gửi lại cùng khóa và database chỉ có một thanh toán. Desktop/tablet/mobile PASS regression login, US-21/22/24/25/27; pytest kiểm tra US-26.
 - **SKIP:** quyết định nguồn giá US-20; bảo vệ retry của client cũ không gửi khóa; toàn bộ kịch bản multi-process/MySQL qua mạng và mọi role/viewport.
+
+## Audit regression giá và idempotency
+
+- Pytest **21 PASS**, 0 FAIL, một warning deprecation; kiểm tra guard startup từ chối unique index sai cột.
+- MySQL InnoDB riêng **PASS** startup trên schema test, migration US-24/25, giữ dữ liệu cũ, FK/unique, rollback, deadlock, hai request cùng khóa/cùng nội dung, xung đột nội dung, số dư và dashboard. Request đồng thời được chạy qua FastAPI TestClient trong tiến trình với MySQL thật; chưa chạy concurrent HTTP qua mạng hoặc nhiều process.
+- Chrome headless desktop 1366, tablet 768, mobile 390 **PASS** login, cơ sở/phòng/hợp đồng, lịch sử US-21, US-22 tạo hóa đơn, thanh toán US-24, US-25 và dashboard; mất phản hồi sau khi server ghi rồi thử lại cùng khóa tạo đúng một dòng.
+- US-20: **BLOCKED** quyết định giá của nhóm. Client không gửi khóa idempotency, người khác hoặc khóa mới vẫn có thể ghi trùng một giao dịch thực tế; không tuyên bố chống trùng tuyệt đối. US-16/19, toàn bộ luồng role và concurrency đa tiến trình: **SKIP**.
