@@ -1,5 +1,6 @@
 import calendar
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.boarding import (
     Contract,
     Invoice,
+    InvoiceDueDateHistory,
     InvoiceMonth,
     Payment,
     Property,
@@ -34,6 +36,15 @@ PRICES = {
     "water": "water_unit_price",
     "service": "service_unit_price",
 }
+
+
+def effective_status(total: int, paid: int, due_date: date | None, now: datetime | None = None) -> str:
+    today = (now or datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))).astimezone(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+    if paid >= total:
+        return 'paid'
+    if due_date is not None and today > due_date:
+        return 'overdue'
+    return 'partially_paid' if paid > 0 else 'unpaid'
 
 
 def create_reading(db: Session, user: User, room_id: int, data: ReadingCreate) -> UtilityReading:
@@ -167,6 +178,7 @@ def _attach_invoice_details(db: Session, invoices: list[Invoice]) -> None:
 
         invoice.paid_amount = paid_amount
         invoice.remaining_amount = remaining_amount
+        invoice.effective_status = effective_status(invoice.total_amount, paid_amount, invoice.due_date)
         invoice.room_number = room_number
         invoice.property_name = property_name
         invoice.tenant_name = tenant_name
@@ -179,9 +191,6 @@ def list_invoices(
     contract_id: int | None = None,
 ) -> list[Invoice]:
     query = select(Invoice)
-
-    if status is not None:
-        query = query.where(Invoice.status == status)
 
     if period is not None:
         query = query.where(Invoice.period == period)
@@ -197,6 +206,9 @@ def list_invoices(
     ]
 
     _attach_invoice_details(db, invoices)
+
+    if status is not None:
+        invoices = [invoice for invoice in invoices if invoice.effective_status == status]
 
     return invoices
 
@@ -215,7 +227,8 @@ def _paid_amount(db: Session, invoice_id: int) -> int:
     return int(paid or 0)
 
 def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
 
     if paid_amount <= 0:
         invoice.status = "unpaid"
@@ -229,6 +242,34 @@ def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
 
 def _format_vnd(amount: int) -> str:
     return f"{amount:,}".replace(",", ".") + " đ"
+
+def reconcile_invoice_status(db: Session, user: User, invoice_id: int) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    invoice = db.scalar(select(Invoice).where(Invoice.id==invoice_id).with_for_update().execution_options(populate_existing=True))
+    paid=sum(p.amount for p in db.scalars(select(Payment).where(Payment.invoice_id==invoice_id).with_for_update()))
+    if paid > invoice.total_amount:
+        raise HTTPException(409,'Tổng thanh toán vượt hóa đơn; cần kiểm tra thủ công.')
+    invoice.status = 'unpaid' if paid == 0 else 'paid' if paid == invoice.total_amount else 'partially_paid'
+    save(db, invoice)
+    return {'id':invoice.id, 'status':invoice.status, 'effective_status':effective_status(invoice.total_amount,paid,invoice.due_date), 'paid_amount':paid, 'remaining_amount':invoice.total_amount-paid}
+
+
+def update_due_date(db: Session, user: User, invoice_id: int, data) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    invoice = db.scalar(select(Invoice).where(Invoice.id == invoice_id).with_for_update().execution_options(populate_existing=True))
+    old = invoice.due_date
+    if old != data.due_date:
+        invoice.due_date = data.due_date
+        db.add(InvoiceDueDateHistory(invoice_id=invoice.id, old_due_date=old, new_due_date=data.due_date, reason=data.reason, changed_by=user.id))
+        save(db, invoice)
+    paid = sum(payment.amount for payment in db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()))
+    return {'id': invoice.id, 'due_date': invoice.due_date, 'effective_status': effective_status(invoice.total_amount, paid, invoice.due_date)}
 
 def record_payment(
     db: Session,
@@ -246,7 +287,7 @@ def record_payment(
     invoice = db.scalar(
         select(Invoice)
         .where(Invoice.id == invoice_id)
-        .with_for_update()
+        .with_for_update().execution_options(populate_existing=True)
     )
 
     if invoice is None:
@@ -255,7 +296,8 @@ def record_payment(
             detail="Không tìm thấy hóa đơn.",
         )
 
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
 
     if invoice.status == "paid" or paid_amount >= invoice.total_amount:
         raise HTTPException(
@@ -283,11 +325,10 @@ def record_payment(
     db.add(payment)
     db.flush()
 
-    recompute_invoice_status(db, invoice)
+    total_paid = paid_amount + data.amount
+    invoice.status = 'paid' if total_paid >= invoice.total_amount else 'partially_paid'
 
     save(db, payment, invoice)
-
-    total_paid = _paid_amount(db, invoice.id)
 
     return {
         "id": payment.id,
@@ -299,6 +340,7 @@ def record_payment(
         "note": payment.note,
         "recorded_by_name": user.full_name,
         "invoice_status": invoice.status,
+        "effective_status": effective_status(invoice.total_amount, total_paid, invoice.due_date),
         "total_paid": total_paid,
         "remaining_amount": max(invoice.total_amount - total_paid, 0),
     }

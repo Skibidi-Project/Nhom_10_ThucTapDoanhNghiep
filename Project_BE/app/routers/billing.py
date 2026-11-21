@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.models.user import User
 from app.schemas.boarding import (
     InvoiceResponse,
+    InvoiceDueDateUpdate,
     PaymentCreate,
     PaymentResult,
     PaymentHistoryResponse,
@@ -51,6 +52,15 @@ def read_invoice(
     user: User = Depends(require_permissions(Permission.INVOICE_READ)),
 ):
     return billing_service.read_invoice(db, user, invoice_id)
+
+@invoice_router.post('/{invoice_id}/reconcile-status')
+def reconcile_status(invoice_id: int, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.INVOICE_MANAGE))):
+    return billing_service.reconcile_invoice_status(db,user,invoice_id)
+
+
+@invoice_router.put('/{invoice_id}/due-date')
+def set_due_date(invoice_id: int, data: InvoiceDueDateUpdate, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.INVOICE_MANAGE))):
+    return billing_service.update_due_date(db, user, invoice_id, data)
 
 
 @invoice_router.post(

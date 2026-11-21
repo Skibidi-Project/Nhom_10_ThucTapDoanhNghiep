@@ -186,3 +186,4 @@
         grid-column: auto;
     }
 }
+.payment-status-overdue { background:#fee4e2; color:#b42318; }
