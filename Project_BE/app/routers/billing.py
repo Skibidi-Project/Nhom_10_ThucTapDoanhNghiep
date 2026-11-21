@@ -52,6 +52,10 @@ def read_invoice(
 ):
     return billing_service.read_invoice(db, user, invoice_id)
 
+@invoice_router.post('/{invoice_id}/reconcile-status')
+def reconcile_status(invoice_id: int, db: Session = Depends(get_db), user: User = Depends(require_permissions(Permission.INVOICE_MANAGE))):
+    return billing_service.reconcile_invoice_status(db,user,invoice_id)
+
 
 @invoice_router.post(
     "/{invoice_id}/payments",

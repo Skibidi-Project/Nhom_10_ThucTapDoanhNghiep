@@ -11,6 +11,7 @@ from app.routers import (
     billing,
     buildings,
     contracts,
+    dashboard,
     expenses,
     properties,
     room_type,
@@ -40,6 +41,7 @@ app.include_router(properties.router)
 app.include_router(properties.room_router)
 app.include_router(tenants.router)
 app.include_router(contracts.router)
+app.include_router(dashboard.router)
 app.include_router(service_assignments.router)
 app.include_router(expenses.router)
 app.include_router(billing.invoice_router)

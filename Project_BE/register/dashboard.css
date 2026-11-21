@@ -1,0 +1,3 @@
+.filters{display:flex;gap:1rem;align-items:end;flex-wrap:wrap}.filters label{display:grid;gap:.4rem}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin:1rem 0}.stat{padding:1.2rem;border:1px solid #e4e7ec;border-radius:14px;background:#fff}.stat strong{display:block;font-size:1.5rem;margin-top:.5rem;overflow-wrap:anywhere}@media(max-width:600px){.filters label,.filters button{width:100%}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.chart-row{display:grid;grid-template-columns:7rem 1fr 3rem;gap:.75rem;align-items:center;margin:.75rem 0}.chart-track{height:1rem;background:#e4e7ec;border-radius:1rem;overflow:hidden}.chart-bar{height:100%;background:#526ee8;border-radius:1rem}

@@ -167,6 +167,7 @@ function renderInvoices() {
             invoiceStatusLabels[invoice.status] || invoice.status,
         );
         statusCell.append(badge);
+        statusCell.append(createElement("div", "payment-due-missing", "Ch\u01b0a c\u00f3 h\u1ea1n thanh to\u00e1n"));
         row.append(statusCell);
 
         const actions = createElement("td", "payment-actions");
@@ -177,7 +178,14 @@ function renderInvoices() {
         const historyButton = createElement("button", "button button-outline payment-action", "Lịch sử");
         historyButton.type = "button";
         historyButton.addEventListener("click", () => openHistory(invoice));
-        actions.append(recordButton, historyButton);
+        const reconcileButton = createElement("button", "button button-outline payment-action", "Cập nhật trạng thái");
+        reconcileButton.type = "button";
+        reconcileButton.addEventListener("click", async () => {
+            reconcileButton.disabled = true;
+            try { await apiRequest(`/invoices/${invoice.id}/reconcile-status`, {method:"POST"}); await loadUserAndInvoices(); showNotice("Đã cập nhật trạng thái theo thanh toán.", "success"); }
+            catch (error) { showNotice(error.message, "error"); reconcileButton.disabled = false; }
+        });
+        actions.append(recordButton, historyButton, reconcileButton);
         row.append(actions);
         paymentRows.append(row);
     }

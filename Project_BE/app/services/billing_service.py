@@ -215,7 +215,8 @@ def _paid_amount(db: Session, invoice_id: int) -> int:
     return int(paid or 0)
 
 def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
 
     if paid_amount <= 0:
         invoice.status = "unpaid"
@@ -229,6 +230,19 @@ def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
 
 def _format_vnd(amount: int) -> str:
     return f"{amount:,}".replace(",", ".") + " đ"
+
+def reconcile_invoice_status(db: Session, user: User, invoice_id: int) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    invoice = db.scalar(select(Invoice).where(Invoice.id==invoice_id).with_for_update().execution_options(populate_existing=True))
+    paid=sum(p.amount for p in db.scalars(select(Payment).where(Payment.invoice_id==invoice_id).with_for_update()))
+    if paid > invoice.total_amount:
+        raise HTTPException(409,'Tổng thanh toán vượt hóa đơn; cần kiểm tra thủ công.')
+    invoice.status = 'unpaid' if paid == 0 else 'paid' if paid == invoice.total_amount else 'partially_paid'
+    save(db, invoice)
+    return {'id':invoice.id, 'status':invoice.status, 'paid_amount':paid, 'remaining_amount':invoice.total_amount-paid}
 
 def record_payment(
     db: Session,
@@ -246,7 +260,7 @@ def record_payment(
     invoice = db.scalar(
         select(Invoice)
         .where(Invoice.id == invoice_id)
-        .with_for_update()
+        .with_for_update().execution_options(populate_existing=True)
     )
 
     if invoice is None:
@@ -255,7 +269,8 @@ def record_payment(
             detail="Không tìm thấy hóa đơn.",
         )
 
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
 
     if invoice.status == "paid" or paid_amount >= invoice.total_amount:
         raise HTTPException(
@@ -283,11 +298,10 @@ def record_payment(
     db.add(payment)
     db.flush()
 
-    recompute_invoice_status(db, invoice)
+    total_paid = paid_amount + data.amount
+    invoice.status = 'paid' if total_paid >= invoice.total_amount else 'partially_paid'
 
     save(db, payment, invoice)
-
-    total_paid = _paid_amount(db, invoice.id)
 
     return {
         "id": payment.id,
