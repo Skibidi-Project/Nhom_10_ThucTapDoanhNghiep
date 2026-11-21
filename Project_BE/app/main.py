@@ -41,6 +41,14 @@ app = FastAPI(
     title="FastAPI Auth Minimal",
     lifespan=lifespan,
 )
+
+@app.middleware('http')
+async def revalidate_register_assets(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith('/register/'):
+        response.headers['Cache-Control'] = 'no-cache'
+    return response
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(buildings.property_router)

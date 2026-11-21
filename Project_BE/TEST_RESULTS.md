@@ -1,7 +1,7 @@
-# Kết quả kiểm thử US-25
+# Kết quả kiểm thử tích hợp
 
-- Pytest và API: 12 PASS, 0 FAIL, 1 warning; bao gồm quá hạn, thiếu hạn, hạn hôm nay, ranh giới giờ Việt Nam, thanh toán và quyền.
-- MySQL InnoDB riêng: PASS migration trên schema cũ, giữ hạn NULL của hóa đơn cũ, ghi audit, thanh toán HTTP đồng thời và chống vượt số dư. Không ghi products_db.
-- Chrome desktop/mobile với backend SQLite demo thực: PASS đăng nhập, thanh toán từng phần, đặt hạn có căn cứ, quá hạn còn nợ, thanh toán hết, đối chiếu, dashboard, lọc, console và API.
-- Regression US-22/US-24/US-27: PARTIAL, chưa bao phủ đầy đủ các luồng nghiệp vụ. Login PASS. Kiểm thử đầy đủ giao diện phòng và hợp đồng: SKIP.
-- Các thay đổi hạn được khóa theo hóa đơn và ghi lịch sử cùng transaction. Ngày giờ audit lưu UTC; ngày quá hạn dùng Asia/Ho_Chi_Minh. Trạng thái thanh toán cũ được giữ để tương thích; `effective_status` là trạng thái được hiển thị và lọc.
+- `DATABASE_URL=sqlite://` với JWT secret thử nghiệm, `python -m pytest -q -p no:cacheprovider`: 14 PASS, 0 FAIL, 1 cảnh báo deprecation. Bao gồm API US-21 theo phòng/kỳ, phân quyền và chống trùng; US-25/27 và các test có sẵn.
+- MySQL InnoDB database riêng: PASS migration, giữ dữ liệu cũ, hai thanh toán đồng thời, chống vượt, công nợ và dashboard. Không ghi products_db.
+- Chrome headless với backend thực và SQLite riêng: PASS desktop 1366, tablet 768, mobile 390 cho login không reload, menu, lịch sử điện/nước US-21, thanh toán từng phần, đối chiếu US-25, dashboard, back, logout và đăng nhập lại cho landlord; không lỗi console hay response HTTP >=400 trong luồng đó.
+- Các test chưa chạy: toàn bộ AC US-20/21/24/26, logout/login lại cho manager, tenant và admin, full regression register, phòng, hợp đồng và US-16/19; không coi là PASS.
+- Lỗi tìm được: login main đưa mọi role sang trang account; sửa điều hướng theo role. Không thể khẳng định cache hay server cũ có phải nguyên nhân báo cáo ban đầu.

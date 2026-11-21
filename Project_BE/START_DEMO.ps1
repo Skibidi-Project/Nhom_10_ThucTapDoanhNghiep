@@ -3,6 +3,8 @@ $port = if ($env:MINISTAY_DEMO_PORT) { [int]$env:MINISTAY_DEMO_PORT } else { 802
 if ($port -lt 1024 -or $port -gt 65535) { throw 'Cổng demo không hợp lệ.' }
 $Python = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\.venv\Scripts\python.exe'))
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) { throw 'Không tìm thấy .venv.' }
+& $Python -c "import fastapi, sqlalchemy, uvicorn, argon2, tzdata"
+if ($LASTEXITCODE -ne 0) { throw 'Thiếu dependency trong .venv; cài requirements.txt trước khi chạy.' }
 $tempDir = [System.IO.Path]::GetFullPath($env:TEMP)
 $demoDb = [System.IO.Path]::GetFullPath((Join-Path $tempDir 'ministay_us25_us27_demo.sqlite3'))
 if ([System.IO.Path]::GetDirectoryName($demoDb) -ne $tempDir) { throw 'Đường dẫn demo không hợp lệ.' }

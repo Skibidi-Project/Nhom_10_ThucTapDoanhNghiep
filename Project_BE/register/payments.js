@@ -206,6 +206,8 @@ function renderInvoices() {
         });
         actions.append(recordButton, historyButton, reconcileButton, dueButton);
         row.append(actions);
+        const labels = ['Kỳ', 'Khu trọ', 'Phòng', 'Khách thuê', 'Tổng tiền', 'Đã thu', 'Còn thiếu', 'Trạng thái', 'Thao tác'];
+        Array.from(row.children).forEach((cell, index) => cell.dataset.label = labels[index]);
         paymentRows.append(row);
     }
 }

@@ -80,8 +80,8 @@ form.addEventListener("submit", async event => {
         const role = data.user.role;
         sessionStorage.setItem("us05_user_role", role);
         password.value = "";
-        showMessage(data.message, "success");
-        setTimeout(() => window.location.assign("account.html"), 500);
+        const destinations = {landlord: "properties.html", manager: "properties.html", admin: "admin-users.html", tenant: "account.html"};
+        window.location.assign(destinations[role] || "account.html");
     } catch (error) {
         showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng thử lại." : error.message, "failure");
     } finally {

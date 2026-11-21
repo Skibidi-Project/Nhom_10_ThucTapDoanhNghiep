@@ -13,7 +13,7 @@ if url.get_backend_name()!='sqlite' or not url.database or Path(url.database).re
 from app.db.database import Base,engine
 import app.models,app.models.room_type
 from app.models.user import User
-from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth,InvoiceDueDateHistory
+from app.models.boarding import Property,Room,TenantProfile,Contract,Invoice,Payment,InvoiceMonth,InvoiceDueDateHistory,UtilityReading
 email='landlord.us25.demo@example.com';pwd=getpass.getpass('Mật khẩu tài khoản demo: ')
 if len(pwd)<8:raise SystemExit('Mật khẩu tối thiểu 8 ký tự.')
 inspector=inspect(engine)
@@ -53,5 +53,9 @@ with Session(engine) as db,db.begin():
             example=Invoice(contract_id=contract.id,period=period,rent_amount=1000000,utility_amount=0,total_amount=1000000,status=status,due_date=due);db.add(example);db.flush()
             db.add(InvoiceDueDateHistory(invoice_id=example.id,new_due_date=due,reason='Demo agreement',changed_by=u.id))
             if paid:db.add(Payment(invoice_id=example.id,amount=paid,method='cash',recorded_by=u.id,paid_at=datetime.now()))
+    for kind,previous,current in [('electricity',100,150),('water',10,16)]:
+        current_period=date.today().strftime('%Y-%m')
+        if not db.scalar(select(UtilityReading).where(UtilityReading.room_id==rooms[0].id,UtilityReading.period==current_period,UtilityReading.utility_type==kind)):
+            db.add(UtilityReading(room_id=rooms[0].id,period=current_period,utility_type=kind,previous_reading=previous,current_reading=current,recorded_by=u.id))
 print('Email demo:',email,'| Khu trọ: MiniStay Dashboard Demo')
 engine.dispose()

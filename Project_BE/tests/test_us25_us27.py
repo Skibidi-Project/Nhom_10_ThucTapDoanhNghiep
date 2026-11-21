@@ -120,3 +120,18 @@ def test_invoice_contract_filter_cannot_expose_another_property(env):
     assert c.get(f'/api/invoices?contract_id={other_contract}',headers=owner).json()==[]
     result=c.get(f'/api/invoices?contract_id={other_contract}',headers=other).json()
     assert len(result)==1 and result[0]['contract_id']==other_contract
+
+
+def test_us21_reading_history_scope_and_periods(env):
+    from sqlalchemy import select
+    c,(owner,other,manager,tenant,_),_,_=env
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    room_id=db.scalar(select(Room.id).where(Room.room_number=='1'));dep.close()
+    for period,previous,current in [('2026-01',100,140),('2026-02',140,165)]:
+        r=c.post(f'/api/rooms/{room_id}/readings',headers=owner,json={'utility_type':'electricity','period':period,'previous_reading':previous,'current_reading':current})
+        assert r.status_code==201
+    assert c.post(f'/api/rooms/{room_id}/readings',headers=owner,json={'utility_type':'electricity','period':'2026-02','previous_reading':140,'current_reading':165}).status_code==409
+    readings=c.get(f'/api/rooms/{room_id}/readings',headers=manager).json()
+    assert [(r['period'],r['current_reading']-r['previous_reading']) for r in readings]==[('2026-01',40),('2026-02',25)]
+    assert c.get(f'/api/rooms/{room_id}/readings',headers=other).status_code==403
+    assert c.get(f'/api/rooms/{room_id}/readings',headers=tenant).status_code==403
