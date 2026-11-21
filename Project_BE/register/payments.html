@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
+<head><link rel="icon" href="data:,">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh toán - MiniStay</title>
     <link rel="stylesheet" href="properties.css">
     <link rel="stylesheet" href="payments.css">
-</head>
+<link rel="stylesheet" href="navigation.css"><script defer src="navigation.js"></script></head>
 <body>
     <header class="topbar">
         <div class="topbar-left">
@@ -28,10 +28,12 @@
             <div>
                 <h1>Ghi nhận thanh toán</h1>
                 <p class="subtitle">Theo dõi đã thu, còn thiếu và lịch sử thanh toán của hóa đơn.</p>
+                <a class="button button-outline" href="properties.html">Quản lý cơ sở</a>
             </div>
         </section>
 
         <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <p id="contractScope" class="subtitle" hidden>Đang xem hóa đơn theo hợp đồng. <a href="payments.html">Xem tất cả hóa đơn</a></p>
         <section id="paymentSection" hidden>
             <div class="panel payment-filters">
                 <div class="form-grid">
@@ -42,6 +44,7 @@
                             <option value="unpaid">Chưa thanh toán</option>
                             <option value="partially_paid">Thanh toán một phần</option>
                             <option value="paid">Đã thanh toán</option>
+                            <option value="overdue">Quá hạn</option>
                         </select>
                     </div>
                     <div class="form-group">

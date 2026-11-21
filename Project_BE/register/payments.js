@@ -22,6 +22,7 @@ const paymentPreview = document.getElementById("paymentPreview");
 const savePaymentBtn = document.getElementById("savePaymentBtn");
 const paymentFormError = document.getElementById("paymentFormError");
 const historyDialog = document.getElementById("historyDialog");
+const contractId = new URLSearchParams(window.location.search).get("contract_id");
 
 let accessToken = sessionStorage.getItem("us05_access_token") || "";
 let currentUser = null;
@@ -83,6 +84,7 @@ const invoiceStatusLabels = {
     unpaid: "Chưa thanh toán",
     partially_paid: "Thanh toán một phần",
     paid: "Đã thanh toán",
+    overdue: "Quá hạn",
 };
 
 function logout() {
@@ -119,7 +121,14 @@ async function loadInvoices() {
     paymentsEmpty.hidden = true;
     paymentsTableContainer.hidden = true;
     try {
+        if (contractId !== null && (!/^[1-9]\d*$/.test(contractId) || !Number.isSafeInteger(Number(contractId)))) {
+            throw new Error("Mã hợp đồng không hợp lệ.");
+        }
         const params = new URLSearchParams();
+        if (contractId !== null) {
+            params.set("contract_id", contractId);
+            document.getElementById("contractScope").hidden = false;
+        }
         if (statusFilter.value) params.set("status", statusFilter.value);
         if (periodFilter.value) params.set("period", periodFilter.value);
         const query = params.toString();
@@ -163,10 +172,11 @@ function renderInvoices() {
         const statusCell = createElement("td");
         const badge = createElement(
             "span",
-            `payment-status payment-status-${invoice.status}`,
-            invoiceStatusLabels[invoice.status] || invoice.status,
+            `payment-status payment-status-${invoice.effective_status || invoice.status}`,
+            invoiceStatusLabels[invoice.effective_status || invoice.status] || invoice.status,
         );
         statusCell.append(badge);
+        statusCell.append(createElement("div", "payment-due-missing", invoice.due_date ? `Hạn: ${formatDate(invoice.due_date)}` : "Chưa có hạn thanh toán"));
         row.append(statusCell);
 
         const actions = createElement("td", "payment-actions");
@@ -177,8 +187,27 @@ function renderInvoices() {
         const historyButton = createElement("button", "button button-outline payment-action", "Lịch sử");
         historyButton.type = "button";
         historyButton.addEventListener("click", () => openHistory(invoice));
-        actions.append(recordButton, historyButton);
+        const reconcileButton = createElement("button", "button button-outline payment-action", "Cập nhật trạng thái");
+        reconcileButton.type = "button";
+        reconcileButton.addEventListener("click", async () => {
+            reconcileButton.disabled = true;
+            try { await apiRequest(`/invoices/${invoice.id}/reconcile-status`, {method:"POST"}); await loadUserAndInvoices(); showNotice("Đã cập nhật trạng thái theo thanh toán.", "success"); }
+            catch (error) { showNotice(error.message, "error"); reconcileButton.disabled = false; }
+        });
+        const dueButton = createElement("button", "button button-outline payment-action", "Đặt hạn thanh toán");
+        dueButton.type = "button";
+        dueButton.addEventListener("click", async () => {
+            const due = prompt("Ngày đến hạn (YYYY-MM-DD):", invoice.due_date || "");
+            if (due === null) return;
+            const reason = prompt("Căn cứ hoặc lý do đặt hạn:");
+            if (reason === null) return;
+            try { await apiRequest(`/invoices/${invoice.id}/due-date`, {method:"PUT",body:JSON.stringify({due_date:due,reason})}); await loadInvoices(); showNotice("Đã cập nhật hạn thanh toán.", "success"); }
+            catch (error) { showNotice(error.message, "error"); }
+        });
+        actions.append(recordButton, historyButton, reconcileButton, dueButton);
         row.append(actions);
+        const labels = ['Kỳ', 'Khu trọ', 'Phòng', 'Khách thuê', 'Tổng tiền', 'Đã thu', 'Còn thiếu', 'Trạng thái', 'Thao tác'];
+        Array.from(row.children).forEach((cell, index) => cell.dataset.label = labels[index]);
         paymentRows.append(row);
     }
 }
@@ -236,13 +265,22 @@ async function savePayment(event) {
             paid_at: `${paymentPaidAt.value}T00:00:00`,
             note: paymentNote.value,
         };
+        const attemptStorageKey = `us24_payment_attempt_${activeInvoice.id}`;
+        let attemptKey = sessionStorage.getItem(attemptStorageKey);
+        if (!attemptKey) {
+            attemptKey = crypto.randomUUID();
+            sessionStorage.setItem(attemptStorageKey, attemptKey);
+        }
         const result = await apiRequest(`/invoices/${activeInvoice.id}/payments`, {
             method: "POST",
+            headers: {"Idempotency-Key": attemptKey},
             body: JSON.stringify(body),
         });
+        sessionStorage.removeItem(attemptStorageKey);
         activeInvoice.paid_amount = result.total_paid;
         activeInvoice.remaining_amount = result.remaining_amount;
         activeInvoice.status = result.invoice_status;
+        activeInvoice.effective_status = result.effective_status;
         paymentDialog.close();
         renderInvoices();
         showNotice("Đã ghi nhận thanh toán thành công.", "success");

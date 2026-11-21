@@ -1,13 +1,20 @@
 import calendar
+import hashlib
+import json
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.models.boarding import (
     Contract,
     Invoice,
+    InvoiceDueDateHistory,
+    InvoiceUtilitySnapshot,
+    InvoiceServiceSnapshot,
     InvoiceMonth,
     Payment,
     Property,
@@ -34,6 +41,15 @@ PRICES = {
     "water": "water_unit_price",
     "service": "service_unit_price",
 }
+
+
+def effective_status(total: int, paid: int, due_date: date | None, now: datetime | None = None) -> str:
+    today = (now or datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))).astimezone(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+    if paid >= total:
+        return 'paid'
+    if due_date is not None and today > due_date:
+        return 'overdue'
+    return 'partially_paid' if paid > 0 else 'unpaid'
 
 
 def create_reading(db: Session, user: User, room_id: int, data: ReadingCreate) -> UtilityReading:
@@ -91,6 +107,7 @@ def _utility_amount(db: Session, contract: Contract, period: str, prop) -> int:
 
 
 def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreate) -> Invoice:
+    from app.services.utility_pricing_service import calculate
     contract = get_contract(db, contract_id)
     room = get_room(db, contract.room_id)
     prop = property_of_room(db, room)
@@ -105,7 +122,8 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
     exists = db.scalar(select(Invoice).join(Contract).where(Contract.room_id == room.id, Invoice.period == data.period))
     if exists is not None:
         raise HTTPException(status_code=409, detail="Hóa đơn của kỳ này đã tồn tại.")
-    utility_amount = _utility_amount(db, contract, data.period, prop)
+    breakdown = calculate(db,user,contract_id,data.period,lock=True)
+    utility_amount = breakdown['invoice_utility_total']
     if contract.monthly_rent + utility_amount > 2_147_483_647:
         raise HTTPException(status_code=422, detail="Tổng tiền vượt giới hạn lưu trữ.")
     db.add(InvoiceMonth(room_id=room.id, period=data.period))
@@ -114,6 +132,15 @@ def create_invoice(db: Session, user: User, contract_id: int, data: InvoiceCreat
         utility_amount=utility_amount, total_amount=contract.monthly_rent + utility_amount, status="unpaid",
     )
     db.add(invoice)
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(409,'Hóa đơn của kỳ này đã tồn tại.') from exc
+    for item in breakdown['items']:
+        db.add(InvoiceUtilitySnapshot(invoice_id=invoice.id,utility=item['utility'],price_id=item['price_id'],source=item['source'],previous_reading=item['previous_reading'],current_reading=item['current_reading'],unit_price=item['unit_price'],amount=item['amount']))
+    for item in breakdown['fixed_items']:
+        db.add(InvoiceServiceSnapshot(invoice_id=invoice.id,**item))
     save(db, invoice)
     return invoice
 
@@ -167,6 +194,7 @@ def _attach_invoice_details(db: Session, invoices: list[Invoice]) -> None:
 
         invoice.paid_amount = paid_amount
         invoice.remaining_amount = remaining_amount
+        invoice.effective_status = effective_status(invoice.total_amount, paid_amount, invoice.due_date)
         invoice.room_number = room_number
         invoice.property_name = property_name
         invoice.tenant_name = tenant_name
@@ -179,9 +207,6 @@ def list_invoices(
     contract_id: int | None = None,
 ) -> list[Invoice]:
     query = select(Invoice)
-
-    if status is not None:
-        query = query.where(Invoice.status == status)
 
     if period is not None:
         query = query.where(Invoice.period == period)
@@ -197,6 +222,9 @@ def list_invoices(
     ]
 
     _attach_invoice_details(db, invoices)
+
+    if status is not None:
+        invoices = [invoice for invoice in invoices if invoice.effective_status == status]
 
     return invoices
 
@@ -215,7 +243,8 @@ def _paid_amount(db: Session, invoice_id: int) -> int:
     return int(paid or 0)
 
 def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
 
     if paid_amount <= 0:
         invoice.status = "unpaid"
@@ -230,11 +259,40 @@ def recompute_invoice_status(db: Session, invoice: Invoice) -> str:
 def _format_vnd(amount: int) -> str:
     return f"{amount:,}".replace(",", ".") + " đ"
 
+def reconcile_invoice_status(db: Session, user: User, invoice_id: int) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    invoice = db.scalar(select(Invoice).where(Invoice.id==invoice_id).with_for_update().execution_options(populate_existing=True))
+    paid=sum(p.amount for p in db.scalars(select(Payment).where(Payment.invoice_id==invoice_id).with_for_update()))
+    if paid > invoice.total_amount:
+        raise HTTPException(409,'Tổng thanh toán vượt hóa đơn; cần kiểm tra thủ công.')
+    invoice.status = 'unpaid' if paid == 0 else 'paid' if paid == invoice.total_amount else 'partially_paid'
+    save(db, invoice)
+    return {'id':invoice.id, 'status':invoice.status, 'effective_status':effective_status(invoice.total_amount,paid,invoice.due_date), 'paid_amount':paid, 'remaining_amount':invoice.total_amount-paid}
+
+
+def update_due_date(db: Session, user: User, invoice_id: int, data) -> dict:
+    invoice = get_invoice(db, invoice_id)
+    contract = get_contract(db, invoice.contract_id)
+    room = get_room(db, contract.room_id)
+    assert_can_operate(db, user, property_of_room(db, room))
+    invoice = db.scalar(select(Invoice).where(Invoice.id == invoice_id).with_for_update().execution_options(populate_existing=True))
+    old = invoice.due_date
+    if old != data.due_date:
+        invoice.due_date = data.due_date
+        db.add(InvoiceDueDateHistory(invoice_id=invoice.id, old_due_date=old, new_due_date=data.due_date, reason=data.reason, changed_by=user.id))
+        save(db, invoice)
+    paid = sum(payment.amount for payment in db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()))
+    return {'id': invoice.id, 'due_date': invoice.due_date, 'effective_status': effective_status(invoice.total_amount, paid, invoice.due_date)}
+
 def record_payment(
     db: Session,
     user: User,
     invoice_id: int,
     data: PaymentCreate,
+    idempotency_key: str | None = None,
 ) -> dict:
     invoice = get_invoice(db, invoice_id)
     contract = get_contract(db, invoice.contract_id)
@@ -246,7 +304,7 @@ def record_payment(
     invoice = db.scalar(
         select(Invoice)
         .where(Invoice.id == invoice_id)
-        .with_for_update()
+        .with_for_update().execution_options(populate_existing=True)
     )
 
     if invoice is None:
@@ -255,7 +313,23 @@ def record_payment(
             detail="Không tìm thấy hóa đơn.",
         )
 
-    paid_amount = _paid_amount(db, invoice.id)
+    payments = db.scalars(select(Payment).where(Payment.invoice_id == invoice.id).with_for_update()).all()
+    paid_amount = sum(payment.amount for payment in payments)
+
+    fingerprint = hashlib.sha256(json.dumps(data.model_dump(mode='json'), sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')).hexdigest()
+    key_digest = hashlib.sha256(idempotency_key.encode('ascii')).hexdigest() if idempotency_key is not None else None
+    if idempotency_key is not None:
+        existing = next((p for p in payments if p.recorded_by == user.id and p.idempotency_key == key_digest), None)
+        if existing is not None:
+            if existing.request_fingerprint != fingerprint:
+                raise HTTPException(409, 'Khóa idempotency đã được sử dụng với nội dung khác.')
+            return {
+                'id': existing.id, 'invoice_id': existing.invoice_id, 'amount': existing.amount,
+                'method': existing.method, 'recorded_by': existing.recorded_by, 'paid_at': existing.paid_at,
+                'note': existing.note, 'recorded_by_name': user.full_name, 'invoice_status': invoice.status,
+                'effective_status': effective_status(invoice.total_amount, paid_amount, invoice.due_date),
+                'total_paid': paid_amount, 'remaining_amount': max(invoice.total_amount-paid_amount, 0),
+            }
 
     if invoice.status == "paid" or paid_amount >= invoice.total_amount:
         raise HTTPException(
@@ -278,16 +352,17 @@ def record_payment(
         recorded_by=user.id,
         paid_at=data.paid_at or datetime.now(),
         note=data.note,
+        idempotency_key=key_digest,
+        request_fingerprint=fingerprint if idempotency_key is not None else None,
     )
 
     db.add(payment)
     db.flush()
 
-    recompute_invoice_status(db, invoice)
+    total_paid = paid_amount + data.amount
+    invoice.status = 'paid' if total_paid >= invoice.total_amount else 'partially_paid'
 
     save(db, payment, invoice)
-
-    total_paid = _paid_amount(db, invoice.id)
 
     return {
         "id": payment.id,
@@ -299,6 +374,7 @@ def record_payment(
         "note": payment.note,
         "recorded_by_name": user.full_name,
         "invoice_status": invoice.status,
+        "effective_status": effective_status(invoice.total_amount, total_paid, invoice.due_date),
         "total_paid": total_paid,
         "remaining_amount": max(invoice.total_amount - total_paid, 0),
     }

@@ -161,6 +161,7 @@ function renderGuestView() {
     document.getElementById("refreshBtn").hidden = true;
     document.getElementById("roomsLink").hidden = true;
     document.getElementById("contractsLink").hidden = true;
+    document.getElementById("invoicesLink").hidden = true;
 }
 
 async function connect(token) {
@@ -189,6 +190,7 @@ async function connect(token) {
     document.getElementById("refreshBtn").hidden = false;
     document.getElementById("roomsLink").hidden = false;
     document.getElementById("contractsLink").hidden = false;
+    document.getElementById("invoicesLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
     document.getElementById("pageSubtitle").textContent = user.role === "manager"
         ? "Danh sách chỉ gồm các cơ sở được Landlord giao cho bạn quản lý."

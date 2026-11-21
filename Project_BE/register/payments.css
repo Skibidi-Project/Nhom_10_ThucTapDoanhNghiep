@@ -186,3 +186,14 @@
         grid-column: auto;
     }
 }
+.payment-status-overdue { background:#fee4e2; color:#b42318; }
+@media (max-width: 1600px) {
+  .payment-table, .payment-table tbody, .payment-table tr, .payment-table td { display:block; width:100%; min-width:0; }
+  .payment-table thead { display:none; }
+  .payment-table tr { border:1px solid #dce3e8; border-radius:12px; margin-bottom:12px; padding:8px; background:#fff; }
+  .payment-table td { display:flex; justify-content:space-between; gap:12px; align-items:center; white-space:normal; }
+  .payment-table td::before { content:attr(data-label); color:#66727e; font-weight:700; }
+  .payment-table td.payment-actions { flex-wrap:wrap; justify-content:flex-start; }
+  .payment-table td.payment-actions::before { width:100%; }
+  #paymentsTableContainer { overflow:visible; }
+}
