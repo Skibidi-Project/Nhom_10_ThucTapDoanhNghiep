@@ -164,6 +164,37 @@
         </div>
     </dialog>
 
+    <dialog id="utilityHistoryDialog" class="property-dialog utility-history-dialog">
+        <div class="detail-content">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">US-21 · LỊCH SỬ CHỈ SỐ</p>
+                    <h2 id="utilityHistoryTitle">Lịch sử điện/nước</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeUtilityHistoryBtn" aria-label="Đóng">×</button>
+            </div>
+            <label class="history-month-filter" for="utilityMonthFilter">
+                <span>Tháng</span>
+                <select id="utilityMonthFilter"><option value="">Tất cả các tháng</option></select>
+            </label>
+            <p id="utilityHistoryState" class="table-state">Đang tải lịch sử...</p>
+            <section id="utilityChartSection" class="utility-chart-section" hidden>
+                <h3>Lượng tiêu thụ theo tháng</h3>
+                <div class="utility-legend"><span><i class="legend-electricity"></i>Điện (kWh)</span><span><i class="legend-water"></i>Nước (m³)</span></div>
+                <div id="utilityChart" class="utility-chart" role="img" aria-label="Biểu đồ lượng điện và nước tiêu thụ theo tháng"></div>
+            </section>
+            <section id="utilityTableSection" hidden>
+                <h3 class="utility-table-heading">Bảng chỉ số</h3>
+                <div class="table-scroll">
+                    <table class="room-table utility-history-table">
+                        <thead><tr><th>Tháng</th><th>Loại</th><th>Chỉ số đầu</th><th>Chỉ số cuối</th><th>Tiêu thụ</th></tr></thead>
+                        <tbody id="utilityHistoryRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </dialog>
+
     <script src="rooms.js"></script>
 </body>
 </html>

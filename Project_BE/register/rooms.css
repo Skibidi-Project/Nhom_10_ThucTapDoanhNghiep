@@ -196,6 +196,26 @@
     font-size: 14px;
 }
 
+.utility-history-dialog { width: min(900px, calc(100% - 32px)); }
+.utility-history-dialog .detail-content { padding: 26px; }
+.utility-history-dialog h3 { margin: 20px 0 12px; color: #303b45; font-size: 15px; }
+.history-month-filter { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: #53606b; font-size: 13px; font-weight: 650; }
+.history-month-filter select { min-width: 190px; min-height: 40px; border: 1px solid #dce3e8; border-radius: 8px; padding: 8px 10px; color: #25313b; background: white; font: inherit; }
+.utility-legend { display: flex; gap: 18px; color: #53606b; font-size: 12px; }
+.utility-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.utility-legend i { width: 11px; height: 11px; display: inline-block; border-radius: 3px; }
+.legend-electricity,.utility-bar.electricity { background: #e6a23c; }
+.legend-water,.utility-bar.water { background: #3287c8; }
+.utility-chart { min-height: 175px; display: flex; align-items: stretch; gap: 12px; overflow-x: auto; padding: 18px 4px 0; border-bottom: 1px solid #dfe5e9; }
+.utility-month-group { min-width: 76px; flex: 1; display: grid; grid-template-rows: 1fr auto; text-align: center; color: #66727e; font-size: 11px; }
+.utility-bars { height: 135px; display: flex; align-items: end; justify-content: center; gap: 7px; }
+.utility-bar { width: 20px; min-height: 2px; border-radius: 5px 5px 0 0; position: relative; }
+.utility-bar-value { position: absolute; left: 50%; bottom: calc(100% + 4px); transform: translateX(-50%); color: #47525c; font-size: 10px; white-space: nowrap; }
+.utility-month-label { padding: 8px 0 9px; }
+.utility-table-heading { margin-top: 24px !important; }
+.utility-history-table { min-width: 560px; }
+.utility-history-dialog .table-state { margin: 16px 0; }
+
 @media (max-width: 720px) {
     .room-toolbar {
         grid-template-columns: 1fr;
@@ -205,6 +225,8 @@
         width: 100%;
         flex-wrap: wrap;
     }
+
+    .history-month-filter { align-items: flex-start; flex-direction: column; }
 
     .topbar-actions a.button {
         display: none;

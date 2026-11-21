@@ -15,6 +15,7 @@ const emptyState = document.getElementById("emptyState");
 const errorState = document.getElementById("errorState");
 const roomDialog = document.getElementById("roomDialog");
 const detailDialog = document.getElementById("detailDialog");
+const utilityHistoryDialog = document.getElementById("utilityHistoryDialog");
 const roomForm = document.getElementById("roomForm");
 const addRoomBtn = document.getElementById("addRoomBtn");
 const searchInput = document.getElementById("searchInput");
@@ -28,6 +29,7 @@ let properties = [];
 let currentPage = 1;
 let total = 0;
 let debounceTimer;
+let utilityHistory = [];
 
 function showNotice(message, type = "info") {
     notice.textContent = message;
@@ -111,6 +113,7 @@ function renderRows(items) {
         const actionsCell = document.createElement("td");
         const actions = createElement("div", "room-actions");
         appendAction(actions, "Chi tiết", () => showRoomDetail(room));
+        appendAction(actions, "Lịch sử điện/nước", () => showUtilityHistory(room), "utility-history-action");
         if (room.status === "available") {
             appendAction(actions, "Lập hợp đồng", () => {
                 window.location.href = `contracts.html?room_id=${encodeURIComponent(room.id)}`;
@@ -338,6 +341,102 @@ async function showRoomDetail(room) {
     }
 }
 
+function utilityTypeLabel(type) {
+    return type === "electricity" ? "Điện" : "Nước";
+}
+
+function utilityUnit(type) {
+    return type === "electricity" ? "kWh" : "m³";
+}
+
+function formatUsage(value) {
+    return new Intl.NumberFormat("vi-VN", {maximumFractionDigits: 2}).format(value);
+}
+
+function renderUtilityHistory() {
+    const state = document.getElementById("utilityHistoryState");
+    const chartSection = document.getElementById("utilityChartSection");
+    const tableSection = document.getElementById("utilityTableSection");
+    const chart = document.getElementById("utilityChart");
+    const rows = document.getElementById("utilityHistoryRows");
+    const selectedMonth = document.getElementById("utilityMonthFilter").value;
+    const filtered = utilityHistory
+        .filter(reading => !selectedMonth || reading.period === selectedMonth)
+        .sort((a, b) => b.period.localeCompare(a.period) || a.utility_type.localeCompare(b.utility_type));
+
+    chart.replaceChildren();
+    rows.replaceChildren();
+    if (!filtered.length) {
+        state.textContent = selectedMonth ? "Tháng này chưa có chỉ số điện/nước." : "Phòng chưa có lịch sử chỉ số điện/nước.";
+        state.hidden = false;
+        chartSection.hidden = true;
+        tableSection.hidden = true;
+        return;
+    }
+
+    state.hidden = true;
+    chartSection.hidden = false;
+    tableSection.hidden = false;
+    const monthly = new Map();
+    for (const reading of filtered) {
+        if (!monthly.has(reading.period)) monthly.set(reading.period, {electricity: 0, water: 0});
+        monthly.get(reading.period)[reading.utility_type] = reading.current_reading - reading.previous_reading;
+    }
+    const maxUsage = Math.max(1, ...Array.from(monthly.values()).flatMap(value => [value.electricity, value.water]));
+    for (const [period, values] of Array.from(monthly.entries()).sort(([a], [b]) => a.localeCompare(b))) {
+        const group = createElement("div", "utility-month-group");
+        const bars = createElement("div", "utility-bars");
+        for (const type of ["electricity", "water"]) {
+            const bar = createElement("div", `utility-bar ${type}`);
+            bar.style.height = `${Math.max(2, values[type] / maxUsage * 100)}%`;
+            bar.setAttribute("aria-label", `${utilityTypeLabel(type)} ${formatUsage(values[type])} ${utilityUnit(type)}`);
+            bar.append(createElement("span", "utility-bar-value", formatUsage(values[type])));
+            bars.append(bar);
+        }
+        group.append(bars, createElement("div", "utility-month-label", period));
+        chart.append(group);
+    }
+
+    for (const reading of filtered) {
+        const usage = reading.current_reading - reading.previous_reading;
+        const row = document.createElement("tr");
+        row.append(
+            createElement("td", "", reading.period),
+            createElement("td", "", utilityTypeLabel(reading.utility_type)),
+            createElement("td", "", formatUsage(reading.previous_reading)),
+            createElement("td", "", formatUsage(reading.current_reading)),
+            createElement("td", "", `${formatUsage(usage)} ${utilityUnit(reading.utility_type)}`),
+        );
+        rows.append(row);
+    }
+}
+
+async function showUtilityHistory(room) {
+    const title = document.getElementById("utilityHistoryTitle");
+    const monthFilter = document.getElementById("utilityMonthFilter");
+    const state = document.getElementById("utilityHistoryState");
+    const chartSection = document.getElementById("utilityChartSection");
+    const tableSection = document.getElementById("utilityTableSection");
+    title.textContent = `Lịch sử điện/nước · Phòng ${room.room_number}`;
+    monthFilter.replaceChildren(new Option("Tất cả các tháng", ""));
+    state.textContent = "Đang tải lịch sử...";
+    state.hidden = false;
+    chartSection.hidden = true;
+    tableSection.hidden = true;
+    utilityHistory = [];
+    utilityHistoryDialog.showModal();
+    try {
+        const readings = await apiRequest(`/rooms/${room.id}/readings`);
+        utilityHistory = readings.filter(reading => ["electricity", "water"].includes(reading.utility_type));
+        const months = [...new Set(utilityHistory.map(reading => reading.period))].sort((a, b) => b.localeCompare(a));
+        for (const month of months) monthFilter.append(new Option(month, month));
+        renderUtilityHistory();
+    } catch (error) {
+        state.textContent = error.message;
+        state.hidden = false;
+    }
+}
+
 tokenForm.addEventListener("submit", async event => {
     event.preventDefault();
     connectBtn.disabled = true;
@@ -386,6 +485,8 @@ document.getElementById("closeDialogBtn").addEventListener("click", () => roomDi
 document.getElementById("cancelBtn").addEventListener("click", () => roomDialog.close());
 document.getElementById("closeDetailBtn").addEventListener("click", () => detailDialog.close());
 document.getElementById("closeDetailActionBtn").addEventListener("click", () => detailDialog.close());
+document.getElementById("closeUtilityHistoryBtn").addEventListener("click", () => utilityHistoryDialog.close());
+document.getElementById("utilityMonthFilter").addEventListener("change", renderUtilityHistory);
 logoutBtn.addEventListener("click", disconnect);
 
 if (!accessToken) {
