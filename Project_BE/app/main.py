@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect
 
-from app.db.database import engine, init_db
+from app.db.database import Base, engine, init_db
 from app.routers import (
     auth,
     billing,
@@ -55,7 +55,17 @@ async def lifespan(app: FastAPI):
             for table, columns in required.items():
                 if not inspector.has_table(table) or not columns.issubset({c['name'] for c in inspector.get_columns(table)}):
                     raise RuntimeError('US-20 pricing migration is required before starting this existing database.')
-    init_db()
+        # MySQL schemas are managed by reviewed migrations, never by startup.
+        # Check the complete mapped schema before serving requests.
+        for table in Base.metadata.sorted_tables:
+            if not inspector.has_table(table.name):
+                raise RuntimeError(f'Missing MySQL table {table.name}; apply reviewed migrations before deployment.')
+            existing = {column['name'] for column in inspector.get_columns(table.name)}
+            missing = sorted(set(table.columns.keys()) - existing)
+            if missing:
+                raise RuntimeError(f'Missing MySQL columns in {table.name}: {", ".join(missing)}; apply reviewed migrations before deployment.')
+    else:
+        init_db()
     try:
         yield
     finally:
