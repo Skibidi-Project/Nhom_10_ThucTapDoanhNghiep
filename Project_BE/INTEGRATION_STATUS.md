@@ -8,3 +8,7 @@
 - US-25 migration `migrations/us25_due_date_mysql.sql` phải được sao lưu và nhóm phê duyệt trước khi chạy production; không áp dụng vào products_db. Startup code main có DDL, nhánh này kiểm tra schema US-25 MySQL trước init_db. Xem DEMO_README.md về rollback.
 - Nguyên nhân xác nhận: main mới US-06 chuyển toàn bộ role sang account.html sau login; sửa chuyển hướng theo role. Static /register/ trả Cache-Control no-cache để trình duyệt xác thực lại; chưa có chứng cứ chứng minh cache là nguyên nhân duy nhất trong môi trường người dùng.
 - Còn hạn chế: chưa có US-19 an toàn trong bản này, US-20 chưa duyệt nguồn giá; chưa nghiệm thu toàn bộ US-20/21/24/26; chưa chứng minh toàn bộ màn hình và RBAC trên mọi viewport. Không tuyên bố ready for main.
+
+## Đợt kiểm thử hồi quy tiếp theo
+
+Đã sửa biểu đồ lịch sử khi thiếu một loại điện/nước và sửa tràn ngang trên desktop/mobile. Thêm đường menu đến trang chốt hóa đơn US-22 và hiển thị trạng thái hiệu lực tại trang đó. Chrome và MySQL đã chạy trên môi trường test riêng; xem TEST_RESULTS.md. Các điểm US-20, nghiệp vụ trùng thanh toán và regression chưa bao phủ vẫn cần review trước production.

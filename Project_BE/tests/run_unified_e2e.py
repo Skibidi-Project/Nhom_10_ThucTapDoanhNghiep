@@ -17,11 +17,17 @@ with sync_playwright() as p:
   page.on('pageerror',lambda e: errors.append(str(e)))
   page.on('console',lambda m: errors.append(m.text) if m.type=='error' else None)
   page.on('response',lambda r: bad.append((r.status,r.url)) if r.status>=400 else None)
+  def fits():
+   if page.evaluate('document.documentElement.scrollWidth > innerWidth'):
+    page.screenshot(path=str(Path(tempfile.gettempdir())/('overflow-'+label+'.png')),full_page=True)
+    raise AssertionError(f'Horizontal page overflow: {label} {page.url}')
   page.goto(base+'/register/login.html',wait_until='networkidle');page.locator('#identifier').fill('landlord.us25.demo@example.com');page.locator('#password').fill(password);page.locator('#loginForm button[type=submit]').click()
   page.wait_for_url('**/properties.html');nav=page.locator('.unified-nav');nav.get_by_role('link',name='Hóa đơn & Thanh toán').wait_for();token=page.evaluate("sessionStorage.getItem('us05_access_token')");assert token
+  fits()
   assert page.locator('#invoicesLink').is_visible()
-  nav.get_by_role('link',name='Quản lý phòng').click();page.wait_for_url('**/rooms.html');row=page.locator('#roomRows tr').filter(has_text='D01');row.wait_for();row.get_by_role('button',name='Lịch sử điện/nước').click();page.locator('#utilityHistoryRows tr').first.wait_for();assert page.locator('#utilityHistoryRows tr').count()==2;assert page.locator('#utilityChartSection').is_visible();page.locator('#closeUtilityHistoryBtn').click()
+  nav.get_by_role('link',name='Quản lý phòng').click();page.wait_for_url('**/rooms.html');row=page.locator('#roomRows tr').filter(has_text='D01');row.wait_for();row.get_by_role('button',name='Lịch sử điện/nước').click();page.locator('#utilityHistoryRows tr').first.wait_for();history=page.locator('#utilityHistoryRows').inner_text();assert 'Điện' in history and 'Nước' in history;assert page.locator('#utilityChartSection').is_visible();page.locator('#closeUtilityHistoryBtn').click()
   page.locator('.unified-nav').get_by_role('link',name='Hóa đơn & Thanh toán').click();page.wait_for_url('**/payments.html');row=page.locator('#paymentRows tr').filter(has_text=period);row.wait_for();row.get_by_role('button',name='Ghi nhận thanh toán').click();page.locator('#paymentAmount').fill('400');page.locator('#savePaymentBtn').click();page.locator('#paymentDialog').wait_for(state='hidden');assert 'Thanh toán một phần' in row.inner_text();row.get_by_role('button',name='Cập nhật trạng thái').click();page.get_by_text('Đã cập nhật trạng thái theo thanh toán.').wait_for()
+  fits()
   page.locator('.unified-nav').get_by_role('link',name='Tổng quan').click();page.wait_for_url('**/dashboard.html');page.locator('.stat').first.wait_for();assert page.locator('.stat strong').nth(1).inner_text()=='3'
   page.go_back();page.wait_for_url('**/payments.html');page.locator('.unified-nav').get_by_role('link',name='Quản lý cơ sở').click();page.wait_for_url('**/properties.html');assert page.evaluate("sessionStorage.getItem('us05_access_token')")==token;page.locator('#logoutBtn').click();assert page.locator('.unified-nav').is_hidden();assert page.evaluate("sessionStorage.getItem('us05_access_token')") is None
   page.locator('#guestActions').get_by_role('link',name='Đăng nhập').click();page.wait_for_url('**/login.html');page.locator('#identifier').fill('landlord.us25.demo@example.com');page.locator('#password').fill(password);page.locator('#loginForm button[type=submit]').click();page.wait_for_url('**/properties.html');page.locator('.unified-nav').get_by_role('link',name='Hóa đơn & Thanh toán').wait_for()

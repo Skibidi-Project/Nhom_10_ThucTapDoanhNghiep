@@ -379,14 +379,15 @@ function renderUtilityHistory() {
     tableSection.hidden = false;
     const monthly = new Map();
     for (const reading of filtered) {
-        if (!monthly.has(reading.period)) monthly.set(reading.period, {electricity: 0, water: 0});
+        if (!monthly.has(reading.period)) monthly.set(reading.period, {});
         monthly.get(reading.period)[reading.utility_type] = reading.current_reading - reading.previous_reading;
     }
-    const maxUsage = Math.max(1, ...Array.from(monthly.values()).flatMap(value => [value.electricity, value.water]));
+    const maxUsage = Math.max(1, ...Array.from(monthly.values()).flatMap(value => Object.values(value)));
     for (const [period, values] of Array.from(monthly.entries()).sort(([a], [b]) => a.localeCompare(b))) {
         const group = createElement("div", "utility-month-group");
         const bars = createElement("div", "utility-bars");
         for (const type of ["electricity", "water"]) {
+            if (values[type] === undefined) continue;
             const bar = createElement("div", `utility-bar ${type}`);
             bar.style.height = `${Math.max(2, values[type] / maxUsage * 100)}%`;
             bar.setAttribute("aria-label", `${utilityTypeLabel(type)} ${formatUsage(values[type])} ${utilityUnit(type)}`);

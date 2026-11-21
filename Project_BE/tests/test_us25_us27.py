@@ -135,3 +135,79 @@ def test_us21_reading_history_scope_and_periods(env):
     assert [(r['period'],r['current_reading']-r['previous_reading']) for r in readings]==[('2026-01',40),('2026-02',25)]
     assert c.get(f'/api/rooms/{room_id}/readings',headers=other).status_code==403
     assert c.get(f'/api/rooms/{room_id}/readings',headers=tenant).status_code==403
+
+
+def test_us26_expense_crud_scope_validation_and_dashboard(env):
+    c,(owner,other,manager,tenant,admin),_,pid=env
+    payload={'property_id':pid,'category':'repair','description':'Repair','amount':120,'expense_date':date.today().isoformat()}
+    assert c.post('/api/expenses',headers=tenant,json=payload).status_code==403
+    assert c.post('/api/expenses',headers=admin,json=payload).status_code==403
+    assert c.post('/api/expenses',headers=other,json=payload).status_code==403
+    assert c.post('/api/expenses',headers=owner,json={**payload,'amount':0}).status_code==422
+    assert c.post('/api/expenses',headers=owner,json={**payload,'expense_date':(date.today()+timedelta(days=1)).isoformat()}).status_code==422
+    r=c.post('/api/expenses',headers=manager,json=payload);assert r.status_code==201
+    eid=r.json()['id']
+    assert c.get(f'/api/expenses/{eid}',headers=other).status_code==403
+    assert c.get('/api/expenses/summary',headers=owner).json()['total_amount']==120
+    assert c.get('/api/dashboard/summary',headers=owner).json()['expenses']==120
+    assert c.put(f'/api/expenses/{eid}',headers=other,json={'amount':200}).status_code==403
+    assert c.put(f'/api/expenses/{eid}',headers=owner,json={'amount':200}).json()['amount']==200
+    assert c.get('/api/expenses',headers=manager).json()['total_amount']==200
+    assert c.delete(f'/api/expenses/{eid}',headers=other).status_code==403
+    assert c.delete(f'/api/expenses/{eid}',headers=owner).status_code==204
+    assert c.get('/api/expenses/summary',headers=owner).json()['count']==0
+
+
+def test_us20_existing_billing_price_source_difference(env):
+    from sqlalchemy import select
+    from app.models.boarding import PropertyServicePrice,UtilityReading
+    from app.models.service_assignment import ServiceAssignment
+    from app.services.billing_service import _utility_amount
+    _,_,_,pid=env
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    prop=db.get(Property,pid);prop.electricity_unit_price=2
+    contract=db.scalar(select(Contract));uid=contract.created_by
+    db.add(PropertyServicePrice(property_id=pid,service_code='electricity',billing_unit='kwh',unit_price=3))
+    db.add(ServiceAssignment(contract_id=contract.id,service_code='electricity',quantity=1,price_override=4,assigned_by=uid))
+    db.add(UtilityReading(room_id=contract.room_id,utility_type='electricity',period='2026-01',previous_reading=10,current_reading=20,recorded_by=uid));db.commit()
+    # The published US-20 branch uses the property field; main billing uses the contract override.
+    assert (20-10)*prop.electricity_unit_price == 20
+    assert _utility_amount(db,contract,'2026-01',prop)==40
+    dep.close()
+
+
+def test_register_login_expired_token_and_role_access(env):
+    import secrets,jwt
+    from datetime import datetime,timezone
+    from app.core.security import _secret
+    c,(owner,other,manager,tenant,admin),_,_=env
+    password=secrets.token_urlsafe(18)
+    body={'full_name':'New User','email':'newuser@example.com','phone':'0900000022','password':password}
+    r=c.post('/api/auth/register',json=body);assert r.status_code==201
+    assert c.post('/api/auth/register',json=body).status_code==409
+    r=c.post('/api/auth/login',json={'identifier':body['email'],'password':password});assert r.status_code==200
+    token=r.json()['access_token'];assert c.get('/api/users/me',headers={'Authorization':'Bearer '+token}).status_code==200
+    expired=jwt.encode({'sub':str(r.json()['user']['id']),'exp':datetime.now(timezone.utc)-timedelta(minutes=1)},_secret(),algorithm='HS256')
+    assert c.get('/api/users/me',headers={'Authorization':'Bearer '+expired}).status_code==401
+    assert c.get('/api/users/me').status_code==401
+    assert c.get('/api/properties',headers=tenant).status_code==403
+    assert c.get('/api/properties',headers=admin).status_code==403
+    assert c.get('/api/properties',headers=manager).status_code==200
+
+
+def test_us22_invoice_creation_utilities_duplicate_and_scope(env):
+    from sqlalchemy import select
+    from app.models.boarding import UtilityReading
+    c,(owner,other,manager,tenant,_),_,pid=env
+    dep=app.dependency_overrides[get_db]();db=next(dep)
+    prop=db.get(Property,pid);prop.electricity_unit_price=2;prop.water_unit_price=3
+    contract=db.scalar(select(Contract));period=(date.today().replace(day=1)-timedelta(days=1)).strftime('%Y-%m')
+    for kind,old,new in [('electricity',10,20),('water',5,10)]:
+        db.add(UtilityReading(room_id=contract.room_id,utility_type=kind,period=period,previous_reading=old,current_reading=new,recorded_by=contract.created_by))
+    db.commit();cid=contract.id;dep.close()
+    url=f'/api/contracts/{cid}/invoices'
+    assert c.post(url,headers=tenant,json={'period':period}).status_code==403
+    assert c.post(url,headers=other,json={'period':period}).status_code==403
+    result=c.post(url,headers=manager,json={'period':period});assert result.status_code==201
+    assert result.json()['rent_amount']==100 and result.json()['utility_amount']==35 and result.json()['total_amount']==135
+    assert c.post(url,headers=owner,json={'period':period}).status_code==409

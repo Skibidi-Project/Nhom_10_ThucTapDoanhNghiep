@@ -1,7 +1,9 @@
-# Kết quả kiểm thử tích hợp
+﻿# Kiểm thử hồi quy tích hợp
 
-- `DATABASE_URL=sqlite://` với JWT secret thử nghiệm, `python -m pytest -q -p no:cacheprovider`: 14 PASS, 0 FAIL, 1 cảnh báo deprecation. Bao gồm API US-21 theo phòng/kỳ, phân quyền và chống trùng; US-25/27 và các test có sẵn.
-- MySQL InnoDB database riêng: PASS migration, giữ dữ liệu cũ, hai thanh toán đồng thời, chống vượt, công nợ và dashboard. Không ghi products_db.
-- Chrome headless với backend thực và SQLite riêng: PASS desktop 1366, tablet 768, mobile 390 cho login không reload, menu, lịch sử điện/nước US-21, thanh toán từng phần, đối chiếu US-25, dashboard, back, logout và đăng nhập lại cho landlord; không lỗi console hay response HTTP >=400 trong luồng đó.
-- Các test chưa chạy: toàn bộ AC US-20/21/24/26, logout/login lại cho manager, tenant và admin, full regression register, phòng, hợp đồng và US-16/19; không coi là PASS.
-- Lỗi tìm được: login main đưa mọi role sang trang account; sửa điều hướng theo role. Không thể khẳng định cache hay server cũ có phải nguyên nhân báo cáo ban đầu.
+- Pytest trên SQLite cô lập: **18 PASS, 0 FAIL**, một cảnh báo `datetime.utcnow` deprecated. Bao gồm đăng ký/đăng nhập/JWT hết hạn; RBAC; US-21; US-22 lập hóa đơn, tiền phòng và điện/nước, chống trùng; US-24/25; US-26 CRUD/validation/phân quyền; US-27; rollback hạn thanh toán.
+- MySQL InnoDB riêng: **PASS** migration, giữ dữ liệu cũ, foreign key, unique, rollback, deadlock hai transaction (một transaction rollback), thanh toán HTTP đồng thời, công nợ và dashboard. Database kiểm thử `ministay_us25_test_3c08598f128b` và `ministay_us25_test_82b1b83e7213`; không ghi products_db. Đây là kiểm thử deadlock InnoDB tổng quát, không chứng minh mọi deadlock của ứng dụng.
+- Chrome thật desktop 1366, tablet 768, mobile 390: **PASS** đăng nhập landlord không reload, điều hướng, US-21, US-22 tạo hóa đơn, US-24 thanh toán, US-25, dashboard, back/logout/login lại; kiểm tra dữ liệu sau refresh, lỗi console và HTTP. Kiểm tra tràn ngang ở trang cơ sở và thanh toán. Chưa quét hết mọi phần tử hoặc mọi trang.
+- Chrome mobile: **PASS** điều hướng đăng nhập và RBAC dashboard của manager, tenant, admin với tài khoản thử riêng.
+- US-21: lỗi thiếu nước bị vẽ thành 0 đã sửa; so sánh Chrome với JS commit trước và API thật. Ảnh trước/sau trong `%TEMP%\ministay_unified_test\us21-before.png` và `us21-after.png`. Ảnh lỗi/đã sửa tràn ngang: `overflow-desktop.png`, `overflow-desktop-after.png`, `overflow-mobile.png`, `overflow-mobile-after.png` trong cùng thư mục.
+- US-20: **BLOCKED** duyệt nguồn giá. Test xác nhận giá properties 2 và override hợp đồng 4 cho 10 đơn vị cho hai số khác nhau (20 và 40). Giao diện nhánh US-20 chưa tích hợp để tránh hiển thị số sai.
+- **SKIP/PARTIAL:** AC đầy đủ US-20/21/24/26, thao tác trọn vẹn properties/rooms/contracts, toàn bộ API US-26 và mọi role/viewport, idempotency chống gửi lại giao dịch trùng không có khóa yêu cầu, mọi trường hợp đồng thời, US-16/19. Không coi là đã nghiệm thu.

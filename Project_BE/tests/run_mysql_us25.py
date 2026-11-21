@@ -5,6 +5,7 @@ from datetime import date,timedelta
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from sqlalchemy import create_engine,select,text
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -61,5 +62,37 @@ with Session(engine) as db:
     assert db.get(Invoice,iid).status=='paid' and sum(p.amount for p in db.scalars(select(Payment).where(Payment.invoice_id==iid)))==100
 c=TestClient(app);d=c.get('/api/dashboard/summary',headers=headers);assert d.status_code==200 and d.json()['outstanding']==0 and d.json()['revenue_received']==100
 assert c.post(f'/api/invoices/{iid}/payments',headers=headers,json={'amount':1,'method':'cash'}).status_code==409
-print('PASS MySQL InnoDB: migration, old data preserved, due date, concurrent payments, status and dashboard; isolated databases:',name,migration_name)
+try:
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO payments(invoice_id,amount,method,recorded_by,paid_at) VALUES (999999,1,'cash',:uid,NOW())"),{'uid':uid})
+    raise AssertionError('Foreign key not enforced')
+except IntegrityError:
+    pass
+with engine.connect() as conn:
+    tx=conn.begin();conn.execute(text('UPDATE invoices SET total_amount=999 WHERE id=:id'),{'id':iid});tx.rollback()
+with Session(engine) as db:
+    assert db.get(Invoice,iid).total_amount==100
+    duplicate=Invoice(contract_id=db.get(Invoice,iid).contract_id,period=db.get(Invoice,iid).period,rent_amount=1,utility_amount=0,total_amount=1,status='unpaid');db.add(duplicate)
+    try:db.commit();raise AssertionError('Unique constraint not enforced')
+    except IntegrityError:db.rollback()
+with engine.begin() as conn:
+    conn.execute(text('CREATE TABLE deadlock_probe (id INT PRIMARY KEY, n INT NOT NULL) ENGINE=InnoDB'))
+    conn.execute(text('INSERT INTO deadlock_probe VALUES (1,0),(2,0)'))
+sync=Barrier(2)
+def deadlock(a,b):
+    try:
+        with engine.begin() as conn:
+            conn.execute(text('UPDATE deadlock_probe SET n=n+1 WHERE id=:id'),{'id':a})
+            sync.wait(timeout=10)
+            conn.execute(text('UPDATE deadlock_probe SET n=n+1 WHERE id=:id'),{'id':b})
+        return 'committed'
+    except OperationalError as exc:
+        if exc.orig.args[0] != 1213:raise
+        return 'deadlock'
+with ThreadPoolExecutor(max_workers=2) as pool:
+    a=pool.submit(deadlock,1,2);b=pool.submit(deadlock,2,1);outcomes=sorted([a.result(),b.result()])
+assert outcomes==['committed','deadlock'],outcomes
+with engine.connect() as conn:
+    assert conn.execute(text('SELECT SUM(n) FROM deadlock_probe')).scalar_one()==2
+print('PASS MySQL InnoDB: migration, FK, unique, rollback, deadlock, concurrent payments and dashboard; isolated databases:',name,migration_name)
 engine.dispose()

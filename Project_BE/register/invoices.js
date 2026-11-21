@@ -23,9 +23,11 @@ async function loadInvoices() {
     const container = document.getElementById("invoices");
     container.replaceChildren();
     const money = value => value.toLocaleString("vi-VN") + " đ";
+    const labels = {unpaid: "Chưa thanh toán", partially_paid: "Thanh toán một phần", paid: "Đã thanh toán", overdue: "Quá hạn"};
     for (const invoice of invoices) {
         const row = document.createElement("p");
-        row.textContent = `#${invoice.id} · Hợp đồng ${invoice.contract_id} · ${invoice.period} · Phòng ${money(invoice.rent_amount)} · Điện, nước và dịch vụ ${money(invoice.utility_amount)} · Tổng ${money(invoice.total_amount)} · ${invoice.status}`;
+        const status = invoice.effective_status || invoice.status;
+        row.textContent = `#${invoice.id} · Hợp đồng ${invoice.contract_id} · ${invoice.period} · Phòng ${money(invoice.rent_amount)} · Điện, nước và dịch vụ ${money(invoice.utility_amount)} · Tổng ${money(invoice.total_amount)} · ${labels[status] || status}`;
         container.append(row);
     }
     if (!invoices.length) container.textContent = "Chưa có hóa đơn.";
