@@ -1,11 +1,18 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import ContractCreate, ContractResponse, DepositUpdate, InvoiceCreate, InvoiceResponse
+from app.schemas.boarding import (
+    ContractCreate,
+    ContractListResponse,
+    ContractResponse,
+    DepositUpdate,
+    InvoiceCreate,
+    InvoiceResponse,
+)
 from app.services import billing_service, contract_service
 
 router = APIRouter(
@@ -15,12 +22,25 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[ContractResponse])
+@router.get("", response_model=list[ContractResponse] | ContractListResponse)
 def read_contracts(
+    property_id: int | None = Query(default=None, gt=0),
+    status: str | None = Query(default=None, pattern=r"^(created|active|pending_liquidation|expired)$"),
+    q: str | None = Query(default=None, max_length=50),
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
 ):
-    return contract_service.list_contracts(db, user)
+    return contract_service.list_contracts(
+        db,
+        user,
+        property_id=property_id,
+        status=status,
+        q=q,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)

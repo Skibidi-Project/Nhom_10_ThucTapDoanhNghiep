@@ -36,6 +36,11 @@ def _payment_idempotency_schema_ready(columns: set[str], uniques: list[dict]) ->
 async def lifespan(app: FastAPI):
     # Existing MySQL databases must be migrated explicitly before startup DDL.
     if engine.dialect.name == 'mysql':
+        # Nạp toàn bộ Model để SQLAlchemy nhận diện các bảng.
+        import app.models
+
+        # Chỉ tạo những bảng chưa tồn tại, giữ nguyên bảng đã có.
+        Base.metadata.create_all(bind=engine)
         inspector = inspect(engine)
         if inspector.has_table('invoices'):
             columns = {column['name'] for column in inspector.get_columns('invoices')}

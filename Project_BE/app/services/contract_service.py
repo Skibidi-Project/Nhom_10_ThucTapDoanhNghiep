@@ -1,13 +1,13 @@
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.boarding import Contract, Property, PropertyManager, Room, TenantProfile
 from app.models.user import User
 from app.schemas.boarding import ContractCreate
-from app.services.access_scope import assert_can_operate, get_contract, get_room, get_tenant, property_of_room
+from app.services.access_scope import assert_can_operate, get_contract, get_property, get_room, get_tenant, property_of_room
 from app.services.db_util import save
 
 
@@ -82,7 +82,15 @@ def create_contract(db: Session, user: User, data: ContractCreate) -> dict:
     return _contract_payload(contract, room, prop, tenant)
 
 
-def list_contracts(db: Session, user: User) -> list[dict]:
+def list_contracts(
+    db: Session,
+    user: User,
+    property_id: int | None = None,
+    status: str | None = None,
+    q: str | None = None,
+    page: int | None = None,
+    page_size: int | None = None,
+) -> list[dict] | dict:
     statement = (
         select(Contract, Room, Property, TenantProfile)
         .join(Room, Room.id == Contract.room_id)
@@ -97,10 +105,56 @@ def list_contracts(db: Session, user: User) -> list[dict]:
         ).where(PropertyManager.user_id == user.id)
     else:
         return []
-    rows = db.execute(statement.order_by(Contract.id)).all()
+
+    if property_id is not None:
+        prop = get_property(db, property_id)
+        assert_can_operate(db, user, prop)
+        statement = statement.where(Property.id == property_id)
+
+    search = q.strip() if q else ""
+    if search:
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+        statement = statement.where(
+            or_(
+                Room.room_number.like(pattern, escape="\\"),
+                TenantProfile.full_name.like(pattern, escape="\\"),
+            )
+        )
+
+    paginated = page is not None or page_size is not None
+    order_by = Contract.id.desc() if paginated else Contract.id.asc()
+    rows = db.execute(statement.order_by(order_by)).all()
     for contract, _, _, _ in rows:
         _sync_lifecycle(db, contract)
-    return [_contract_payload(contract, room, prop, tenant) for contract, room, prop, tenant in rows]
+
+    filtered = [
+        (contract, room, prop, tenant)
+        for contract, room, prop, tenant in rows
+        if status is None or contract.status == status
+    ]
+
+    if not paginated:
+        return [
+            _contract_payload(contract, room, prop, tenant)
+            for contract, room, prop, tenant in filtered
+        ]
+
+    current_page = page or 1
+    current_page_size = page_size or 10
+    total = len(filtered)
+    # Dữ liệu quy mô đồ án; cắt trang trong bộ nhớ sau khi đồng bộ và lọc trạng thái.
+    start = (current_page - 1) * current_page_size
+    sliced = filtered[start:start + current_page_size]
+    return {
+        "items": [
+            _contract_payload(contract, room, prop, tenant)
+            for contract, room, prop, tenant in sliced
+        ],
+        "total": total,
+        "page": current_page,
+        "page_size": current_page_size,
+    }
 
 
 def read_contract(db: Session, user: User, contract_id: int) -> dict:

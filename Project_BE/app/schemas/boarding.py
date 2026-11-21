@@ -285,6 +285,13 @@ class ContractResponse(BaseModel):
     tenant_name: str
 
 
+class ContractListResponse(BaseModel):
+    items: list[ContractResponse]
+    total: int
+    page: int
+    page_size: int
+
+
 class DepositUpdate(BaseModel):
     status: str = Field(pattern=r"^(held|returned|deducted|not_applicable)$")
     returned_amount: int = Field(default=0, ge=0)
