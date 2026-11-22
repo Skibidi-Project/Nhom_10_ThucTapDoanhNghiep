@@ -242,7 +242,7 @@ tokenForm.addEventListener("submit", async event => {
 floorCountInput.addEventListener("input", () => redrawFloorInputs());
 addBuildingBtn.addEventListener("click", openCreateDialog);
 document.getElementById("refreshBtn").addEventListener("click", loadBuildings);
-document.getElementById("logoutBtn").addEventListener("click", disconnect);
+document.getElementById("logoutBtn")?.addEventListener("click", disconnect);
 document.getElementById("closeDialogBtn").addEventListener("click", () => buildingDialog.close());
 document.getElementById("cancelBtn").addEventListener("click", () => buildingDialog.close());
 

@@ -488,7 +488,7 @@ document.getElementById("closeDetailBtn").addEventListener("click", () => detail
 document.getElementById("closeDetailActionBtn").addEventListener("click", () => detailDialog.close());
 document.getElementById("closeUtilityHistoryBtn").addEventListener("click", () => utilityHistoryDialog.close());
 document.getElementById("utilityMonthFilter").addEventListener("change", renderUtilityHistory);
-logoutBtn.addEventListener("click", disconnect);
+logoutBtn?.addEventListener("click", disconnect);
 
 if (!accessToken) {
     window.location.replace("index.html");
