@@ -109,12 +109,13 @@ function renderProperties() {
         }
         card.append(prices);
 
+        const propertyLinks = createElement("div", "property-links");
         const roomsLink = createElement("a", "button button-outline rooms-link", "Quản lý phòng");
         roomsLink.href = `rooms.html?property_id=${encodeURIComponent(property.id)}`;
-        card.append(roomsLink);
         const buildingsLink = createElement("a", "button button-outline rooms-link", "Quản lý tòa nhà");
         buildingsLink.href = `buildings.html?property_id=${encodeURIComponent(property.id)}`;
-        card.append(buildingsLink);
+        propertyLinks.append(roomsLink, buildingsLink);
+        card.append(propertyLinks);
 
         if (currentUser?.role === "landlord") {
             const actions = createElement("div", "card-actions");
@@ -159,9 +160,6 @@ function renderGuestView() {
     logoutBtn.hidden = true;
     addPropertyBtn.hidden = true;
     document.getElementById("refreshBtn").hidden = true;
-    document.getElementById("roomsLink").hidden = true;
-    document.getElementById("contractsLink").hidden = true;
-    document.getElementById("invoicesLink").hidden = true;
 }
 
 async function connect(token) {
@@ -188,9 +186,6 @@ async function connect(token) {
     logoutBtn.hidden = false;
     guestActions.hidden = true;
     document.getElementById("refreshBtn").hidden = false;
-    document.getElementById("roomsLink").hidden = false;
-    document.getElementById("contractsLink").hidden = false;
-    document.getElementById("invoicesLink").hidden = false;
     addPropertyBtn.hidden = user.role !== "landlord";
     document.getElementById("pageSubtitle").textContent = user.role === "manager"
         ? "Danh sách chỉ gồm các cơ sở được Landlord giao cho bạn quản lý."

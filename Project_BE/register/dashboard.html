@@ -1,5 +1,49 @@
-<!doctype html><html lang="vi"><head><link rel="icon" href="data:,"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thống kê | MiniStay</title><link rel="stylesheet" href="properties.css"><link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="navigation.css"><script defer src="navigation.js"></script></head><body>
-<header class="topbar"><a class="brand" href="properties.html">MiniStay</a><a class="button button-light" href="properties.html">Quản lý cơ sở</a></header>
-<main class="container"><section class="intro"><div><h1>Thống kê tổng quan</h1><p class="subtitle">Doanh thu là tiền đã thu; công nợ theo kỳ hóa đơn.</p></div></section>
-<form id="filters" class="panel filters"><label>Tháng <input type="month" id="period" required></label><label>Khu trọ <select id="property"><option value="">Tất cả khu trọ</option></select></label><button class="button button-primary">Xem thống kê</button></form>
-<p id="notice" role="status" aria-live="polite">Đang tải...</p><section id="cards" class="stats" aria-live="polite"></section><p class="subtitle">Tỷ lệ lấp đầy = phòng đang thuê / tổng phòng, bao gồm phòng bảo trì trong mẫu số. Doanh thu tính theo ngày thanh toán; nợ và tiền lập tính theo kỳ hóa đơn.</p></main><script src="dashboard.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Thống kê | MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="navigation.css">
+    <script defer src="navigation.js"></script>
+</head>
+
+<body>
+    <header class="topbar">
+        <a class="brand" href="properties.html">MiniStay</a>
+    </header>
+    <main class="container dashboard-page">
+        <section class="intro">
+            <div>
+                <h1>Thống kê tổng quan</h1>
+                <p class="subtitle">Doanh thu là tiền đã thu; công nợ theo kỳ hóa đơn.</p>
+            </div>
+        </section>
+        <form id="filters" class="panel filters">
+            <label>
+                Tháng
+                <input type="month" id="period" required>
+            </label>
+            <label>
+                Khu trọ
+                <select id="property">
+                    <option value="">Tất cả khu trọ</option>
+                </select>
+            </label>
+            <button class="button button-primary">Xem thống kê</button>
+        </form>
+        <p id="notice" class="dashboard-notice" role="status" aria-live="polite">Đang tải...</p>
+        <section id="cards" class="stats" aria-live="polite"></section>
+        <p class="subtitle dashboard-note">
+            Tỷ lệ lấp đầy = phòng đang thuê / tổng phòng, bao gồm phòng bảo trì trong mẫu số. Doanh thu
+            tính theo ngày thanh toán; nợ và tiền lập tính theo kỳ hóa đơn.
+        </p>
+    </main>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

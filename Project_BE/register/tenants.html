@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Khách thuê | MiniStay</title>
     <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="tenants.css">
 <link rel="stylesheet" href="navigation.css"><script defer src="navigation.js"></script></head>
 <body>
     <header class="topbar">
@@ -33,7 +34,17 @@
             </form>
             <section class="panel">
                 <h2>Danh sách khách thuê</h2>
+                <div class="tenant-search">
+                    <input id="tenantSearch" type="search" maxlength="50" placeholder="Tìm theo tên, CCCD hoặc số điện thoại" aria-label="Tìm khách thuê">
+                    <button id="clearTenantSearch" type="button" class="button button-outline" hidden>Xóa</button>
+                </div>
+                <p id="tenantResultCount" class="tenant-result-count" aria-live="polite">0 khách thuê</p>
                 <div id="tenantList"></div>
+                <div id="tenantPagination" class="tenant-pagination" hidden>
+                    <button id="tenantPreviousBtn" type="button" class="button button-outline">Trước</button>
+                    <span id="tenantPageInfo">Trang 1/1</span>
+                    <button id="tenantNextBtn" type="button" class="button button-outline">Sau</button>
+                </div>
             </section>
         </section>
     </main>

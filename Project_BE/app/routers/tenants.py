@@ -1,11 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
 from app.core.rbac import Permission
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.boarding import TenantAccountLink, TenantAccountLinkResponse, TenantCreate, TenantResponse, TenantUpdate
+from app.schemas.boarding import (
+    TenantAccountLink,
+    TenantAccountLinkResponse,
+    TenantCreate,
+    TenantListResponse,
+    TenantResponse,
+    TenantUpdate,
+)
 from app.services import tenant_service
 from app.services.db_util import save
 
@@ -16,12 +23,15 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[TenantResponse])
+@router.get("", response_model=list[TenantResponse] | TenantListResponse)
 def read_tenants(
+    q: str | None = Query(default=None, max_length=50),
+    page: int | None = Query(default=None, ge=1),
+    page_size: int | None = Query(default=None, ge=1, le=100),
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.TENANT_MANAGE)),
 ):
-    return tenant_service.list_tenants(db, user)
+    return tenant_service.list_tenants(db, user, q=q, page=page, page_size=page_size)
 
 
 @router.post("", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)

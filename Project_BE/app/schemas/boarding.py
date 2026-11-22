@@ -193,6 +193,13 @@ class TenantResponse(BaseModel):
     id_photo_type: str | None
 
 
+class TenantListResponse(BaseModel):
+    items: list[TenantResponse]
+    total: int
+    page: int
+    page_size: int
+
+
 class TenantAccountLink(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

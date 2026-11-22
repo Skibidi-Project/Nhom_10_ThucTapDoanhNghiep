@@ -17,8 +17,8 @@
 }
 
 .services-page .notice.info {
-    color: #176b57;
-    background: #e9f6ef;
+    color: var(--color-info-text);
+    background: var(--color-info-bg);
 }
 
 .services-page .notice {
@@ -55,8 +55,8 @@
 }
 
 .stat-card small {
-    color: #8a949e;
-    font-size: 11px;
+    color: #687481;
+    font-size: 12px;
 }
 
 .services-page .panel {
@@ -74,8 +74,12 @@
 
 .toolbar {
     display: grid;
-    grid-template-columns: 1.1fr 1fr 1.5fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
+}
+
+.toolbar-item {
+    min-width: 0;
 }
 
 .toolbar-item label,
@@ -89,7 +93,7 @@
 
 .services-page select {
     width: 100%;
-    min-height: 42px;
+    min-height: 44px;
     border: 1px solid #dce3e8;
     border-radius: 8px;
     padding: 10px 12px;
@@ -99,8 +103,8 @@
 }
 
 .services-page select:focus {
-    border-color: #268a70;
-    box-shadow: 0 0 0 3px #16836a18;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px #16765f1a;
 }
 
 .services-page select:disabled {
@@ -110,7 +114,7 @@
 
 .segmented {
     display: flex;
-    min-height: 42px;
+    min-height: 50px;
     padding: 3px;
     border: 1px solid #e0e7e3;
     border-radius: 9px;
@@ -119,13 +123,14 @@
 
 .mode-btn {
     flex: 1;
+    min-height: 44px;
     padding: 7px 10px;
     border: 0;
     border-radius: 6px;
     color: #687481;
     background: transparent;
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 650;
 }
 
@@ -136,7 +141,12 @@
 .mode-btn:focus-visible,
 .services-page button:focus-visible,
 .services-page a:focus-visible {
-    outline: 3px solid #14b8a6;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.services-page select:focus-visible {
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 
@@ -177,8 +187,8 @@
 .service-code {
     display: block;
     margin-top: 6px;
-    color: #8a949e;
-    font-size: 11px;
+    color: #687481;
+    font-size: 12px;
 }
 
 .service-card-footer {
@@ -195,7 +205,7 @@
     border-radius: 20px;
     color: #687481;
     background: #f0f3f5;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -215,7 +225,7 @@
     color: #176b57;
     border: 1px solid #cfe1db;
     background: #f5fbf8;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .service-card .button:hover:not(:disabled) {
@@ -229,8 +239,20 @@
 
 .data-table {
     width: 100%;
+    min-width: 600px;
     border-collapse: collapse;
     text-align: left;
+}
+
+.table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table th {
@@ -238,7 +260,7 @@
     color: #687481;
     border-bottom: 1px solid #e8edf1;
     background: #f7f9fa;
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -247,7 +269,7 @@
     padding: 13px;
     color: #34414d;
     border-bottom: 1px solid #edf0f2;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .data-table tbody tr:last-child td {
@@ -256,7 +278,7 @@
 
 .data-table .button {
     padding: 7px 10px;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 .inline-actions {
@@ -265,15 +287,15 @@
 }
 
 .services-page .danger {
-    color: #a13b37;
-    background: #fff0ef;
+    color: var(--color-error-text);
+    background: var(--color-error-bg);
 }
 
 .source-badge {
     display: inline-block;
     padding: 5px 8px;
     border-radius: 20px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 650;
 }
 
@@ -285,7 +307,7 @@
     border-radius: 9px;
     color: #687481;
     background: #f7f9fa;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .empty-inline {
@@ -293,13 +315,14 @@
 }
 
 .inline-error {
-    color: #a13b37;
-    background: #fff0ef;
+    color: var(--color-error-text);
+    background: var(--color-error-bg);
 }
 
 .property-dialog {
     width: min(520px, calc(100% - 28px));
-    max-height: min(90vh, 700px);
+    max-height: min(90vh, 820px);
+    max-height: min(90dvh, 820px);
     overflow-y: auto;
 }
 
@@ -313,6 +336,8 @@
 
 .remove-dialog {
     width: min(500px, calc(100% - 28px));
+    max-height: min(90vh, 820px);
+    max-height: min(90dvh, 820px);
     overflow-y: auto;
 }
 
@@ -326,8 +351,8 @@
 
 .remove-dialog .eyebrow {
     margin: 0 0 7px;
-    color: #268a70;
-    font-size: 10px;
+    color: var(--color-primary);
+    font-size: 12px;
     font-weight: 750;
     letter-spacing: .9px;
 }
@@ -346,15 +371,15 @@
 
 .remove-service-details dt {
     margin-bottom: 5px;
-    color: #78838f;
-    font-size: 11px;
+    color: #687481;
+    font-size: 13px;
     font-weight: 600;
 }
 
 .remove-service-details dd {
     margin: 0;
     color: #25313b;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 650;
     line-height: 1.5;
     overflow-wrap: anywhere;
@@ -367,11 +392,11 @@
 .remove-warning {
     margin: 16px 0 0;
     padding: 12px 14px;
-    border-left: 3px solid #268a70;
+    border-left: 3px solid #c58a2b;
     border-radius: 0 8px 8px 0;
-    color: #46525e;
-    background: #e9f6ef;
-    font-size: 12px;
+    color: var(--color-warning-text);
+    background: var(--color-warning-bg);
+    font-size: 13px;
     line-height: 1.6;
 }
 
@@ -379,9 +404,9 @@
     margin: 14px 0 0;
     padding: 11px 12px;
     border-radius: 8px;
-    color: #a13b37;
-    background: #fff0ef;
-    font-size: 12px;
+    color: var(--color-error-text);
+    background: var(--color-error-bg);
+    font-size: 13px;
     line-height: 1.5;
 }
 
@@ -441,24 +466,24 @@
     margin: 10px 0 0;
     padding: 11px 12px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
 }
 
 .service-info {
-    color: #176b57;
-    background: #e9f6ef;
+    color: var(--color-info-text);
+    background: var(--color-info-bg);
 }
 
 .configuration-hint {
-    color: #687481;
-    background: #f5f7f9;
+    color: var(--color-warning-text);
+    background: var(--color-warning-bg);
 }
 
 .form-hint {
     margin-top: 14px;
     color: #687481;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
 }
 
@@ -466,7 +491,7 @@
     min-height: 18px;
     margin: 10px 0 0;
     color: #a13b37;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 @media (max-width: 900px) {
@@ -528,12 +553,13 @@
         overflow-x: auto;
     }
 
-    .data-table {
-        min-width: 600px;
-    }
-
     .property-dialog form {
         padding: 22px;
+    }
+
+    .property-dialog .dialog-actions {
+        margin: 22px -22px -22px;
+        padding: 14px 22px 22px;
     }
 
     .remove-dialog-content {
@@ -541,6 +567,8 @@
     }
 
     .remove-dialog .dialog-actions {
+        margin: 20px -22px -22px;
+        padding: 14px 22px 22px;
         flex-direction: column-reverse;
     }
 

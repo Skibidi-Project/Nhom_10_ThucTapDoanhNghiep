@@ -1,1 +1,73 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Điện nước | MiniStay</title><link rel="stylesheet" href="properties.css"><link rel="stylesheet" href="navigation.css"><script defer src="navigation.js"></script></head><body><header class="topbar"><a class="brand" href="properties.html">MiniStay</a></header><main class="container"><h1>Tính điện/nước</h1><p>Chỉ số đã ghi và giá có chứng cứ được dùng cho kỳ hóa đơn.</p><form class="panel" id="previewForm"><label>Hợp đồng <select id="contract" required></select></label> <label>Kỳ <input id="period" type="month" required></label> <button class="button button-primary">Xem tính tiền</button></form><p id="message" role="status" aria-live="polite"></p><section id="result" class="panel" hidden></section><p><a id="issueLink" href="invoices.html" hidden>Chốt hóa đơn</a> · <a href="rooms.html">Quản lý phòng</a></p><details class="panel"><summary>Thêm lịch sử giá có chứng cứ</summary><form id="priceForm"><label>Cơ sở <select id="property" required></select></label> <label>Phạm vi <select id="scope"><option value="property">Khu trọ</option><option value="room">Phòng</option><option value="contract">Hợp đồng</option></select></label> <label>Mã phòng/hợp đồng (nếu chọn) <input id="target" type="number" min="1"></label> <label>Loại <select id="utility"><option value="electricity">Điện</option><option value="water">Nước</option></select></label> <label>Đơn giá <input id="price" type="number" min="0" step="1" required></label> <label>Hiệu lực từ <input id="from" type="date" required></label> <label>đến <input id="to" type="date" required></label> <label>Căn cứ <input id="evidence" minlength="3" maxlength="500" required></label> <button class="button button-primary">Lưu giá</button></form><p id="priceMessage" role="status"></p><button id="historyBtn" class="button button-outline" type="button">Xem lịch sử giá cơ sở</button><div id="history"></div></details></main><script src="utility-pricing.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Điện nước | MiniStay</title>
+    <link rel="stylesheet" href="properties.css">
+    <link rel="stylesheet" href="utility-pricing.css">
+    <link rel="stylesheet" href="navigation.css">
+    <script defer src="navigation.js"></script>
+</head>
+<body>
+    <header class="topbar utility-pricing-topbar">
+        <a class="brand" href="properties.html">MiniStay</a>
+    </header>
+    <main class="container utility-pricing-page">
+        <section class="utility-pricing-intro">
+            <p class="eyebrow">Điện nước</p>
+            <h1>Tính điện/nước</h1>
+            <p class="subtitle">Chỉ số đã ghi và giá có chứng cứ được dùng cho kỳ hóa đơn.</p>
+        </section>
+        <form class="panel utility-preview-form" id="previewForm">
+            <div class="utility-form-heading">
+                <h2>Xem trước kỳ hóa đơn</h2>
+                <p>Chọn hợp đồng và kỳ cần tính.</p>
+            </div>
+            <div class="utility-form-grid">
+                <label class="utility-field" for="contract">Hợp đồng <select id="contract" required></select></label>
+                <label class="utility-field" for="period">Kỳ <input id="period" type="month" required></label>
+            </div>
+            <button class="button button-primary utility-form-submit" type="submit">Xem tính tiền</button>
+        </form>
+        <p id="message" class="utility-message" role="status" aria-live="polite"></p>
+        <section id="result" class="panel utility-result" aria-live="polite" hidden></section>
+        <p class="utility-page-links">
+            <a id="issueLink" class="button button-outline" href="invoices.html" hidden>Chốt hóa đơn</a>
+            <a class="button button-light" href="rooms.html">Quản lý phòng</a>
+        </p>
+        <details class="panel utility-history">
+            <summary>Thêm lịch sử giá có chứng cứ</summary>
+            <form id="priceForm" class="utility-price-form">
+                <div class="utility-form-grid">
+                    <label class="utility-field" for="property">Cơ sở <select id="property" required></select></label>
+                    <label class="utility-field" for="scope">Phạm vi
+                        <select id="scope">
+                            <option value="property">Khu trọ</option>
+                            <option value="room">Phòng</option>
+                            <option value="contract">Hợp đồng</option>
+                        </select>
+                    </label>
+                    <label class="utility-field" for="target">Mã phòng/hợp đồng (nếu chọn) <input id="target" type="number" min="1"></label>
+                    <label class="utility-field" for="utility">Loại
+                        <select id="utility">
+                            <option value="electricity">Điện</option>
+                            <option value="water">Nước</option>
+                        </select>
+                    </label>
+                    <label class="utility-field" for="price">Đơn giá <input id="price" type="number" min="0" step="1" required></label>
+                    <label class="utility-field" for="from">Hiệu lực từ <input id="from" type="date" required></label>
+                    <label class="utility-field" for="to">Đến <input id="to" type="date" required></label>
+                    <label class="utility-field utility-field-wide" for="evidence">Căn cứ <input id="evidence" minlength="3" maxlength="500" required></label>
+                </div>
+                <button class="button button-primary utility-form-submit" type="submit">Lưu giá</button>
+            </form>
+            <p id="priceMessage" class="utility-message" role="status" aria-live="polite"></p>
+            <button id="historyBtn" class="button button-outline history-button" type="button">Xem lịch sử giá cơ sở</button>
+            <div id="history" class="utility-history-list"></div>
+        </details>
+    </main>
+    <script src="utility-pricing.js"></script>
+</body>
+</html>

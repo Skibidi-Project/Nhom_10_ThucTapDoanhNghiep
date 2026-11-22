@@ -3,6 +3,13 @@ const section = document.getElementById("tenantSection");
 const form = document.getElementById("tenantForm");
 const notice = document.getElementById("notice");
 const list = document.getElementById("tenantList");
+const searchInput = document.getElementById("tenantSearch");
+const clearSearchButton = document.getElementById("clearTenantSearch");
+const resultCount = document.getElementById("tenantResultCount");
+const pagination = document.getElementById("tenantPagination");
+const previousButton = document.getElementById("tenantPreviousBtn");
+const nextButton = document.getElementById("tenantNextBtn");
+const TENANT_PAGE_SIZE = 10;
 const cancelEdit = document.getElementById("cancelEdit");
 const title = document.getElementById("formTitle");
 const propertyField = document.getElementById("propertyField");
@@ -10,6 +17,9 @@ const property = form.elements.property_id;
 const identityFields = ["full_name", "phone", "id_number", "id_issue_date", "id_issue_place", "hometown"];
 let manager = false;
 let editing = null;
+let tenantPage = 1;
+let tenantRequestId = 0;
+let searchTimer = null;
 
 async function request(path, options = {}) {
     const headers = new Headers(options.headers);
@@ -51,10 +61,43 @@ function action(parent, label, handler) {
     parent.append(button, " ");
 }
 
-async function loadTenants() {
-    const tenants = await (await request("/tenants")).json();
+async function loadTenants(resetPage = false) {
+    if (resetPage) tenantPage = 1;
+    const requestId = ++tenantRequestId;
+    const search = searchInput.value.trim();
+    const pageSize = TENANT_PAGE_SIZE;
+    const query = `${search ? `q=${encodeURIComponent(search)}&` : ""}page=${tenantPage}&page_size=${pageSize}`;
+    clearSearchButton.hidden = !searchInput.value;
+    let result;
+    try {
+        result = await (await request(`/tenants?${query}`)).json();
+    } catch (error) {
+        if (requestId !== tenantRequestId) return;
+        throw error;
+    }
+    if (requestId !== tenantRequestId) return;
+    const tenants = result.items || [];
+    if (tenants.length === 0 && result.total > 0 && tenantPage > 1) {
+        tenantPage = Math.max(1, Math.ceil(result.total / result.page_size));
+        await loadTenants();
+        return;
+    }
+
+    resultCount.textContent = search
+        ? `${result.total} kết quả cho "${search}"`
+        : `${result.total} khách thuê`;
+    const totalPages = Math.max(1, Math.ceil(result.total / result.page_size));
+    pagination.hidden = result.total === 0;
+    document.getElementById("tenantPageInfo").textContent = `Trang ${result.page}/${totalPages}`;
+    previousButton.disabled = result.page <= 1;
+    nextButton.disabled = result.page >= totalPages;
+
     list.replaceChildren();
-    if (!tenants.length) list.textContent = "Chưa có hồ sơ khách thuê.";
+    if (!tenants.length) {
+        list.textContent = search
+            ? `Không tìm thấy khách thuê nào khớp với "${search}". Thử nhập tên, số CCCD hoặc số điện thoại khác.`
+            : "Chưa có hồ sơ khách thuê.";
+    }
     for (const tenant of tenants) {
         const row = document.createElement("article");
         const heading = document.createElement("h3");
@@ -132,6 +175,34 @@ async function loadTenants() {
 }
 
 cancelEdit.addEventListener("click", () => resetEditor());
+searchInput.addEventListener("input", () => {
+    tenantRequestId++;
+    clearTimeout(searchTimer);
+    clearSearchButton.hidden = !searchInput.value;
+    searchTimer = setTimeout(() => loadTenants(true).catch(error => {
+        notice.textContent = error.message;
+    }), 300);
+});
+clearSearchButton.addEventListener("click", () => {
+    searchInput.value = "";
+    loadTenants(true).catch(error => {
+        notice.textContent = error.message;
+    });
+});
+previousButton.addEventListener("click", () => {
+    if (tenantPage > 1) {
+        tenantPage--;
+        loadTenants().catch(error => {
+            notice.textContent = error.message;
+        });
+    }
+});
+nextButton.addEventListener("click", () => {
+    tenantPage++;
+    loadTenants().catch(error => {
+        notice.textContent = error.message;
+    });
+});
 form.addEventListener("submit", async event => {
     event.preventDefault();
     const button = form.querySelector("[type=submit]");
@@ -141,14 +212,15 @@ form.addEventListener("submit", async event => {
     if (editing === null && manager) payload.property_id = Number(property.value);
     button.disabled = true;
     try {
-        await request(editing === null ? "/tenants" : `/tenants/${editing}`, {
+        const isCreating = editing === null;
+        await request(isCreating ? "/tenants" : `/tenants/${editing}`, {
             method: editing === null ? "POST" : "PUT",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(payload),
         });
         resetEditor();
         notice.textContent = "Đã lưu hồ sơ.";
-        await loadTenants();
+        await loadTenants(isCreating);
     } catch (error) {
         notice.textContent = error.message;
     } finally {
