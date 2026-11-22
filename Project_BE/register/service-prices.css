@@ -45,9 +45,19 @@
 .property-picker select:focus,
 .price-dialog select:focus,
 .price-dialog input:focus {
-    border-color: #268a70;
-    box-shadow: 0 0 0 3px #16836a18;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px #16765f1a;
     outline: none;
+}
+
+.property-picker select:focus-visible,
+.price-dialog select:focus-visible,
+.price-dialog input:focus-visible,
+.price-page .button:focus-visible,
+.price-page a:focus-visible,
+.price-dialog button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 .price-grid {
@@ -88,8 +98,8 @@
 .price-code {
     display: block;
     margin-top: 6px;
-    color: #8a949e;
-    font-size: 11px;
+    color: #687481;
+    font-size: 12px;
     overflow-wrap: anywhere;
 }
 
@@ -99,7 +109,7 @@
     border-radius: 20px;
     color: #727d87;
     background: #f0f3f5;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -127,20 +137,13 @@
     min-height: 18px;
     margin: 0;
     color: #78838f;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
 }
 
 .price-card .button {
     width: 100%;
     margin-top: 18px;
-}
-
-.price-page .button:focus-visible,
-.price-page a:focus-visible,
-.price-dialog button:focus-visible {
-    outline: 3px solid #14b8a6;
-    outline-offset: 2px;
 }
 
 .price-page .button:disabled,
@@ -155,18 +158,19 @@
     border-radius: 9px;
     color: #687481;
     background: #f7f9fa;
-    font-size: 13px;
+    font-size: 14px;
     text-align: center;
 }
 
 .price-error {
-    color: #a13b37;
-    background: #fff0ef;
+    color: var(--color-error-text);
+    background: var(--color-error-bg);
 }
 
 .price-dialog {
     width: min(520px, calc(100% - 28px));
-    max-height: min(90vh, 700px);
+    max-height: min(90vh, 820px);
+    max-height: min(90dvh, 820px);
     overflow-y: auto;
     animation: price-dialog-in .18s ease-out;
 }
@@ -182,8 +186,8 @@
 
 .price-dialog .eyebrow {
     margin: 0 0 7px;
-    color: #268a70;
-    font-size: 10px;
+    color: var(--color-primary);
+    font-size: 12px;
     font-weight: 750;
     letter-spacing: .9px;
 }
@@ -228,17 +232,17 @@
 
 .price-field-hint {
     margin: 7px 0 0;
-    color: #87919a;
-    font-size: 11px;
+    color: #687481;
+    font-size: 13px;
 }
 
 .price-form-error {
     margin: 14px 0 0;
     padding: 11px 12px;
     border-radius: 8px;
-    color: #a13b37;
-    background: #fff0ef;
-    font-size: 12px;
+    color: var(--color-error-text);
+    background: var(--color-error-bg);
+    font-size: 13px;
     line-height: 1.5;
 }
 
@@ -331,6 +335,8 @@
     }
 
     .price-dialog .dialog-actions {
+        margin: 22px -22px -22px;
+        padding: 14px 22px 22px;
         flex-direction: column-reverse;
     }
 

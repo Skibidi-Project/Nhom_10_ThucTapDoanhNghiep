@@ -21,6 +21,7 @@ const addRoomBtn = document.getElementById("addRoomBtn");
 const searchInput = document.getElementById("searchInput");
 const propertyFilter = document.getElementById("propertyFilter");
 const statusFilter = document.getElementById("statusFilter");
+const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 const propertySelect = document.getElementById("roomProperty");
 const formError = document.getElementById("formError");
 
@@ -140,7 +141,16 @@ function updatePagination() {
     document.getElementById("nextPageBtn").disabled = currentPage >= pageCount;
 }
 
+function updateClearFiltersButton() {
+    clearFiltersBtn.hidden = !(
+        searchInput.value.trim()
+        || propertyFilter.value
+        || statusFilter.value
+    );
+}
+
 async function loadRooms() {
+    updateClearFiltersButton();
     setLoading(true);
     try {
         const params = new URLSearchParams({page: String(currentPage), page_size: String(PAGE_SIZE)});
@@ -149,11 +159,21 @@ async function loadRooms() {
         if (propertyFilter.value) params.set("property_id", propertyFilter.value);
         if (statusFilter.value) params.set("status", statusFilter.value);
         const result = await apiRequest(`/rooms?${params}`);
+        if (result.items.length === 0 && result.total > 0 && currentPage > 1) {
+            currentPage = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+            await loadRooms();
+            return;
+        }
         total = result.total;
         renderRows(result.items);
         loadingState.hidden = true;
         tableContainer.hidden = result.items.length === 0;
         emptyState.hidden = result.items.length !== 0;
+        const isFiltered = Boolean(search || propertyFilter.value || statusFilter.value);
+        emptyState.textContent = isFiltered
+            ? "Không có phòng phù hợp với bộ lọc."
+            : "Không tìm thấy phòng phù hợp.";
+        updateClearFiltersButton();
         updatePagination();
     } catch (error) {
         total = 0;
@@ -468,6 +488,7 @@ document.getElementById("nextPageBtn").addEventListener("click", () => {
     }
 });
 searchInput.addEventListener("input", () => {
+    updateClearFiltersButton();
     window.clearTimeout(debounceTimer);
     debounceTimer = window.setTimeout(() => {
         currentPage = 1;
@@ -476,10 +497,20 @@ searchInput.addEventListener("input", () => {
 });
 propertyFilter.addEventListener("change", () => {
     currentPage = 1;
+    updateClearFiltersButton();
     loadRooms();
 });
 statusFilter.addEventListener("change", () => {
     currentPage = 1;
+    updateClearFiltersButton();
+    loadRooms();
+});
+clearFiltersBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    propertyFilter.value = "";
+    statusFilter.value = "";
+    currentPage = 1;
+    updateClearFiltersButton();
     loadRooms();
 });
 document.getElementById("closeDialogBtn").addEventListener("click", () => roomDialog.close());

@@ -16,7 +16,7 @@ const contractsTableContainer = document.getElementById("contractsTableContainer
 const contractSearch = document.getElementById("contractSearch");
 const contractPropertyFilter = document.getElementById("contractPropertyFilter");
 const contractStatusFilter = document.getElementById("contractStatusFilter");
-const contractPageSize = document.getElementById("contractPageSize");
+const CONTRACT_PAGE_SIZE = 10;
 const contractPagination = document.getElementById("contractPagination");
 const contractPreviousBtn = document.getElementById("contractPreviousBtn");
 const contractNextBtn = document.getElementById("contractNextBtn");
@@ -286,7 +286,7 @@ async function loadContracts(resetPage = false) {
     const requestId = ++contractRequestId;
     const params = new URLSearchParams({
         page: String(contractPage),
-        page_size: contractPageSize.value || "10",
+        page_size: String(CONTRACT_PAGE_SIZE),
     });
     const search = contractSearch.value.trim();
     if (search) params.set("q", search);
@@ -518,7 +518,6 @@ contractSearch.addEventListener("input", () => {
 });
 contractPropertyFilter.addEventListener("change", reloadContractsFromFirstPage);
 contractStatusFilter.addEventListener("change", reloadContractsFromFirstPage);
-contractPageSize.addEventListener("change", reloadContractsFromFirstPage);
 contractPreviousBtn.addEventListener("click", () => {
     if (contractPage > 1) {
         contractPage--;

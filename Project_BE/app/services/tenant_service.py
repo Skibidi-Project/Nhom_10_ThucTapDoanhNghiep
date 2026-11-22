@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
@@ -53,13 +53,48 @@ def create_tenant(db: Session, user: User, data: TenantCreate) -> TenantProfile:
     return tenant
 
 
-def list_tenants(db: Session, user: User) -> list[TenantProfile]:
+def list_tenants(
+    db: Session,
+    user: User,
+    q: str | None = None,
+    page: int | None = None,
+    page_size: int | None = None,
+) -> list[TenantProfile] | dict:
     landlord_ids = accessible_landlord_ids(db, user)
-    if not landlord_ids:
-        return []
-    return list(db.scalars(
-        select(TenantProfile).where(TenantProfile.landlord_id.in_(landlord_ids)).order_by(TenantProfile.id)
+    statement = select(TenantProfile).where(TenantProfile.landlord_id.in_(landlord_ids))
+
+    search = q.strip() if q else ""
+    if search:
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+        statement = statement.where(
+            or_(
+                TenantProfile.full_name.like(pattern, escape="\\"),
+                TenantProfile.phone.like(pattern, escape="\\"),
+                TenantProfile.id_number.like(pattern, escape="\\"),
+            )
+        )
+
+    paginated = page is not None or page_size is not None
+    if not paginated:
+        return list(db.scalars(statement.order_by(TenantProfile.id)))
+
+    current_page = page or 1
+    current_page_size = page_size or 10
+    total = db.scalar(
+        select(func.count()).select_from(statement.order_by(None).subquery())
+    ) or 0
+    items = list(db.scalars(
+        statement.order_by(TenantProfile.id.desc())
+        .offset((current_page - 1) * current_page_size)
+        .limit(current_page_size)
     ))
+    return {
+        "items": items,
+        "total": total,
+        "page": current_page,
+        "page_size": current_page_size,
+    }
 
 
 def read_tenant(db: Session, user: User, tenant_id: int) -> TenantProfile:

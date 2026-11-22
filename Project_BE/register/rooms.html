@@ -15,6 +15,7 @@
             <a class="button button-light" href="properties.html">Quản lý cơ sở</a>
             <a class="button button-light" href="contracts.html">Quản lý hợp đồng</a>
             <a class="button button-light" href="services.html">Dịch vụ</a>
+            <button type="button" class="button button-light" id="logoutBtn">Đăng xuất</button>
         </div>
     </header>
 
@@ -74,6 +75,7 @@
                         <option value="maintenance">Bảo trì</option>
                     </select>
                 </label>
+                <button type="button" class="button button-outline" id="clearFiltersBtn" hidden>Xóa bộ lọc</button>
             </div>
 
             <p id="loadingState" class="table-state">Đang tải danh sách phòng...</p>
@@ -106,7 +108,7 @@
         <form id="roomForm">
             <div class="dialog-heading">
                 <div>
-                    <p class="eyebrow">THÔNG TIN PHÒNG</p>
+                    <p class="eyebrow">Thông tin phòng</p>
                     <h2 id="roomDialogTitle">Thêm phòng</h2>
                 </div>
                 <button type="button" class="close-btn" id="closeDialogBtn" aria-label="Đóng">×</button>
@@ -151,7 +153,7 @@
         <div class="detail-content">
             <div class="dialog-heading">
                 <div>
-                    <p class="eyebrow">CHI TIẾT PHÒNG</p>
+                    <p class="eyebrow">Chi tiết phòng</p>
                     <h2 id="detailTitle">Thông tin phòng</h2>
                 </div>
                 <button type="button" class="close-btn" id="closeDetailBtn" aria-label="Đóng">×</button>
@@ -167,7 +169,7 @@
         <div class="detail-content">
             <div class="dialog-heading">
                 <div>
-                    <p class="eyebrow">US-21 · LỊCH SỬ CHỈ SỐ</p>
+                    <p class="eyebrow">US-21 · Lịch sử chỉ số</p>
                     <h2 id="utilityHistoryTitle">Lịch sử điện/nước</h2>
                 </div>
                 <button type="button" class="close-btn" id="closeUtilityHistoryBtn" aria-label="Đóng">×</button>

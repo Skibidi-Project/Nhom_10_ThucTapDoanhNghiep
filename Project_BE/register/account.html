@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tài khoản | MiniStay</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="properties.css">
     <link rel="stylesheet" href="account.css">
+    <link rel="stylesheet" href="navigation.css">
+    <script defer src="navigation.js"></script>
 </head>
 <body>
     <div class="glow glow-one"></div>
@@ -17,18 +20,16 @@
         </header>
         <div class="account-grid">
             <section class="account-card">
-                <div class="form-tag">HỒ SƠ CỦA BẠN</div>
-                <details class="profile-panel">
-                    <summary>Xem thông tin cá nhân</summary>
-                    <p class="account-description">Thông tin tài khoản đang đăng nhập.</p>
-                    <div id="profileMessage" class="account-message" role="status" aria-live="polite"></div>
-                    <dl id="profileDetails" class="profile-details"></dl>
-                </details>
+                <div class="form-tag">Hồ sơ của bạn</div>
+                <h2>Thông tin cá nhân</h2>
+                <p class="account-description">Thông tin tài khoản đang đăng nhập.</p>
+                <div id="profileMessage" class="account-message" role="status" aria-live="polite"></div>
+                <dl id="profileDetails" class="profile-details"></dl>
                 <a id="dashboardLink" class="register-btn account-dashboard" href="properties.html">Đến trang quản lý <span>→</span></a>
             </section>
 
             <section class="account-card">
-                <div class="form-tag">BẢO MẬT</div>
+                <div class="form-tag">Bảo mật</div>
                 <h2>Đổi mật khẩu</h2>
                 <p class="account-description">Nhập mật khẩu hiện tại để xác nhận, sau đó tạo mật khẩu mới.</p>
                 <div id="passwordMessage" class="account-message" role="status" aria-live="polite"></div>

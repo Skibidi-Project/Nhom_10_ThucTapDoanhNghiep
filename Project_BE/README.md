@@ -166,6 +166,22 @@ phòng, mã/tên khu trọ và tên khách thuê. `rental_contracts.payment_cycl
 được ứng dụng tự bổ sung an toàn khi khởi động; có thể áp dụng script tương ứng
 trong `sql.sql` thủ công nếu cần.
 
+### Tìm kiếm và phân trang hợp đồng, khách thuê
+
+| Endpoint | Tìm kiếm và phân trang |
+|---|---|
+| `GET /api/contracts?property_id=&status=&q=&page=&page_size=` | Lọc tùy chọn theo khu trọ, trạng thái và từ khóa `q` (số phòng hoặc tên khách). |
+| `GET /api/tenants?q=&page=&page_size=` | Tìm tùy chọn theo tên, CCCD hoặc số điện thoại. |
+
+`page` và `page_size` là tùy chọn để giữ tương thích với các trang hiện cần danh
+sách đầy đủ: nếu không truyền cả hai, endpoint trả mảng như trước. Khi truyền
+một trong hai, endpoint trả `{items, total, page, page_size}`; mặc định `page=1`,
+`page_size=10`, và sắp xếp mới nhất trước. `page_size` nhận từ 1 đến 100.
+
+Trạng thái hợp đồng được đồng bộ theo ngày trước khi lọc `status`, vì vậy kết quả
+phản ánh trạng thái hiệu lực hiện tại. Từ khóa tìm kiếm theo chuỗi con; ký tự `%`,
+`_` và `\` được xem là ký tự thường, không phải ký tự đại diện.
+
 ## Phân quyền API
 
 | API / nghiệp vụ | Vai trò được phép |
