@@ -22,12 +22,21 @@ const paymentPreview = document.getElementById("paymentPreview");
 const savePaymentBtn = document.getElementById("savePaymentBtn");
 const paymentFormError = document.getElementById("paymentFormError");
 const historyDialog = document.getElementById("historyDialog");
+const dueDateDialog = document.getElementById("dueDateDialog");
+const dueDateForm = document.getElementById("dueDateForm");
+const dueDateInput = document.getElementById("dueDateInput");
+const dueReasonInput = document.getElementById("dueReasonInput");
+const dueDateError = document.getElementById("dueDateError");
+const saveDueDateBtn = document.getElementById("saveDueDateBtn");
+const cancelDueDateBtn = document.getElementById("cancelDueDateBtn");
+const closeDueDateBtn = document.getElementById("closeDueDateBtn");
 const contractId = new URLSearchParams(window.location.search).get("contract_id");
 
 let accessToken = sessionStorage.getItem("us05_access_token") || "";
 let currentUser = null;
 let invoices = [];
 let activeInvoice = null;
+let activeDueInvoice = null;
 
 function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -196,14 +205,7 @@ function renderInvoices() {
         });
         const dueButton = createElement("button", "button button-outline payment-action", "Đặt hạn thanh toán");
         dueButton.type = "button";
-        dueButton.addEventListener("click", async () => {
-            const due = prompt("Ngày đến hạn (YYYY-MM-DD):", invoice.due_date || "");
-            if (due === null) return;
-            const reason = prompt("Căn cứ hoặc lý do đặt hạn:");
-            if (reason === null) return;
-            try { await apiRequest(`/invoices/${invoice.id}/due-date`, {method:"PUT",body:JSON.stringify({due_date:due,reason})}); await loadInvoices(); showNotice("Đã cập nhật hạn thanh toán.", "success"); }
-            catch (error) { showNotice(error.message, "error"); }
-        });
+        dueButton.addEventListener("click", () => openDueDateDialog(invoice));
         actions.append(recordButton, historyButton, reconcileButton, dueButton);
         row.append(actions);
         const labels = ['Kỳ', 'Khu trọ', 'Phòng', 'Khách thuê', 'Tổng tiền', 'Đã thu', 'Còn thiếu', 'Trạng thái', 'Thao tác'];
@@ -329,6 +331,76 @@ async function openHistory(invoice) {
         historyLoading.hidden = true;
     }
 }
+
+function openDueDateDialog(invoice) {
+    activeDueInvoice = invoice;
+    dueDateError.textContent = "";
+    dueDateInput.value = invoice.due_date ? invoice.due_date.includes("T") ? invoice.due_date.split("T")[0] : invoice.due_date : "";
+    dueReasonInput.value = "";
+    saveDueDateBtn.disabled = false;
+    cancelDueDateBtn.disabled = false;
+    closeDueDateBtn.disabled = false;
+    dueDateDialog.showModal();
+    requestAnimationFrame(() => dueDateInput.focus());
+}
+
+function closeDueDateDialog() {
+    if (saveDueDateBtn.disabled) return;
+    dueDateDialog.close();
+    activeDueInvoice = null;
+    dueDateError.textContent = "";
+}
+
+cancelDueDateBtn.addEventListener("click", closeDueDateDialog);
+closeDueDateBtn.addEventListener("click", closeDueDateDialog);
+dueDateDialog.addEventListener("cancel", event => {
+    if (saveDueDateBtn.disabled) {
+        event.preventDefault();
+        return;
+    }
+    activeDueInvoice = null;
+    dueDateError.textContent = "";
+});
+dueDateDialog.addEventListener("click", event => {
+    if (event.target === dueDateDialog) closeDueDateDialog();
+});
+
+dueDateForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!activeDueInvoice) return;
+    const due = dueDateInput.value;
+    const reason = dueReasonInput.value.trim();
+    if (!due) {
+        dueDateError.textContent = "Vui lòng chọn ngày đến hạn.";
+        dueDateInput.focus();
+        return;
+    }
+    if (!reason) {
+        dueDateError.textContent = "Vui lòng nhập căn cứ hoặc lý do đặt hạn.";
+        dueReasonInput.focus();
+        return;
+    }
+    dueDateError.textContent = "";
+    saveDueDateBtn.disabled = true;
+    cancelDueDateBtn.disabled = true;
+    closeDueDateBtn.disabled = true;
+    try {
+        await apiRequest(`/invoices/${activeDueInvoice.id}/due-date`, {
+            method: "PUT",
+            body: JSON.stringify({due_date: due, reason})
+        });
+        dueDateDialog.close();
+        activeDueInvoice = null;
+        await loadInvoices();
+        showNotice("Đã cập nhật hạn thanh toán.", "success");
+    } catch (error) {
+        dueDateError.textContent = error.message;
+    } finally {
+        saveDueDateBtn.disabled = false;
+        cancelDueDateBtn.disabled = false;
+        closeDueDateBtn.disabled = false;
+    }
+});
 
 logoutBtn.addEventListener("click", logout);
 statusFilter.addEventListener("change", loadInvoices);

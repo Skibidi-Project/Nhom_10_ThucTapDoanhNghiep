@@ -20,6 +20,7 @@ let editing = null;
 let tenantPage = 1;
 let tenantRequestId = 0;
 let searchTimer = null;
+let accountLinkTenant = null;
 
 async function request(path, options = {}) {
     const headers = new Headers(options.headers);
@@ -43,10 +44,10 @@ function resetEditor(tenant = null) {
     property.required = !tenant && manager;
 }
 
-function action(parent, label, handler) {
+function action(parent, label, handler, className = "button button-outline") {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "button button-outline";
+    button.className = className;
     button.textContent = label;
     button.addEventListener("click", async () => {
         button.disabled = true;
@@ -58,8 +59,79 @@ function action(parent, label, handler) {
             button.disabled = false;
         }
     });
-    parent.append(button, " ");
+    parent.append(button);
 }
+
+const accountLinkDialog = document.getElementById("accountLinkDialog");
+const accountLinkForm = document.getElementById("accountLinkForm");
+const accountLinkIdentifier = document.getElementById("accountLinkIdentifier");
+const accountLinkError = document.getElementById("accountLinkError");
+const accountLinkSubmitBtn = document.getElementById("accountLinkSubmitBtn");
+const accountLinkCancelBtn = document.getElementById("accountLinkCancelBtn");
+const accountLinkCloseBtn = document.getElementById("accountLinkCloseBtn");
+
+function openAccountLinkModal(tenant) {
+    accountLinkTenant = tenant;
+    accountLinkForm.reset();
+    accountLinkError.textContent = "";
+    accountLinkSubmitBtn.disabled = false;
+    accountLinkDialog.showModal();
+    requestAnimationFrame(() => accountLinkIdentifier.focus());
+}
+
+function closeAccountLinkModal() {
+    if (accountLinkSubmitBtn.disabled) return;
+    accountLinkDialog.close();
+    accountLinkTenant = null;
+    accountLinkError.textContent = "";
+}
+
+accountLinkCancelBtn.addEventListener("click", closeAccountLinkModal);
+accountLinkCloseBtn.addEventListener("click", closeAccountLinkModal);
+accountLinkDialog.addEventListener("cancel", event => {
+    if (accountLinkSubmitBtn.disabled) {
+        event.preventDefault();
+        return;
+    }
+    accountLinkTenant = null;
+    accountLinkError.textContent = "";
+});
+accountLinkDialog.addEventListener("click", event => {
+    if (event.target === accountLinkDialog) closeAccountLinkModal();
+});
+
+accountLinkForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!accountLinkTenant) return;
+    const identifier = accountLinkIdentifier.value.trim();
+    if (!identifier) {
+        accountLinkError.textContent = "Vui lòng nhập email hoặc số điện thoại.";
+        accountLinkIdentifier.focus();
+        return;
+    }
+    accountLinkError.textContent = "";
+    accountLinkSubmitBtn.disabled = true;
+    accountLinkCancelBtn.disabled = true;
+    accountLinkCloseBtn.disabled = true;
+    try {
+        const payload = await request(`/tenants/${accountLinkTenant.id}/account`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({identifier})
+        }).then(response => response.json());
+        const tenantName = accountLinkTenant.full_name;
+        accountLinkDialog.close();
+        accountLinkTenant = null;
+        notice.textContent = `Đã liên kết tài khoản ${payload.full_name} (${payload.email}) với hồ sơ ${tenantName}.`;
+        await loadTenants();
+    } catch (error) {
+        accountLinkError.textContent = error.message;
+    } finally {
+        accountLinkSubmitBtn.disabled = false;
+        accountLinkCancelBtn.disabled = false;
+        accountLinkCloseBtn.disabled = false;
+    }
+});
 
 async function loadTenants(resetPage = false) {
     if (resetPage) tenantPage = 1;
@@ -94,39 +166,71 @@ async function loadTenants(resetPage = false) {
 
     list.replaceChildren();
     if (!tenants.length) {
-        list.textContent = search
+        const emptyState = document.createElement("div");
+        emptyState.className = "tenant-empty-state";
+        emptyState.textContent = search
             ? `Không tìm thấy khách thuê nào khớp với "${search}". Thử nhập tên, số CCCD hoặc số điện thoại khác.`
             : "Chưa có hồ sơ khách thuê.";
+        list.append(emptyState);
     }
     for (const tenant of tenants) {
         const row = document.createElement("article");
+        row.className = "tenant-card";
+
+        const header = document.createElement("div");
+        header.className = "tenant-card-header";
+        const avatar = document.createElement("div");
+        avatar.className = "tenant-avatar";
+        avatar.textContent = tenant.full_name ? tenant.full_name.trim().charAt(0).toUpperCase() : "?";
+        avatar.setAttribute("aria-hidden", "true");
+        const headingWrap = document.createElement("div");
+        headingWrap.className = "tenant-card-heading";
         const heading = document.createElement("h3");
         heading.textContent = tenant.full_name;
-        const details = document.createElement("p");
-        details.textContent = [tenant.phone, tenant.id_number, tenant.id_issue_date, tenant.id_issue_place, tenant.hometown].filter(Boolean).join(" · ");
-        const accountStatus = document.createElement("p");
-        accountStatus.textContent = tenant.user_id ? `Tài khoản: Đã liên kết (user_id: ${tenant.user_id})` : "Tài khoản: Chưa liên kết";
-        row.append(heading, details, accountStatus);
+        const tenantCode = document.createElement("p");
+        tenantCode.textContent = `Mã hồ sơ: ${tenant.id}`;
+        headingWrap.append(heading, tenantCode);
+        header.append(avatar, headingWrap);
+
+        const info = document.createElement("dl");
+        info.className = "tenant-info-grid";
+        const infoItems = [
+            ["Số điện thoại", tenant.phone],
+            ["Số CCCD", tenant.id_number],
+            ["Ngày cấp", tenant.id_issue_date],
+            ["Nơi cấp", tenant.id_issue_place],
+            ["Quê quán", tenant.hometown],
+        ];
+        for (const [label, value] of infoItems) {
+            const item = document.createElement("div");
+            item.className = "tenant-info-item";
+            const term = document.createElement("dt");
+            term.textContent = label;
+            const description = document.createElement("dd");
+            description.textContent = value || "-";
+            item.append(term, description);
+            info.append(item);
+        }
+
+        const accountRow = document.createElement("div");
+        accountRow.className = "tenant-account-row";
+        const accountStatus = document.createElement("span");
+        accountStatus.className = `tenant-account-status${tenant.user_id ? " linked" : ""}`;
+        accountStatus.textContent = tenant.user_id ? "Đã liên kết" : "Chưa liên kết";
+        const accountActions = document.createElement("div");
+        accountActions.className = "tenant-account-actions";
+        accountRow.append(accountStatus, accountActions);
+        row.append(header, info, accountRow);
 
         if (tenant.user_id) {
-            action(row, "Gỡ liên kết", async () => {
+            action(accountActions, "Gỡ liên kết", async () => {
                 if (!confirm(`Gỡ liên kết tài khoản khỏi hồ sơ của ${tenant.full_name}?`)) return;
                 await request(`/tenants/${tenant.id}/account`, {method: "DELETE"});
                 notice.textContent = `Đã gỡ liên kết tài khoản khỏi hồ sơ ${tenant.full_name}.`;
                 await loadTenants();
             });
         } else {
-            action(row, "Liên kết tài khoản", async () => {
-                const identifier = window.prompt("Nhập email hoặc SĐT của tài khoản khách thuê cần liên kết:");
-                if (!identifier || !identifier.trim()) throw new Error("Vui lòng nhập email hoặc SĐT hợp lệ.");
-                const payload = await request(`/tenants/${tenant.id}/account`, {
-                    method: "PUT",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({identifier: identifier.trim()})
-                }).then(response => response.json());
-                notice.textContent = `Đã liên kết tài khoản ${payload.full_name} (${payload.email}) với hồ sơ ${tenant.full_name}.`;
-                await loadTenants();
-            });
+            action(accountActions, "Liên kết tài khoản", () => openAccountLinkModal(tenant));
         }
 
         const url = `/tenants/${tenant.id}/id-photo`;
@@ -134,16 +238,26 @@ async function loadTenants(resetPage = false) {
         file.type = "file";
         file.accept = "image/png,image/jpeg";
         file.setAttribute("aria-label", `Ảnh CCCD của ${tenant.full_name}`);
-        row.append(file);
-        action(row, "Lưu ảnh CCCD", async () => {
+        const photoSection = document.createElement("section");
+        photoSection.className = "tenant-photo-section";
+        const photoHeading = document.createElement("h4");
+        photoHeading.textContent = "Ảnh CCCD";
+        const photoActions = document.createElement("div");
+        photoActions.className = "tenant-photo-actions";
+        photoSection.append(photoHeading, file, photoActions);
+        row.append(photoSection);
+
+        const cardActions = document.createElement("div");
+        cardActions.className = "tenant-card-actions";
+        action(cardActions, "Lưu ảnh CCCD", async () => {
             const selected = file.files[0];
             if (!selected) throw new Error("Hãy chọn ảnh CCCD.");
             await request(url, {method: "PUT", headers: {"Content-Type": selected.type}, body: selected});
             notice.textContent = "Đã lưu ảnh CCCD.";
             await loadTenants();
-        });
+        }, "button tenant-save-photo");
         if (tenant.id_photo_type) {
-            action(row, "Tải ảnh CCCD", async () => {
+            action(photoActions, "Tải ảnh CCCD", async () => {
                 const response = await request(url);
                 const objectUrl = URL.createObjectURL(await response.blob());
                 const link = document.createElement("a");
@@ -152,24 +266,25 @@ async function loadTenants(resetPage = false) {
                 link.click();
                 setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
             });
-            action(row, "Xóa ảnh", async () => {
+            action(photoActions, "Xóa ảnh", async () => {
                 if (!confirm("Xóa ảnh CCCD của hồ sơ này?")) return;
                 await request(url, {method: "DELETE"});
                 notice.textContent = "Đã xóa ảnh CCCD.";
                 await loadTenants();
             });
         }
-        action(row, "Sửa hồ sơ", () => {
+        action(cardActions, "Sửa hồ sơ", () => {
             resetEditor(tenant);
             form.elements.full_name.focus();
-        });
-        action(row, "Xóa hồ sơ", async () => {
+        }, "button button-outline tenant-edit");
+        action(cardActions, "Xóa hồ sơ", async () => {
             if (!confirm(`Xóa hồ sơ của ${tenant.full_name}?`)) return;
             await request(`/tenants/${tenant.id}`, {method: "DELETE"});
             if (editing === tenant.id) resetEditor();
             notice.textContent = "Đã xóa hồ sơ.";
             await loadTenants();
-        });
+        }, "button tenant-delete");
+        row.append(cardActions);
         list.append(row);
     }
 }
