@@ -117,11 +117,11 @@ function renderRows(items) {
         appendAction(actions, "Lịch sử điện/nước", () => showUtilityHistory(room), "utility-history-action");
         if (room.status === "available") {
             appendAction(actions, "Lập hợp đồng", () => {
-                window.location.href = `contracts.html?room_id=${encodeURIComponent(room.id)}`;
+                window.location.href = `/register/html/contracts.html?room_id=${encodeURIComponent(room.id)}`;
             });
         }
         appendAction(actions, "Dịch vụ", () => {
-            window.location.href = `services.html?room_id=${encodeURIComponent(room.id)}`;
+            window.location.href = `/register/html/services.html?room_id=${encodeURIComponent(room.id)}`;
         });
         if (room.status !== "occupied") {
             appendAction(actions, "Sửa", () => openEditDialog(room));
@@ -522,7 +522,7 @@ document.getElementById("utilityMonthFilter").addEventListener("change", renderU
 logoutBtn?.addEventListener("click", disconnect);
 
 if (!accessToken) {
-    window.location.replace("index.html");
+    window.location.replace("/register/html/index.html");
 } else {
     connect(accessToken).catch(error => {
         disconnect();

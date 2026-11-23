@@ -31,7 +31,7 @@ function clearNotice() {
 
 function logout() {
     sessionStorage.removeItem("us05_access_token");
-    window.location.assign("login.html");
+    window.location.assign("/register/html/login.html");
 }
 
 async function fetchJson(url, options = {}) {
@@ -178,7 +178,7 @@ async function ensureAdminAccess() {
     if (!token) {
         setNotice("Chỉ quản trị viên được truy cập. Vui lòng đăng nhập.", "error");
         const link = document.createElement("a");
-        link.href = "login.html";
+        link.href = "/register/html/login.html";
         link.textContent = "Quay lại đăng nhập";
         notice.append(" ");
         notice.append(link);
@@ -191,7 +191,7 @@ async function ensureAdminAccess() {
         if (me.role !== "admin") {
             setNotice("Chỉ quản trị viên được truy cập.", "error");
             const link = document.createElement("a");
-            link.href = "login.html";
+            link.href = "/register/html/login.html";
             link.textContent = "Về trang đăng nhập";
             notice.append(" ");
             notice.append(link);
@@ -201,7 +201,7 @@ async function ensureAdminAccess() {
     } catch (error) {
         setNotice("Chỉ quản trị viên được truy cập.", "error");
         const link = document.createElement("a");
-        link.href = "login.html";
+        link.href = "/register/html/login.html";
         link.textContent = "Về trang đăng nhập";
         notice.append(" ");
         notice.append(link);

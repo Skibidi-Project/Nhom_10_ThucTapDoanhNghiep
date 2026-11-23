@@ -282,12 +282,12 @@ priceDialog.addEventListener("close", () => {
 
 logoutBtn.addEventListener("click", () => {
     sessionStorage.removeItem("us05_access_token");
-    window.location.href = "login.html";
+    window.location.href = "/register/html/login.html";
 });
 
 async function bootstrap() {
     if (!accessToken) {
-        window.location.href = "login.html";
+        window.location.href = "/register/html/login.html";
         return;
     }
 

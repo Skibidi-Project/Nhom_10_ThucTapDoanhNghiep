@@ -112,7 +112,7 @@ async function apiRequest(path, options = {}) {
 
 function logout() {
     sessionStorage.removeItem("us05_access_token");
-    window.location.href = "login.html";
+    window.location.href = "/register/html/login.html";
 }
 
 // Khởi tạo trang và nạp danh sách khu trọ được giao.
@@ -132,7 +132,7 @@ async function init() {
 
             const suitableLink = createElement("a", "", "Đăng nhập bằng tài khoản khác");
 
-            suitableLink.href = "login.html";
+            suitableLink.href = "/register/html/login.html";
             el("notice").append(createElement("br"), suitableLink);
             el("expenseSection").hidden = true;
             return;
