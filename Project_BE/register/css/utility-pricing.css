@@ -71,6 +71,19 @@
     margin-top: 16px;
 }
 
+.utility-preview-submit {
+    width: min(220px, 100%);
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto 0;
+    padding: 11px 22px;
+    border-radius: var(--radius-sm);
+    font-weight: 650;
+    text-align: center;
+}
+
 .utility-message {
     margin: 16px 0 0;
     color: var(--color-text);
@@ -226,6 +239,10 @@
     .utility-form-submit {
         width: 100%;
         justify-content: center;
+    }
+
+    .utility-preview-submit {
+        width: 100%;
     }
 
     .page-actions .button {

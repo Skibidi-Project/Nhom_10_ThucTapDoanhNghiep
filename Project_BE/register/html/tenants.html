@@ -83,6 +83,23 @@
             </div>
         </form>
     </dialog>
+    <dialog id="deleteTenantDialog" class="property-dialog property-confirm-dialog" aria-labelledby="deleteTenantTitle" aria-describedby="deleteTenantDescription">
+        <div class="confirm-dialog-body">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">XÓA HỒ SƠ</p>
+                    <h2 id="deleteTenantTitle">Xác nhận xóa hồ sơ</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDeleteTenantBtn" aria-label="Đóng">×</button>
+            </div>
+            <p id="deleteTenantDescription" class="confirm-dialog-description"></p>
+            <p class="confirm-dialog-warning">Thao tác này không thể hoàn tác.</p>
+        </div>
+        <div class="dialog-actions">
+            <button type="button" class="button button-light" id="cancelDeleteTenantBtn">Hủy</button>
+            <button type="button" class="button button-danger" id="confirmDeleteTenantBtn">Xóa hồ sơ</button>
+        </div>
+    </dialog>
     <script src="tenants.js"></script>
     <script src="../js/tenants.js"></script>
 </body>

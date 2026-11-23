@@ -1,6 +1,23 @@
-.payment-page .intro {
-    min-height: 74px;
+.payment-page .payment-intro {
+    min-height: 0;
     align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.payment-intro-copy {
+    min-width: 0;
+}
+
+.payment-property-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    text-decoration: none;
+}
+
+.payment-page .payment-filters {
+    margin-top: 0;
 }
 
 .payment-filters {
@@ -17,6 +34,10 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px;
+}
+
+.payment-filters .form-grid {
+    margin-top: 0;
 }
 
 .property-dialog .form-grid {
@@ -209,8 +230,8 @@
 }
 
 .empty-state {
-    margin: 16px 0 0;
-    padding: 36px 20px;
+    margin: 18px 0 0;
+    padding: 32px 20px;
     border: 1px dashed #dce3e8;
     border-radius: 14px;
     background: #fff;
@@ -401,6 +422,10 @@
 }
 
 @media (max-width: 720px) {
+    .payment-page .payment-intro {
+        margin-bottom: 20px;
+    }
+
     .topbar-actions a.button {
         display: none;
     }

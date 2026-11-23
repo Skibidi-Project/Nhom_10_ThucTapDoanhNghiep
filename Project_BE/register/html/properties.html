@@ -122,6 +122,24 @@
         </form>
     </dialog>
 
+    <dialog id="deletePropertyDialog" class="property-dialog property-confirm-dialog" aria-labelledby="deletePropertyTitle" aria-describedby="deletePropertyDescription">
+        <div class="confirm-dialog-body">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">XÓA CƠ SỞ</p>
+                    <h2 id="deletePropertyTitle">Xác nhận xóa cơ sở</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDeletePropertyBtn" aria-label="Đóng">×</button>
+            </div>
+            <p id="deletePropertyDescription" class="confirm-dialog-description"></p>
+            <p class="confirm-dialog-warning">Chỉ có thể xóa cơ sở chưa có phòng.</p>
+        </div>
+        <div class="dialog-actions">
+            <button type="button" class="button button-light" id="cancelDeletePropertyBtn">Hủy</button>
+            <button type="button" class="button button-danger" id="confirmDeletePropertyBtn">Xóa cơ sở</button>
+        </div>
+    </dialog>
+
     <script src="../js/properties.js"></script>
 </body>
 </html>

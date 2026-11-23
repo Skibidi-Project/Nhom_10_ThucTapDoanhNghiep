@@ -196,6 +196,24 @@
         </div>
     </dialog>
 
+    <dialog id="deleteRoomDialog" class="property-dialog property-confirm-dialog" aria-labelledby="deleteRoomTitle" aria-describedby="deleteRoomDescription">
+        <div class="confirm-dialog-body">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">XÓA PHÒNG</p>
+                    <h2 id="deleteRoomTitle">Xác nhận xóa phòng</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDeleteRoomBtn" aria-label="Đóng">×</button>
+            </div>
+            <p id="deleteRoomDescription" class="confirm-dialog-description"></p>
+            <p class="confirm-dialog-warning">Thao tác này không thể hoàn tác.</p>
+        </div>
+        <div class="dialog-actions">
+            <button type="button" class="button button-light" id="cancelDeleteRoomBtn">Hủy</button>
+            <button type="button" class="button button-danger" id="confirmDeleteRoomBtn">Xóa phòng</button>
+        </div>
+    </dialog>
+
     <script src="../js/rooms.js"></script>
 </body>
 </html>
