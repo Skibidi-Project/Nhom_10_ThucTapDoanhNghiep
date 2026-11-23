@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f6f8">
+    <title>Thông tin thuê nhà | MiniStay</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="../css/properties.css">
+    <link rel="stylesheet" href="../css/tenant-portal.css">
+</head>
+<body>
+    <main class="tenant-portal">
+        <header class="portal-header">
+            <a class="portal-brand" href="/register/html/tenant-portal.html" aria-label="MiniStay, trang khách thuê"><span class="brand-mark">M</span>MiniStay</a>
+            <div class="portal-account">
+                <span id="tenantGreeting">Xin chào</span>
+                <a class="account-link" href="/register/html/account.html">Tài khoản</a>
+                <button id="logoutBtn" class="logout-button" type="button">Đăng xuất</button>
+            </div>
+        </header>
+
+        <section class="portal-intro" aria-labelledby="pageTitle">
+            <div>
+                <p class="eyebrow">KHU VỰC KHÁCH THUÊ</p>
+                <h1 id="pageTitle">Thông tin thuê nhà của bạn</h1>
+                <p class="intro-copy">Theo dõi hợp đồng, chỉ số điện nước và hóa đơn tại một nơi.</p>
+            </div>
+            <div class="home-illustration" aria-hidden="true"><span>⌂</span><i></i></div>
+        </section>
+
+        <div id="pageMessage" class="portal-message" role="status" aria-live="polite" hidden></div>
+
+        <section class="summary-grid" aria-label="Tóm tắt thông tin">
+            <article class="summary-card"><span class="summary-icon contract-icon">▤</span><div><span class="summary-label">Hợp đồng của bạn</span><strong id="contractCount">—</strong></div></article>
+            <article class="summary-card"><span class="summary-icon reading-icon">ϟ</span><div><span class="summary-label">Kỳ chỉ số gần nhất</span><strong id="latestReading">—</strong></div></article>
+            <article class="summary-card"><span class="summary-icon invoice-icon">₫</span><div><span class="summary-label">Còn phải thanh toán</span><strong id="outstandingTotal">—</strong></div></article>
+        </section>
+
+        <section class="portal-panel">
+            <div class="panel-heading">
+                <div><p class="eyebrow">HỒ SƠ THUÊ</p><h2>Thông tin phòng</h2></div>
+                <label class="contract-filter">Hợp đồng
+                    <select id="contractFilter" aria-label="Lọc theo hợp đồng"><option value="all">Tất cả hợp đồng</option></select>
+                </label>
+            </div>
+
+            <div class="portal-tabs" role="tablist" aria-label="Thông tin thuê nhà">
+                <button class="portal-tab active" id="tab-contracts" type="button" role="tab" aria-selected="true" aria-controls="panel-contracts" data-panel="contracts">Hợp đồng</button>
+                <button class="portal-tab" id="tab-readings" type="button" role="tab" aria-selected="false" aria-controls="panel-readings" data-panel="readings">Chỉ số điện/nước</button>
+                <button class="portal-tab" id="tab-invoices" type="button" role="tab" aria-selected="false" aria-controls="panel-invoices" data-panel="invoices">Hóa đơn</button>
+            </div>
+
+            <div class="tab-panel" id="panel-contracts" role="tabpanel" aria-labelledby="tab-contracts"></div>
+            <div class="tab-panel" id="panel-readings" role="tabpanel" aria-labelledby="tab-readings" hidden></div>
+            <div class="tab-panel" id="panel-invoices" role="tabpanel" aria-labelledby="tab-invoices" hidden></div>
+        </section>
+
+        <footer class="portal-footer">MiniStay · Thông tin chỉ hiển thị cho tài khoản khách thuê đã liên kết.</footer>
+    </main>
+    <script src="../js/tenant-portal.js"></script>
+</body>
+</html>

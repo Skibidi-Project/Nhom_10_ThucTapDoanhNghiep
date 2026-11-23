@@ -338,3 +338,43 @@ def test_us20_midmonth_change_blocks_invoice_without_partial_write(env):
     dep=app.dependency_overrides[get_db]();db=next(dep)
     assert db.scalar(select(Invoice.id).where(Invoice.contract_id==cid,Invoice.period==period)) is None
     assert db.scalars(select(InvoiceUtilitySnapshot)).all()==[];dep.close()
+
+
+def test_us32_tenant_portal_shows_only_linked_tenant_data(env):
+    from sqlalchemy import select
+
+    c,(_,_,_,tenant,_),_,_=env
+    dependency=app.dependency_overrides[get_db]()
+    db=next(dependency)
+    try:
+        tenant_user=db.scalar(select(User).where(User.email=='tenant@example.com'))
+        profile=db.scalar(select(TenantProfile).where(TenantProfile.user_id.is_(None)))
+        profile.user_id=tenant_user.id
+        contract=db.scalar(select(Contract).where(Contract.tenant_id==profile.id))
+
+        second_user=User(full_name='Second Tenant',email='second-tenant@example.com',role='tenant',password_hash='x')
+        db.add(second_user);db.flush()
+        second_profile=TenantProfile(landlord_id=profile.landlord_id,created_by=profile.created_by,full_name='Second Tenant',phone='0900000002',id_number='123456789013',user_id=second_user.id)
+        db.add(second_profile);db.flush()
+        second_room=db.scalar(select(Room).where(Room.room_number=='2'))
+        second_contract=Contract(room_id=second_room.id,tenant_id=second_profile.id,created_by=profile.created_by,start_date=date.today()-timedelta(days=10),end_date=date.today()+timedelta(days=20),monthly_rent=200,deposit=0,status='active')
+        db.add(second_contract);db.flush()
+        second_invoice=Invoice(contract_id=second_contract.id,period='2098-01',rent_amount=200,utility_amount=0,total_amount=200,status='unpaid')
+        db.add(second_invoice);db.commit()
+        tenant_headers={'Authorization':'Bearer '+create_access_token(tenant_user.id)}
+        second_headers={'Authorization':'Bearer '+create_access_token(second_user.id)}
+        contract_id=contract.id
+        second_contract_id=second_contract.id
+    finally:
+        dependency.close()
+
+    portal=c.get('/register/html/tenant-portal.html')
+    assert portal.status_code==200 and 'panel-contracts' in portal.text
+    own_rentals=c.get('/api/tenants/me/rentals',headers=tenant_headers)
+    assert own_rentals.status_code==200
+    assert [item['contract_id'] for item in own_rentals.json()]==[contract_id]
+    own_invoices=c.get('/api/invoices',headers=tenant_headers)
+    assert own_invoices.status_code==200
+    assert {item['contract_id'] for item in own_invoices.json()}=={contract_id}
+    other_rentals=c.get('/api/tenants/me/rentals',headers=second_headers)
+    assert [item['contract_id'] for item in other_rentals.json()]==[second_contract_id]

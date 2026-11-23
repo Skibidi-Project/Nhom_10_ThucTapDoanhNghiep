@@ -1,10 +1,11 @@
 from datetime import date
 
 from fastapi import HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Property, PropertyManager, Room, TenantProfile
+from app.models.boarding import Contract, Invoice, Property, PropertyManager, Room, TenantProfile, UtilityPriceHistory
+from app.models.service_assignment import ServiceAssignment
 from app.models.user import User
 from app.schemas.boarding import ContractCreate
 from app.services.access_scope import assert_can_operate, get_contract, get_property, get_room, get_tenant, property_of_room
@@ -239,3 +240,25 @@ def liquidate_contract(db: Session, user: User, contract_id: int) -> dict:
     room.status = "available"
     save(db, contract, room)
     return _contract_payload(contract, room, property_of_room(db, room), get_tenant(db, contract.tenant_id))
+
+
+def delete_expired_contract(db: Session, user: User, contract_id: int) -> None:
+    contract = get_contract(db, contract_id)
+    if not _visible(db, user, contract):
+        raise HTTPException(status_code=403, detail="B\u1ea1n kh\u00f4ng c\u00f3 quy\u1ec1n x\u00f3a h\u1ee3p \u0111\u1ed3ng n\u00e0y.")
+    if contract.status != "expired":
+        raise HTTPException(status_code=409, detail="Ch\u1ec9 x\u00f3a \u0111\u01b0\u1ee3c h\u1ee3p \u0111\u1ed3ng \u0111\u00e3 h\u1ebft h\u1ea1n v\u00e0 ho\u00e0n t\u1ea5t thanh l\u00fd.")
+
+    invoice_id = db.scalar(select(Invoice.id).where(Invoice.contract_id == contract.id).limit(1))
+    if invoice_id is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Kh\u00f4ng th\u1ec3 x\u00f3a h\u1ee3p \u0111\u1ed3ng \u0111\u00e3 c\u00f3 h\u00f3a \u0111\u01a1n \u0111\u1ec3 b\u1ea3o to\u00e0n l\u1ecbch s\u1eed thanh to\u00e1n.",
+        )
+
+    db.execute(delete(ServiceAssignment).where(ServiceAssignment.contract_id == contract.id))
+    db.execute(
+        delete(UtilityPriceHistory).where(UtilityPriceHistory.contract_id == contract.id)
+    )
+    db.delete(contract)
+    save(db)

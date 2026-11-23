@@ -1,10 +1,13 @@
 ﻿import os
+from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.pool import StaticPool
+from dotenv import load_dotenv
 
-DATABASE_URL = os.getenv("DATABASE_URL") or "mysql+pymysql://root:123456@localhost/products_db"
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+DATABASE_URL = os.getenv("DATABASE_URL") or "mysql+pymysql://root:jay2007@localhost/products_db"
 
 engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):

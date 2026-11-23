@@ -192,6 +192,20 @@ async function requestLiquidation(contract) {
     }
 }
 
+async function deleteExpiredContract(contract) {
+    const confirmed = window.confirm(
+        `X\u00f3a h\u1ee3p \u0111\u1ed3ng ph\u00f2ng ${contract.room_number}? Thao t\u00e1c n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c. H\u1ec7 th\u1ed1ng s\u1ebd ch\u1eb7n x\u00f3a n\u1ebfu h\u1ee3p \u0111\u1ed3ng \u0111\u00e3 c\u00f3 h\u00f3a \u0111\u01a1n \u0111\u1ec3 gi\u1eef l\u1ea1i l\u1ecbch s\u1eed thanh to\u00e1n.`
+    );
+    if (!confirmed) return;
+    try {
+        await apiRequest(`/contracts/${contract.id}`, {method: "DELETE"});
+        showNotice("\u0110\u00e3 x\u00f3a h\u1ee3p \u0111\u1ed3ng h\u1ebft h\u1ea1n.", "success");
+        await loadContracts();
+    } catch (error) {
+        showNotice(error.message, "error");
+    }
+}
+
 function openDepositDialog(contract) {
     const form = document.getElementById("depositForm");
     form.reset();
@@ -262,6 +276,10 @@ function renderContracts(items) {
             }
             const depositReady = contract.deposit === 0 || contract.deposit_status !== "unpaid";
             actions.append(actionButton("Ho\u00e0n t\u1ea5t thanh l\u00fd", () => requestLiquidation(contract), !depositReady));
+        } else if (contract.status === "expired") {
+            const deleteButton = actionButton("X\u00f3a h\u1ee3p \u0111\u1ed3ng", () => deleteExpiredContract(contract));
+            deleteButton.classList.add("contract-delete-action");
+            actions.append(deleteButton);
         } else {
             actions.append(createElement("span", "muted-action", "\u0110\u00e3 ho\u00e0n t\u1ea5t"));
         }

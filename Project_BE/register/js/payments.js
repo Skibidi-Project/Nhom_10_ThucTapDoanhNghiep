@@ -11,6 +11,8 @@ const paymentsTableContainer = document.getElementById("paymentsTableContainer")
 const statusFilter = document.getElementById("statusFilter");
 const periodFilter = document.getElementById("periodFilter");
 const searchFilter = document.getElementById("searchFilter");
+const clearPaymentFiltersBtn = document.getElementById("clearPaymentFilters");
+const emptyClearFiltersBtn = document.getElementById("emptyClearFilters");
 const paymentDialog = document.getElementById("paymentDialog");
 const paymentForm = document.getElementById("paymentForm");
 const paymentSummary = document.getElementById("paymentSummary");
@@ -67,6 +69,24 @@ function localDateString() {
 function showNotice(message, type = "info") {
     notice.textContent = message;
     notice.className = `notice show ${type}`;
+}
+
+function hasPaymentFilters() {
+    return Boolean(statusFilter.value || periodFilter.value || searchFilter.value.trim());
+}
+
+function updatePaymentFilterButtons() {
+    const visible = hasPaymentFilters();
+    clearPaymentFiltersBtn.hidden = !visible;
+    emptyClearFiltersBtn.hidden = !visible;
+}
+
+function clearPaymentFilters() {
+    statusFilter.value = "";
+    periodFilter.value = "";
+    searchFilter.value = "";
+    updatePaymentFilterButtons();
+    loadInvoices();
 }
 
 async function apiRequest(path, options = {}) {
@@ -137,13 +157,16 @@ async function loadInvoices() {
         if (contractId !== null) {
             params.set("contract_id", contractId);
             document.getElementById("contractScope").hidden = false;
+            document.getElementById("contractScopeId").textContent = `#${contractId}`;
         }
         if (statusFilter.value) params.set("status", statusFilter.value);
         if (periodFilter.value) params.set("period", periodFilter.value);
         const query = params.toString();
         invoices = await apiRequest(`/invoices${query ? `?${query}` : ""}`);
+        updatePaymentFilterButtons();
         renderInvoices();
     } catch (error) {
+        updatePaymentFilterButtons();
         paymentsError.textContent = error.message;
         paymentsError.hidden = false;
     } finally {
@@ -163,10 +186,25 @@ function renderInvoices() {
     if (!filtered.length) {
         paymentsEmpty.hidden = false;
         paymentsTableContainer.hidden = true;
+        const hasFilters = hasPaymentFilters();
+        document.getElementById("paymentsEmptyTitle").textContent = search
+            ? "Không tìm thấy kết quả phù hợp"
+            : hasFilters
+                ? "Không có hóa đơn phù hợp với bộ lọc"
+                : "Chưa có hóa đơn cho hợp đồng này";
+        document.getElementById("paymentsEmptyDescription").textContent = search
+            ? "Thử tìm bằng số phòng hoặc tên khách thuê khác, hoặc xóa bộ lọc để xem lại danh sách."
+            : hasFilters
+                ? "Hãy thử xóa trạng thái hoặc kỳ đang chọn để xem các hóa đơn khác."
+                : contractId !== null
+                    ? `Hợp đồng #${contractId} chưa có hóa đơn. Bạn có thể xem danh sách hóa đơn của tất cả hợp đồng.`
+                    : "Hóa đơn sẽ xuất hiện tại đây sau khi được chốt cho các hợp đồng.";
+        updatePaymentFilterButtons();
         return;
     }
     paymentsEmpty.hidden = true;
     paymentsTableContainer.hidden = false;
+    updatePaymentFilterButtons();
     for (const invoice of filtered) {
         const row = document.createElement("tr");
         row.append(
@@ -406,6 +444,8 @@ logoutBtn.addEventListener("click", logout);
 statusFilter.addEventListener("change", loadInvoices);
 periodFilter.addEventListener("change", loadInvoices);
 searchFilter.addEventListener("input", renderInvoices);
+clearPaymentFiltersBtn.addEventListener("click", clearPaymentFilters);
+emptyClearFiltersBtn.addEventListener("click", clearPaymentFilters);
 paymentAmount.addEventListener("input", updatePaymentPreview);
 paymentForm.addEventListener("submit", savePayment);
 document.getElementById("fillRemainingBtn").addEventListener("click", () => {

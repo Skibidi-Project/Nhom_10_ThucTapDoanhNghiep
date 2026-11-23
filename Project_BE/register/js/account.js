@@ -5,7 +5,7 @@ const passwordMessage = document.getElementById("passwordMessage");
 const passwordForm = document.getElementById("passwordForm");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 
-const destinations = { admin: "/register/html/admin-users.html", landlord: "/register/html/properties.html", manager: "/register/html/properties.html" };
+const destinations = { admin: "/register/html/admin-users.html", landlord: "/register/html/properties.html", manager: "/register/html/properties.html", tenant: "/register/html/tenant-portal.html" };
 const roleNames = { admin: "Quản trị viên", landlord: "Chủ nhà", manager: "Quản lý", tenant: "Khách thuê" };
 
 function logout() {
@@ -47,8 +47,13 @@ async function loadProfile() {
             profileDetails.append(dt, dd);
         }
         const dashboardLink = document.getElementById("dashboardLink");
-        if (destinations[user.role]) dashboardLink.href = destinations[user.role];
+        if (destinations[user.role]) {
+            dashboardLink.href = destinations[user.role];
+            if (user.role === "tenant") dashboardLink.innerHTML = "Thông tin thuê nhà <span>→</span>";
+        }
         else dashboardLink.hidden = true;
+        const brand = document.getElementById("accountBrand");
+        if (brand && user.role === "tenant") brand.href = destinations.tenant;
         sessionStorage.setItem("us05_user_role", user.role);
     } catch (error) {
         showMessage(profileMessage, error.message, "failure");

@@ -138,7 +138,7 @@ def read_all_rooms(
     page_size: int = Query(default=10, ge=1, le=100),
     search: str | None = Query(default=None, max_length=20),
     property_id: int | None = Query(default=None, gt=0),
-    room_status: str | None = Query(default=None, alias="status", pattern="^(available|occupied|maintenance)$"),
+    room_status: str | None = Query(default=None, alias="status", pattern="^(available|reserved|occupied|maintenance)$"),
     db: Session = Depends(get_db),
     user: User = Depends(require_permissions(Permission.PROPERTY_OPERATE)),
 ):

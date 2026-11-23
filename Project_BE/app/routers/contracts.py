@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import block_privilege_override, get_current_user, require_permissions
@@ -59,6 +59,16 @@ def read_contract(
     user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
 ):
     return contract_service.read_contract(db, user, contract_id)
+
+
+@router.delete("/{contract_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_expired_contract(
+    contract_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
+):
+    contract_service.delete_expired_contract(db, user, contract_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{contract_id}/terminate", response_model=ContractResponse)

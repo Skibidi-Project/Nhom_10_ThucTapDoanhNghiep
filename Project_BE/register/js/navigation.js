@@ -75,7 +75,7 @@ const groups = [
 
     const brand = document.createElement('a');
     brand.className = 'sidebar-brand';
-    brand.href = '/register/html/properties.html';
+    brand.href = sessionStorage.getItem('us05_user_role') === 'tenant' ? '/register/html/tenant-portal.html' : '/register/html/properties.html';
     brand.innerHTML = '<span class="sidebar-brand-mark">M</span><span class="sidebar-brand-name">MiniStay</span>';
     aside.append(brand);
 
@@ -179,6 +179,11 @@ const groups = [
                 { label: 'QUẢN TRỊ', links: [['/register/html/admin-users.html', 'Quản lý người dùng', 'admin']] },
                 { label: 'CÁ NHÂN', links: [['/register/html/account.html', 'Tài khoản', 'account']] }
             ];
+        } else if (user.role === 'tenant') {
+            visibleGroups = [
+                { label: 'THUÊ NHÀ', links: [['/register/html/tenant-portal.html', 'Thông tin thuê nhà', 'overview']] },
+                { label: 'CÁ NHÂN', links: [['/register/html/account.html', 'Tài khoản', 'account']] }
+            ];
         } else {
             visibleGroups = [{ label: 'CÁ NHÂN', links: [['/register/html/account.html', 'Tài khoản', 'account']] }];
         }
@@ -232,7 +237,12 @@ const groups = [
             ].filter(Boolean);
 
         const mobileItems = [];
-        if (primary.length === 3) {
+        if (role === 'tenant') {
+            mobileItems.push(
+                [allLinks.find(link => link[2] === 'overview')[0], 'Thuê nhà', 'overview'],
+                [allLinks.find(link => link[2] === 'account')[0], 'Tài khoản', 'account']
+            );
+        } else if (primary.length === 3) {
             mobileItems.push(
                 [primary[0][0], 'Tổng quan', 'overview'],
                 [primary[1][0], 'Phòng', 'rooms'],

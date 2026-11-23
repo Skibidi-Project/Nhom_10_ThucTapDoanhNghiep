@@ -262,6 +262,18 @@
     outline-offset: 2px;
 }
 
+.contract-delete-action {
+    color: #a13b37;
+    border-color: #efcfcc;
+    background: #fff8f7;
+}
+
+.contract-delete-action:hover {
+    color: #8d2f2b;
+    border-color: #e4b5b1;
+    background: #fff0ee;
+}
+
 .muted-action,
 .deposit-summary {
     color: #78838f;

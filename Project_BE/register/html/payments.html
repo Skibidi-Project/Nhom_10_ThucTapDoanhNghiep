@@ -23,19 +23,30 @@
         </div>
     </header>
 
-    <main class="container payment-page">
-        <section class="intro payment-intro">
-            <div class="payment-intro-copy">
+    <main class="container payments-page">
+        <section class="intro payments-intro">
+            <div class="payments-intro-copy">
+                <p class="payments-eyebrow">QUẢN LÝ TÀI CHÍNH</p>
                 <h1>Ghi nhận thanh toán</h1>
-                <p class="subtitle">Theo dõi đã thu, còn thiếu và lịch sử thanh toán của hóa đơn.</p>
-                <a class="button button-outline payment-property-link" href="/register/html/properties.html">Quản lý cơ sở</a>
+                <p class="subtitle">Theo dõi khoản đã thu, số dư còn lại và lịch sử thanh toán hóa đơn.</p>
+            </div>
+            <div class="payments-intro-actions">
+                <a class="button button-outline" href="/register/html/properties.html">Quản lý cơ sở <span aria-hidden="true">↗</span></a>
             </div>
         </section>
 
         <div id="notice" class="notice" role="status" aria-live="polite"></div>
-        <p id="contractScope" class="subtitle" hidden>Đang xem hóa đơn theo hợp đồng. <a href="/register/html/payments.html">Xem tất cả hóa đơn</a></p>
+        <div id="contractScope" class="contract-scope" hidden>
+            <span class="scope-icon" aria-hidden="true">⌂</span>
+            <span>Đang lọc hóa đơn theo hợp đồng <strong id="contractScopeId"></strong>.</span>
+            <a href="/register/html/payments.html">Xem tất cả hóa đơn</a>
+        </div>
         <section id="paymentSection" hidden>
             <div class="panel payment-filters">
+                <div class="filters-heading">
+                    <div><span class="filters-icon" aria-hidden="true">☷</span><div><h2>Lọc hóa đơn</h2><p>Chọn trạng thái, kỳ hoặc tìm theo phòng và khách thuê.</p></div></div>
+                    <button type="button" class="filter-reset" id="clearPaymentFilters" hidden>Xóa bộ lọc</button>
+                </div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="statusFilter">Trạng thái</label>
@@ -61,13 +72,11 @@
             <section class="payment-list-section">
                 <p id="paymentsLoading" class="table-state">Đang tải danh sách hóa đơn...</p>
                 <p id="paymentsError" class="table-state error-state" hidden></p>
-                <div id="paymentsEmpty" class="empty-state" hidden>
-                    <svg class="empty-state-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6 2.75h9l3 3V21.25H6z"></path>
-                        <path d="M15 2.75v3h3M9 10.25h6M9 13.75h6M9 17.25h3"></path>
-                    </svg>
-                    <h3>Chưa có hóa đơn phù hợp</h3>
-                    <p>Không tìm thấy hóa đơn theo điều kiện lọc hiện tại. Hãy thử thay đổi bộ lọc.</p>
+                <div id="paymentsEmpty" class="payments-empty" role="status" aria-live="polite" hidden>
+                    <span class="empty-illustration" aria-hidden="true"><span></span><i></i></span>
+                    <h2 id="paymentsEmptyTitle">Không có hóa đơn phù hợp</h2>
+                    <p id="paymentsEmptyDescription">Thử thay đổi bộ lọc để xem các hóa đơn khác.</p>
+                    <button type="button" class="button button-outline" id="emptyClearFilters" hidden>Xóa bộ lọc</button>
                 </div>
                 <div class="table-scroll" id="paymentsTableContainer" hidden>
                     <table class="payment-table">

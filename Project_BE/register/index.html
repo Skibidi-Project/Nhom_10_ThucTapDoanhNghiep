@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>
+    &Dstrok;&abreve;ng k&yacute; t&agrave;i khoản | MiniStay
+    </title>
+    <link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="glow glow-one">
+    </div>
+    <div class="glow glow-two">
+    </div>
+    <main class="container">
+        <section class="left">
+        <div class="logo">
+            <div class="logo-icon">
+            ⌂
+            </div>
+            <span>
+            MiniStay
+            </span>
+        </div>
+        <div class="welcome">
+            <div class="tagline">
+            GIẢI PH&Aacute;P QUẢN L&Yacute; TH&Ocirc;NG MINH
+            </div>
+            <h1>
+                Quản l&yacute; ph&ograve;ng trọ
+            <span>
+                dễ d&agrave;ng hơn.
+            </span>
+            </h1>
+            <p>
+            Nền tảng quản l&yacute; ph&ograve;ng trọ v&agrave; k&yacute; t&uacute;c x&aacute; mini,
+                                        gi&uacute;p bạn quản l&yacute; ph&ograve;ng, người thu&ecirc;, hợp &dstrok;ồng
+                                        v&agrave; thanh to&aacute;n tr&ecirc;n c&ugrave;ng một hệ thống.
+            </p>
+        </div>
+        <div class="features">
+            <div class="feature">
+            <div class="feature-icon">
+                ⌂
+            </div>
+            <span>
+                Quản l&yacute; ph&ograve;ng trọ v&agrave; k&yacute; t&uacute;c x&aacute;
+            </span>
+            </div>
+            <div class="feature">
+            <div class="feature-icon">
+                ♙
+            </div>
+            <span>
+                Quản l&yacute; người thu&ecirc; v&agrave; hợp &dstrok;ồng
+            </span>
+            </div>
+            <div class="feature">
+            <div class="feature-icon">
+                &checkmark;
+            </div>
+            <span>
+                Theo d&otilde;i h&oacute;a &dstrok;ơn v&agrave; thanh to&aacute;n
+            </span>
+            </div>
+        </div>
+        <div class="left-footer">
+            &copy; 2026 MiniStay. Smart Living Management.
+        </div>
+        </section>
+        <section class="right">
+        <div class="form-header">
+            <div class="form-tag">
+            THAM GIA MINISTAY
+            </div>
+            <h2>
+            Tạo t&agrave;i khoản ✨
+            </h2>
+            <p>
+            &Dstrok;iền th&ocirc;ng tin &dstrok;ể bắt &dstrok;ầu quản l&yacute; ph&ograve;ng trọ của bạn.
+            </p>
+        </div>
+        <div aria-live="polite" class="message" id="message" role="status">
+        </div>
+        <form id="registerForm" novalidate="">
+            <div class="form-group">
+            <label for="fullName">
+                Họ v&agrave; t&ecirc;n
+            </label>
+            <div class="input-wrapper">
+                <input autocomplete="name" id="fullName" placeholder="Nguyễn V&abreve;n A" type="text"/>
+            </div>
+            <span class="error" id="nameError">
+            </span>
+            </div>
+            <div class="form-group">
+            <label for="email">
+                &Dstrok;ịa chỉ Email
+            </label>
+            <div class="input-wrapper">
+                <input autocomplete="email" id="email" placeholder="example@gmail.com" type="email"/>
+            </div>
+            <span class="error" id="emailError">
+            </span>
+            </div>
+            <div class="form-group">
+            <label for="phone">
+                Số &dstrok;iện thoại (kh&ocirc;ng bắt buộc)
+            </label>
+            <div class="input-wrapper">
+                <input autocomplete="tel" id="phone" placeholder="0912345678" type="tel"/>
+            </div>
+            <span class="error" id="phoneError">
+            </span>
+            </div>
+            <div class="form-group">
+            <label for="password">
+                Mật khẩu
+            </label>
+            <div class="input-wrapper">
+                <input autocomplete="new-password" id="password" placeholder="Nhập mật khẩu" type="password"/>
+                <button aria-label="Hiện mật khẩu" class="toggle-password" data-target="password" type="button">
+                ◉
+                </button>
+            </div>
+            <p class="password-hint">
+                &Iacute;t nhất 8 k&yacute; tự, gồm chữ hoa, chữ thường v&agrave; số.
+            </p>
+            <span class="error" id="passwordError">
+            </span>
+            </div>
+            <div class="form-group">
+            <label for="confirmPassword">
+                X&aacute;c nhận mật khẩu
+            </label>
+            <div class="input-wrapper">
+                <input autocomplete="new-password" id="confirmPassword" placeholder="Nhập lại mật khẩu" type="password"/>
+                <button aria-label="Hiện mật khẩu x&aacute;c nhận" class="toggle-password" data-target="confirmPassword" type="button">
+                ◉
+                </button>
+            </div>
+            <span class="error" id="confirmError">
+            </span>
+            </div>
+            <div class="terms">
+            <input id="agreeTerms" type="checkbox"/>
+            <label for="agreeTerms">
+                T&ocirc;i &dstrok;ồng &yacute; với
+                <a href="#" id="termsLink">
+                &Dstrok;iều khoản sử dụng
+                </a>
+                v&agrave;
+                <a href="#" id="privacyLink">
+                Ch&iacute;nh s&aacute;ch bảo mật
+                </a>
+                .
+            </label>
+            </div>
+            <span class="error" id="termsError">
+            </span>
+            <button class="register-btn" id="registerBtn" type="submit">
+            &Dstrok;&abreve;ng k&yacute; t&agrave;i khoản
+            <span>
+                &rarr;
+            </span>
+            </button>
+            <p class="login-text">
+            &Dstrok;&atilde; c&oacute; t&agrave;i khoản?
+            <a href="#" id="loginLink">
+                &Dstrok;&abreve;ng nhập ngay
+            </a>
+            </p>
+        </form>
+        </section>
+    </main>
+    <script src="register.api.js">
+    </script>
+    </body>
+</html>

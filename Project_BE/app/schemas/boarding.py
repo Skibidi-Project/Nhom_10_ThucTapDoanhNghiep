@@ -344,6 +344,30 @@ class ReadingResponse(BaseModel):
     recorded_by: int
 
 
+class TenantPortalReading(BaseModel):
+    id: int
+    utility_type: str
+    period: str
+    previous_reading: int
+    current_reading: int
+
+
+class TenantRentalResponse(BaseModel):
+    contract_id: int
+    room_id: int
+    room_number: str
+    property_name: str
+    property_address: str
+    start_date: date
+    end_date: date
+    deposit: int
+    deposit_status: str
+    monthly_rent: int
+    payment_cycle_months: int
+    status: str
+    readings: list[TenantPortalReading]
+
+
 class InvoiceCreate(BaseModel):
     period: str = Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")
 

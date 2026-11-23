@@ -3,7 +3,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.rbac import Role
-from app.models.boarding import Contract, TenantProfile
+from app.models.boarding import Contract, Property, Room, TenantProfile, UtilityReading
 from app.models.user import User
 from app.schemas.boarding import TenantAccountLinkResponse, TenantCreate, TenantUpdate
 from app.schemas.user import UserLogin
@@ -15,6 +15,59 @@ from app.services.access_scope import (
     get_tenant,
 )
 from app.services.db_util import save
+
+
+def list_own_rentals(db: Session, user: User) -> list[dict]:
+    if user.role != Role.TENANT.value:
+        raise HTTPException(status_code=403, detail="Chá»‰ tĂ i khoáº£n khĂ¡ch thuĂª má»›i xem Ä‘Æ°á»£c thĂ´ng tin thuĂª cá»§a mĂ¬nh.")
+
+    rows = db.execute(
+        select(Contract, Room, Property)
+        .join(TenantProfile, TenantProfile.id == Contract.tenant_id)
+        .join(Room, Room.id == Contract.room_id)
+        .join(Property, Property.id == Room.property_id)
+        .where(TenantProfile.user_id == user.id)
+        .order_by(Contract.start_date.desc(), Contract.id.desc())
+    ).all()
+
+    rentals = []
+    for contract, room, prop in rows:
+        first_period = contract.start_date.strftime("%Y-%m")
+        last_period = contract.end_date.strftime("%Y-%m")
+        readings = db.scalars(
+            select(UtilityReading)
+            .where(
+                UtilityReading.room_id == room.id,
+                UtilityReading.period >= first_period,
+                UtilityReading.period <= last_period,
+            )
+            .order_by(UtilityReading.period.desc(), UtilityReading.utility_type)
+        ).all()
+        rentals.append({
+            "contract_id": contract.id,
+            "room_id": room.id,
+            "room_number": room.room_number,
+            "property_name": prop.name,
+            "property_address": prop.address,
+            "start_date": contract.start_date,
+            "end_date": contract.end_date,
+            "deposit": contract.deposit,
+            "deposit_status": contract.deposit_status,
+            "monthly_rent": contract.monthly_rent,
+            "payment_cycle_months": contract.payment_cycle_months,
+            "status": contract.status,
+            "readings": [
+                {
+                    "id": reading.id,
+                    "utility_type": reading.utility_type,
+                    "period": reading.period,
+                    "previous_reading": reading.previous_reading,
+                    "current_reading": reading.current_reading,
+                }
+                for reading in readings
+            ],
+        })
+    return rentals
 
 
 def _landlord_for_create(db: Session, user: User, data: TenantCreate) -> int:

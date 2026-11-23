@@ -10,6 +10,7 @@ from app.schemas.boarding import (
     TenantAccountLinkResponse,
     TenantCreate,
     TenantListResponse,
+    TenantRentalResponse,
     TenantResponse,
     TenantUpdate,
 )
@@ -32,6 +33,14 @@ def read_tenants(
     user: User = Depends(require_permissions(Permission.TENANT_MANAGE)),
 ):
     return tenant_service.list_tenants(db, user, q=q, page=page, page_size=page_size)
+
+
+@router.get("/me/rentals", response_model=list[TenantRentalResponse])
+def read_own_rentals(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.RENTAL_READ_OWN)),
+):
+    return tenant_service.list_own_rentals(db, user)
 
 
 @router.post("", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
