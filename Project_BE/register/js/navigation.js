@@ -1,43 +1,45 @@
 (() => {
-    const groups = [
-        {
-            label: 'TỔNG QUAN',
-            links: [['/register/html/dashboard.html', 'Tổng quan', 'overview']]
-        },
-        {
-            label: 'QUẢN LÝ',
-            links: [
-                ['/register/html/properties.html', 'Quản lý cơ sở', 'properties'],
-                ['/register/html/rooms.html', 'Quản lý phòng', 'rooms'],
-                ['/register/html/contracts.html', 'Quản lý hợp đồng', 'contracts']
-            ]
-        },
-        {
-            label: 'TÀI CHÍNH',
-            links: [
-                ['utility-pricing.html', 'Điện/nước', 'utility'],
-                ['service-prices.html', 'Cấu hình đơn giá dịch vụ', 'service-prices'],
-                ['invoices.html', 'Chốt hóa đơn', 'invoices'],
-                ['payments.html', 'Hóa đơn & Thanh toán', 'payments'],
-                ['expenses.html', 'Chi phí', 'expenses']
-                ['/register/html/utility-pricing.html', 'Điện/nước', 'utility'],
-                ['/register/html/invoices.html', 'Chốt hóa đơn', 'invoices'],
-                ['/register/html/payments.html', 'Hóa đơn & Thanh toán', 'payments'],
-                ['/register/html/expenses.html', 'Chi phí', 'expenses']
-            ]
-        },
-        {
-            label: 'VẬN HÀNH',
-            links: [
-                ['/register/html/services.html', 'Dịch vụ', 'services'],
-                ['/register/html/tenants.html', 'Khách thuê', 'tenants']
-            ]
-        },
-        {
-            label: 'CÁ NHÂN',
-            links: [['/register/html/account.html', 'Tài khoản', 'account']]
-        }
-    ];
+    
+const groups = [
+    {
+        label: 'TỔNG QUAN',
+        links: [
+            ['/register/html/dashboard.html', 'Tổng quan', 'overview']
+        ]
+    },
+    {
+        label: 'QUẢN LÝ',
+        links: [
+            ['/register/html/properties.html', 'Quản lý cơ sở', 'properties'],
+            ['/register/html/rooms.html', 'Quản lý phòng', 'rooms'],
+            ['/register/html/contracts.html', 'Quản lý hợp đồng', 'contracts']
+        ]
+    },
+    {
+        label: 'TÀI CHÍNH',
+        links: [
+            ['/register/html/utility-pricing.html', 'Điện/nước', 'utility'],
+            ['/register/html/service-prices.html', 'Cấu hình đơn giá dịch vụ', 'service-prices'],
+            ['/register/html/invoices.html', 'Chốt hóa đơn', 'invoices'],
+            ['/register/html/payments.html', 'Hóa đơn & Thanh toán', 'payments'],
+            ['/register/html/expenses.html', 'Chi phí', 'expenses']
+        ]
+    },
+    {
+        label: 'VẬN HÀNH',
+        links: [
+            ['/register/html/services.html', 'Dịch vụ', 'services'],
+            ['/register/html/tenants.html', 'Khách thuê', 'tenants']
+        ]
+    },
+    {
+        label: 'CÁ NHÂN',
+        links: [
+            ['/register/html/account.html', 'Tài khoản', 'account']
+        ]
+    }
+];
+
 
     const icons = {
         overview: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M5.5 10v9h13v-9"/><path d="M9.5 19v-5h5v5"/></svg>',
