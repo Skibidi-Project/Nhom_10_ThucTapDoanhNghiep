@@ -6,20 +6,27 @@
     margin-right: auto;
 }
 
-.invoice-topbar > a:not(.brand) {
+.invoice-topbar .guest-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.invoice-topbar .guest-actions a {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 8px 12px;
     border-radius: var(--radius-sm);
-    color: #53606c;
+    color: #20272f;
     text-decoration: none;
     transition: color .18s ease, background-color .18s ease;
 }
 
-.invoice-topbar > a:not(.brand):hover {
-    color: var(--color-primary-hover);
+.invoice-topbar .guest-actions a:hover {
+    color: #12604f;
     background: var(--color-primary-soft);
 }
 
@@ -67,7 +74,7 @@
 
 .invoice-form {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) auto;
     align-items: end;
     gap: 16px;
     margin-top: 0;
@@ -85,7 +92,7 @@
 .invoice-form-heading p,
 .invoice-history-heading p {
     margin: 6px 0 0;
-    color: #687481;
+    color: #78838f;
     font-size: 14px;
 }
 
@@ -93,19 +100,55 @@
     min-width: 0;
     display: grid;
     gap: 8px;
-    color: #46525e;
-    font-size: 14px;
+    color: #25313b;
+    font-size: 13px;
     font-weight: 650;
 }
 
 .invoice-form > label input,
 .invoice-form > label select {
+    box-sizing: border-box;
+    width: 100%;
     min-height: 44px;
+    padding: 10px 13px;
+    border: 1px solid #dce3e8;
+    border-radius: 8px;
+    background: #fff;
+    color: #20272f;
+    font-size: 15px;
+}
+
+.invoice-form > label input:focus-visible,
+.invoice-form > label select:focus-visible {
+    outline: none;
+    border-color: #268a70;
+    box-shadow: 0 0 0 3px rgba(38, 138, 112, 0.12);
 }
 
 .invoice-form > button {
-    min-width: 160px;
+    min-height: 44px;
+    padding: 10px 24px;
+    border: 0;
+    border-radius: 9px;
+    background: #16765f;
+    color: #fff;
+    font-weight: 700;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
     justify-self: end;
+}
+
+.invoice-form > button:hover:not(:disabled) {
+    background: #12604f;
+}
+
+.invoice-form > button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.invoice-form > button:focus-visible {
+    outline: 2px solid #268a70;
+    outline-offset: 2px;
 }
 
 .invoice-history {
@@ -142,7 +185,22 @@
     transform: translateY(-1px);
 }
 
-@media (max-width: 680px) {
+@media (min-width: 640px) and (max-width: 899px) {
+    .invoice-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .invoice-form-heading {
+        grid-column: 1 / -1;
+    }
+
+    .invoice-form > button {
+        grid-column: 1 / -1;
+        justify-self: end;
+    }
+}
+
+@media (max-width: 639px) {
     .invoice-topbar {
         min-height: 60px;
         flex-wrap: wrap;
@@ -154,7 +212,11 @@
         flex: 1 1 100%;
     }
 
-    .invoice-topbar > a:not(.brand) {
+    .invoice-topbar .guest-actions {
+        width: 100%;
+    }
+
+    .invoice-topbar .guest-actions a {
         flex: 1 1 120px;
     }
 
@@ -167,8 +229,15 @@
         grid-column: auto;
     }
 
+    .invoice-form > label input,
+    .invoice-form > label select {
+        font-size: 16px;
+    }
+
     .invoice-form > button {
         width: 100%;
+        min-height: 46px;
+        justify-self: stretch;
     }
 
     .invoice-history {
@@ -181,7 +250,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .invoice-topbar > a:not(.brand),
+    .invoice-topbar .guest-actions a,
+    .invoice-form > button,
     .invoice-list > p {
         transition-duration: .01ms;
     }

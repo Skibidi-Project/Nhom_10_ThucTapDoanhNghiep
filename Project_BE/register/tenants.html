@@ -31,13 +31,23 @@
                 <button class="button" type="submit">Lưu hồ sơ</button>
                 <button class="button button-outline" id="cancelEdit" type="button" hidden>Hủy chỉnh sửa</button>
             </form>
-            <section class="panel">
-                <h2>Danh sách khách thuê</h2>
+            <section class="panel tenant-list-panel">
+                <div class="tenant-list-heading">
+                    <div>
+                        <h2>Danh sách khách thuê</h2>
+                        <p id="tenantResultCount" class="tenant-result-count" aria-live="polite">0 khách thuê</p>
+                    </div>
+                </div>
                 <div class="tenant-search">
-                    <input id="tenantSearch" type="search" maxlength="50" placeholder="Tìm theo tên, CCCD hoặc số điện thoại" aria-label="Tìm khách thuê">
+                    <div class="tenant-search-field">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"></circle>
+                            <path d="m16 16 4 4"></path>
+                        </svg>
+                        <input id="tenantSearch" type="search" maxlength="50" placeholder="Tìm theo tên, CCCD hoặc số điện thoại" aria-label="Tìm khách thuê">
+                    </div>
                     <button id="clearTenantSearch" type="button" class="button button-outline" hidden>Xóa</button>
                 </div>
-                <p id="tenantResultCount" class="tenant-result-count" aria-live="polite">0 khách thuê</p>
                 <div id="tenantList"></div>
                 <div id="tenantPagination" class="tenant-pagination" hidden>
                     <button id="tenantPreviousBtn" type="button" class="button button-outline">Trước</button>
@@ -47,6 +57,32 @@
             </section>
         </section>
     </main>
+    <dialog id="accountLinkDialog" class="account-link-dialog" aria-labelledby="accountLinkTitle" aria-describedby="accountLinkDescription">
+        <form id="accountLinkForm" class="account-link-form">
+            <div class="account-link-heading">
+                <div>
+                    <h2 id="accountLinkTitle">Liên kết tài khoản khách thuê</h2>
+                    <p id="accountLinkDescription">Nhập email hoặc số điện thoại của tài khoản khách thuê đã đăng ký để liên kết với hồ sơ này.</p>
+                </div>
+                <button type="button" class="account-link-close" id="accountLinkCloseBtn" aria-label="Đóng">×</button>
+            </div>
+            <label class="account-link-field" for="accountLinkIdentifier">
+                <span>Email hoặc số điện thoại</span>
+                <span class="account-link-input-wrap">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="8" r="3.25"></circle>
+                        <path d="M5.5 20c.55-3.5 2.72-5.25 6.5-5.25S17.95 16.5 18.5 20"></path>
+                    </svg>
+                    <input id="accountLinkIdentifier" name="identifier" type="text" placeholder="Nhập email hoặc số điện thoại tài khoản" autocomplete="off" required>
+                </span>
+            </label>
+            <p id="accountLinkError" class="account-link-error" role="alert" aria-live="polite"></p>
+            <div class="account-link-actions">
+                <button type="button" class="button button-outline" id="accountLinkCancelBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="accountLinkSubmitBtn">Liên kết tài khoản</button>
+            </div>
+        </form>
+    </dialog>
     <script src="tenants.js"></script>
 </body>
 </html>

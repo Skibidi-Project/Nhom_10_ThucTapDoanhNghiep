@@ -28,7 +28,6 @@
             <div>
                 <h1>Ghi nhận thanh toán</h1>
                 <p class="subtitle">Theo dõi đã thu, còn thiếu và lịch sử thanh toán của hóa đơn.</p>
-                <a class="button button-outline" href="properties.html">Quản lý cơ sở</a>
             </div>
         </section>
 
@@ -61,7 +60,14 @@
             <section class="payment-list-section">
                 <p id="paymentsLoading" class="table-state">Đang tải danh sách hóa đơn...</p>
                 <p id="paymentsError" class="table-state error-state" hidden></p>
-                <p id="paymentsEmpty" class="table-state" hidden>Không có hóa đơn phù hợp.</p>
+                <div id="paymentsEmpty" class="empty-state" hidden>
+                    <svg class="empty-state-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 2.75h9l3 3V21.25H6z"></path>
+                        <path d="M15 2.75v3h3M9 10.25h6M9 13.75h6M9 17.25h3"></path>
+                    </svg>
+                    <h3>Chưa có hóa đơn phù hợp</h3>
+                    <p>Không tìm thấy hóa đơn theo điều kiện lọc hiện tại. Hãy thử thay đổi bộ lọc.</p>
+                </div>
                 <div class="table-scroll" id="paymentsTableContainer" hidden>
                     <table class="payment-table">
                         <thead>
@@ -150,6 +156,34 @@
                 <tbody id="historyRows"></tbody>
             </table>
         </div>
+    </dialog>
+
+    <dialog id="dueDateDialog" class="property-dialog due-date-dialog" aria-labelledby="dueDateTitle" aria-describedby="dueDateDescription">
+        <form id="dueDateForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">HẠN THANH TOÁN</p>
+                    <h2 id="dueDateTitle">Cập nhật hạn thanh toán</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeDueDateBtn" aria-label="Đóng">×</button>
+            </div>
+            <p id="dueDateDescription" class="due-date-description">Thiết lập ngày đến hạn và ghi rõ căn cứ hoặc lý do cập nhật.</p>
+            <div class="due-date-fields">
+                <div class="form-group">
+                    <label for="dueDateInput">Ngày đến hạn</label>
+                    <input id="dueDateInput" type="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="dueReasonInput">Căn cứ hoặc lý do đặt hạn</label>
+                    <textarea id="dueReasonInput" rows="4" maxlength="255" placeholder="Nhập lý do cập nhật hạn thanh toán..." required></textarea>
+                </div>
+            </div>
+            <p id="dueDateError" class="due-date-error" role="alert" aria-live="polite"></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelDueDateBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="saveDueDateBtn">Lưu thay đổi</button>
+            </div>
+        </form>
     </dialog>
 
     <script src="payments.js"></script>

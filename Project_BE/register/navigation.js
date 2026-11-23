@@ -16,6 +16,7 @@
             label: 'TÀI CHÍNH',
             links: [
                 ['utility-pricing.html', 'Điện/nước', 'utility'],
+                ['service-prices.html', 'Cấu hình đơn giá dịch vụ', 'service-prices'],
                 ['invoices.html', 'Chốt hóa đơn', 'invoices'],
                 ['payments.html', 'Hóa đơn & Thanh toán', 'payments'],
                 ['expenses.html', 'Chi phí', 'expenses']
@@ -40,6 +41,7 @@
         rooms: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V7h18v13M3 12h18"/><path d="M7 12V8h4v4M13 12V8h4v4"/></svg>',
         contracts: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 18h4"/></svg>',
         utility: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 6 13h5l-.5 8.5L18 10h-5z"/></svg>',
+        'service-prices': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2z"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>',
         invoices: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
         payments: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>',
         expenses: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4zM7 7V5h10v2"/><circle cx="12" cy="13" r="2.5"/><path d="M12 11v4"/></svg>',
