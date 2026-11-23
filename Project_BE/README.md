@@ -90,18 +90,18 @@ Script tạo các tài khoản chưa có; email đã tồn tại sẽ được b
 
 | Vai trò | Tài khoản (tk) | Mật khẩu (mk) | Sau khi đăng nhập | Dùng để test |
 |---|---|---|---|---|
-| Admin | admin@gmail.com | Admin123456 | `register/admin-users.html` | Xem/tìm kiếm tài khoản, đổi vai trò |
-| Chủ nhà (Landlord) | landlord@gmail.com | Landlord123456 | `register/properties.html` | Tạo khu trọ, phòng, hợp đồng, khách thuê, dịch vụ |
-| Quản lý (Manager) | manager@gmail.com | Manager123456 | `register/properties.html` | Quản lý khu trọ được chủ nhà gán |
-| Khách thuê (Tenant) | tenant@gmail.com | Tenant123456 | Ở lại `register/login.html`, hiện thông báo hướng dẫn | Xem hợp đồng, hóa đơn của chính mình |
+| Admin | admin@gmail.com | Admin123456 | `register/html/admin-users.html` | Xem/tìm kiếm tài khoản, đổi vai trò |
+| Chủ nhà (Landlord) | landlord@gmail.com | Landlord123456 | `register/html/properties.html` | Tạo khu trọ, phòng, hợp đồng, khách thuê, dịch vụ |
+| Quản lý (Manager) | manager@gmail.com | Manager123456 | `register/html/properties.html` | Quản lý khu trọ được chủ nhà gán |
+| Khách thuê (Tenant) | tenant@gmail.com | Tenant123456 | Ở lại `register/html/login.html`, hiện thông báo hướng dẫn | Xem hợp đồng, hóa đơn của chính mình |
 
 Lưu ý để test đủ vai trò:
 
 - Manager mới tạo chưa thấy khu trọ nào. Đăng nhập landlord, tạo khu trọ, rồi gán manager bằng
   `POST /api/properties/{property_id}/managers` với body `{"user_id": <id của manager>}`.
-  Lấy ID ở trang `register/admin-users.html` hoặc gọi `GET /api/users` bằng tài khoản admin.
+  Lấy ID ở trang `register/html/admin-users.html` hoặc gọi `GET /api/users` bằng tài khoản admin.
 - Tenant mới tạo chưa có hợp đồng/hóa đơn. Đăng nhập landlord, tạo hồ sơ khách ở
-  `register/tenants.html`, bấm “Liên kết tài khoản” và nhập `tenant@gmail.com`, sau đó lập hợp đồng
+  `register/html/tenants.html`, bấm “Liên kết tài khoản” và nhập `tenant@gmail.com`, sau đó lập hợp đồng
   cho hồ sơ đó.
 - Admin chỉ quản lý tài khoản, không quản lý khu trọ, phòng hoặc hợp đồng.
 
@@ -111,7 +111,7 @@ Lưu ý để test đủ vai trò:
 ### Luồng cấp quyền cho tài khoản đăng ký
 
 - Mọi tài khoản công khai đăng ký luôn có vai trò `tenant`.
-- Admin đăng nhập vào `/register/admin-users.html` để quản lý danh sách người dùng.
+- Admin đăng nhập vào `/register/html/admin-users.html` để quản lý danh sách người dùng.
 - Từ trang quản trị, admin đổi vai trò `tenant` thành `landlord` hoặc `manager`.
 - Chủ nhà hoặc quản lý có thể truy cập khách thuê và liên kết tài khoản user bằng email/SĐT.
 - Khách thuê đăng nhập sẽ nhìn thấy dữ liệu của chính mình và không bị đẩy vào trang quản lý.
@@ -222,13 +222,13 @@ Không tự đổi mật khẩu root, sửa MySQL Server hoặc xóa dữ liệu
 - Body tạo mới: `{"name":"Block A","floor_count":3,"floor_names":["Trệt","Lầu 1","Lầu 2"]}`.
 - `floor_names` tùy chọn; mặc định tạo `Tầng 1`, `Tầng 2`, ...
 - Tất cả endpoint yêu cầu `PROPERTY_OPERATE` và quyền trên khu trọ.
-- Giao diện: `/register/properties.html` → nút Quản lý tòa nhà.
+- Giao diện: `/register/html/properties.html` → nút Quản lý tòa nhà.
 - Lưu ý: US-07 chưa gán `rooms` vào `floors`; thao tác đó thuộc US-09.
 - Test: `pytest -q tests/test_us07_buildings.py` (SQLite bộ nhớ).
 
 ## US-18 - Gán dịch vụ cho phòng và hợp đồng
 
-- Giao diện: `/register/services.html`. Chọn khu trọ, chọn phòng hoặc hợp đồng chưa kết thúc, rồi gán dịch vụ trong danh mục hệ thống. US-18 không cấu hình đơn giá.
+- Giao diện: `/register/html/services.html`. Chọn khu trọ, chọn phòng hoặc hợp đồng chưa kết thúc, rồi gán dịch vụ trong danh mục hệ thống. US-18 không cấu hình đơn giá.
 - Giao diện lấy tên và mã danh mục qua `GET /api/properties/{property_id}/service-prices`; đơn giá không được hiển thị hoặc chỉnh sửa trên trang này.
 - `GET/POST /api/service-assignments` và `PUT/DELETE /api/service-assignments/{id}` xem, gán, đổi dịch vụ hoặc gỡ assignment. `POST` cần `service_code` cùng một trong `room_id` hoặc `contract_id`; `quantity` mặc định là 1.
 - `GET /api/contracts/{id}/services` trả danh sách dịch vụ hiệu lực, ưu tiên gán trực tiếp cho hợp đồng so với dịch vụ kế thừa từ phòng.

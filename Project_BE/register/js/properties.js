@@ -111,9 +111,9 @@ function renderProperties() {
 
         const propertyLinks = createElement("div", "property-links");
         const roomsLink = createElement("a", "button button-outline rooms-link", "Quản lý phòng");
-        roomsLink.href = `rooms.html?property_id=${encodeURIComponent(property.id)}`;
+        roomsLink.href = `/register/html/rooms.html?property_id=${encodeURIComponent(property.id)}`;
         const buildingsLink = createElement("a", "button button-outline rooms-link", "Quản lý tòa nhà");
-        buildingsLink.href = `buildings.html?property_id=${encodeURIComponent(property.id)}`;
+        buildingsLink.href = `/register/html/buildings.html?property_id=${encodeURIComponent(property.id)}`;
         propertyLinks.append(roomsLink, buildingsLink);
         card.append(propertyLinks);
 
@@ -169,7 +169,7 @@ async function connect(token) {
     const user = await apiRequest("/users/me");
     if (user?.role === "admin") {
         sessionStorage.setItem("us05_access_token", accessToken);
-        window.location.replace("admin-users.html");
+        window.location.replace("/register/html/admin-users.html");
         return;
     }
     if (user?.role === "tenant") {

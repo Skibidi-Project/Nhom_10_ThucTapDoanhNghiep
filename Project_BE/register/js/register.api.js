@@ -203,7 +203,7 @@ registerForm.addEventListener("submit", async function (event) {
         );
         registerForm.reset();
         window.scrollTo({top: 0, behavior: "smooth"});
-        window.setTimeout(() => window.location.assign("login.html"), 1500);
+        window.setTimeout(() => window.location.assign("/register/html/login.html"), 1500);
     } catch (error) {
         showMessage(error instanceof TypeError ? "Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối và thử lại." : error.message, "failure");
     } finally {
@@ -253,4 +253,4 @@ document.getElementById("privacyLink").addEventListener("click", function (event
     alert("Trang chính sách bảo mật đang được phát triển.");
 });
 
-document.getElementById("loginLink").href = "login.html";
+document.getElementById("loginLink").href = "/register/html/login.html";

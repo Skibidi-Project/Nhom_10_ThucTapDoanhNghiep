@@ -5,13 +5,13 @@ const passwordMessage = document.getElementById("passwordMessage");
 const passwordForm = document.getElementById("passwordForm");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 
-const destinations = { admin: "admin-users.html", landlord: "properties.html", manager: "properties.html" };
+const destinations = { admin: "/register/html/admin-users.html", landlord: "/register/html/properties.html", manager: "/register/html/properties.html" };
 const roleNames = { admin: "Quản trị viên", landlord: "Chủ nhà", manager: "Quản lý", tenant: "Khách thuê" };
 
 function logout() {
     sessionStorage.removeItem("us05_access_token");
     sessionStorage.removeItem("us05_user_role");
-    window.location.assign("login.html");
+    window.location.assign("/register/html/login.html");
 }
 
 function showMessage(element, text, type) {

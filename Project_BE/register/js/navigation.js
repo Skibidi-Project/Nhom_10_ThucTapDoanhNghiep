@@ -2,14 +2,14 @@
     const groups = [
         {
             label: 'TỔNG QUAN',
-            links: [['dashboard.html', 'Tổng quan', 'overview']]
+            links: [['/register/html/dashboard.html', 'Tổng quan', 'overview']]
         },
         {
             label: 'QUẢN LÝ',
             links: [
-                ['properties.html', 'Quản lý cơ sở', 'properties'],
-                ['rooms.html', 'Quản lý phòng', 'rooms'],
-                ['contracts.html', 'Quản lý hợp đồng', 'contracts']
+                ['/register/html/properties.html', 'Quản lý cơ sở', 'properties'],
+                ['/register/html/rooms.html', 'Quản lý phòng', 'rooms'],
+                ['/register/html/contracts.html', 'Quản lý hợp đồng', 'contracts']
             ]
         },
         {
@@ -20,18 +20,22 @@
                 ['invoices.html', 'Chốt hóa đơn', 'invoices'],
                 ['payments.html', 'Hóa đơn & Thanh toán', 'payments'],
                 ['expenses.html', 'Chi phí', 'expenses']
+                ['/register/html/utility-pricing.html', 'Điện/nước', 'utility'],
+                ['/register/html/invoices.html', 'Chốt hóa đơn', 'invoices'],
+                ['/register/html/payments.html', 'Hóa đơn & Thanh toán', 'payments'],
+                ['/register/html/expenses.html', 'Chi phí', 'expenses']
             ]
         },
         {
             label: 'VẬN HÀNH',
             links: [
-                ['services.html', 'Dịch vụ', 'services'],
-                ['tenants.html', 'Khách thuê', 'tenants']
+                ['/register/html/services.html', 'Dịch vụ', 'services'],
+                ['/register/html/tenants.html', 'Khách thuê', 'tenants']
             ]
         },
         {
             label: 'CÁ NHÂN',
-            links: [['account.html', 'Tài khoản', 'account']]
+            links: [['/register/html/account.html', 'Tài khoản', 'account']]
         }
     ];
 
@@ -55,7 +59,7 @@
     const token = sessionStorage.getItem('us05_access_token');
     if (!token) return;
 
-    const page = location.pathname.split('/').pop() || 'properties.html';
+    const page = location.pathname;
     const header = document.querySelector('header.topbar') || document.querySelector('header.account-header');
     if (!header) return;
 
@@ -69,7 +73,7 @@
 
     const brand = document.createElement('a');
     brand.className = 'sidebar-brand';
-    brand.href = 'properties.html';
+    brand.href = '/register/html/properties.html';
     brand.innerHTML = '<span class="sidebar-brand-mark">M</span><span class="sidebar-brand-name">MiniStay</span>';
     aside.append(brand);
 
@@ -150,7 +154,7 @@
     function logout() {
         sessionStorage.removeItem('us05_access_token');
         sessionStorage.removeItem('us05_user_role');
-        location.replace('login.html');
+        location.replace('/register/html/login.html');
     }
 
     footer.querySelector('[data-action="logout"]').addEventListener('click', logout);
@@ -170,11 +174,11 @@
             visibleGroups = groups;
         } else if (user.role === 'admin') {
             visibleGroups = [
-                { label: 'QUẢN TRỊ', links: [['admin-users.html', 'Quản lý người dùng', 'admin']] },
-                { label: 'CÁ NHÂN', links: [['account.html', 'Tài khoản', 'account']] }
+                { label: 'QUẢN TRỊ', links: [['/register/html/admin-users.html', 'Quản lý người dùng', 'admin']] },
+                { label: 'CÁ NHÂN', links: [['/register/html/account.html', 'Tài khoản', 'account']] }
             ];
         } else {
-            visibleGroups = [{ label: 'CÁ NHÂN', links: [['account.html', 'Tài khoản', 'account']] }];
+            visibleGroups = [{ label: 'CÁ NHÂN', links: [['/register/html/account.html', 'Tài khoản', 'account']] }];
         }
 
         nav.replaceChildren();
@@ -233,7 +237,7 @@
                 [primary[2][0], 'Hóa đơn', 'payments']
             );
         } else {
-            mobileItems.push(['account.html', 'Tài khoản', 'account']);
+            mobileItems.push(['/register/html/account.html', 'Tài khoản', 'account']);
         }
 
         for (const [href, label, icon] of mobileItems) {
@@ -271,11 +275,11 @@
                 moreList.append(link);
             }
         }
-        if (!visibleGroups.some(group => group.links.some(link => link[0] === 'account.html'))) {
+        if (!visibleGroups.some(group => group.links.some(link => link[0] === '/register/html/account.html'))) {
             const accountLink = document.createElement('a');
-            accountLink.href = 'account.html';
+            accountLink.href = '/register/html/account.html';
             accountLink.innerHTML = icons.account + '<span>Tài khoản</span>';
-            if (page === 'account.html') accountLink.classList.add('active');
+            if (page === '/register/html/account.html') accountLink.classList.add('active');
             moreList.append(accountLink);
         }
 
@@ -315,7 +319,7 @@
     window.addEventListener('pageshow', event => {
         if (!event.persisted) return;
         if (!sessionStorage.getItem('us05_access_token')) {
-            location.replace('login.html');
+            location.replace('/register/html/login.html');
             return;
         }
         refreshNavigation();

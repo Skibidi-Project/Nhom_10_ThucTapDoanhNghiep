@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect
 
@@ -104,6 +105,19 @@ app.include_router(expenses.router)
 app.include_router(billing.invoice_router)
 app.include_router(billing.reading_router)
 app.include_router(room_type.router)
+
+
+@app.get("/register", include_in_schema=False)
+@app.get("/register/", include_in_schema=False)
+async def register_home():
+    return RedirectResponse("/register/html/index.html")
+
+
+@app.get("/register/{page_name}.html", include_in_schema=False)
+async def legacy_register_page(page_name: str):
+    return RedirectResponse(f"/register/html/{page_name}.html")
+
+
 app.mount("/register", StaticFiles(directory=Path(__file__).resolve().parents[1] / "register", html=True), name="register")
 
 # Cấu hình CORS cho phép Live Server (port 5500) gọi API

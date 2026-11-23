@@ -237,10 +237,10 @@ function renderContracts(items) {
         const actionsCell = document.createElement("td");
         const actions = createElement("div", "contract-actions");
         actions.append(actionButton("Dịch vụ", () => {
-            window.location.href = `services.html?contract_id=${encodeURIComponent(contract.id)}`;
+            window.location.href = `/register/html/services.html?contract_id=${encodeURIComponent(contract.id)}`;
         }));
         actions.append(actionButton("Hóa đơn / Thanh toán", () => {
-            window.location.href = `payments.html?contract_id=${encodeURIComponent(contract.id)}`;
+            window.location.href = `/register/html/payments.html?contract_id=${encodeURIComponent(contract.id)}`;
         }));
         if (["created", "active"].includes(contract.status)) {
             if (contract.deposit > 0 && contract.deposit_status === "unpaid") {
@@ -392,7 +392,7 @@ function clearSession() {
 
 function disconnect() {
     clearSession();
-    window.location.replace("index.html");
+    window.location.replace("/register/html/index.html");
 }
 
 function readContractForm() {
@@ -579,7 +579,7 @@ document.getElementById("cancelDepositBtn").addEventListener("click", () => depo
 logoutBtn.addEventListener("click", disconnect);
 
 if (!accessToken) {
-    window.location.replace("index.html");
+    window.location.replace("/register/html/index.html");
 } else {
     connect().catch(error => {
         clearSession();

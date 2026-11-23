@@ -98,7 +98,7 @@ const invoiceStatusLabels = {
 
 function logout() {
     sessionStorage.removeItem("us05_access_token");
-    window.location.href = "login.html";
+    window.location.href = "/register/html/login.html";
 }
 
 async function loadUserAndInvoices() {

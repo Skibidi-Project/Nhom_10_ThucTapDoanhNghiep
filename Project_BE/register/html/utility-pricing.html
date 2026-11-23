@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="icon" href="data:,">
     <title>Điện nước | MiniStay</title>
-    <link rel="stylesheet" href="properties.css">
-    <link rel="stylesheet" href="utility-pricing.css">
-    <link rel="stylesheet" href="navigation.css">
-    <script defer src="navigation.js"></script>
+    <link rel="stylesheet" href="../css/properties.css">
+    <link rel="stylesheet" href="../css/utility-pricing.css">
+    <link rel="stylesheet" href="../css/navigation.css">
+    <script defer src="../js/navigation.js"></script>
 </head>
 <body>
     <header class="topbar utility-pricing-topbar">
-        <a class="brand" href="properties.html">MiniStay</a>
+        <a class="brand" href="/register/html/properties.html">MiniStay</a>
     </header>
     <main class="container utility-pricing-page">
         <section class="utility-pricing-intro">
@@ -37,6 +37,10 @@
             <a id="issueLink" class="button button-primary" href="invoices.html" hidden>Chốt hóa đơn</a>
             <a class="button button-outline" href="rooms.html">Quản lý phòng</a>
         </div>
+        <p class="utility-page-links">
+            <a id="issueLink" class="button button-outline" href="/register/html/invoices.html" hidden>Chốt hóa đơn</a>
+            <a class="button button-light" href="/register/html/rooms.html">Quản lý phòng</a>
+        </p>
         <details class="panel utility-history">
             <summary>Thêm lịch sử giá có chứng cứ</summary>
             <form id="priceForm" class="utility-price-form">
@@ -68,6 +72,6 @@
             <div id="history" class="utility-history-list"></div>
         </details>
     </main>
-    <script src="utility-pricing.js"></script>
+    <script src="../js/utility-pricing.js"></script>
 </body>
 </html>
