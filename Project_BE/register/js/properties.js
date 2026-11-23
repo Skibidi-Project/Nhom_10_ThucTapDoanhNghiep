@@ -10,6 +10,9 @@ const notice = document.getElementById("notice");
 const dialog = document.getElementById("propertyDialog");
 const propertyForm = document.getElementById("propertyForm");
 const addPropertyBtn = document.getElementById("addPropertyBtn");
+const deletePropertyDialog = document.getElementById("deletePropertyDialog");
+const deletePropertyDescription = document.getElementById("deletePropertyDescription");
+let propertyDeleteResolver = null;
 const managerDialog = document.getElementById("managerDialog");
 const managerForm = document.getElementById("managerForm");
 const managerSelect = document.getElementById("managerSelect");
@@ -342,7 +345,7 @@ propertyForm.addEventListener("submit", async event => {
 });
 
 async function deleteProperty(property) {
-    const confirmed = window.confirm(`Bạn có chắc muốn xóa cơ sở “${property.name}”?\n\nChỉ có thể xóa cơ sở chưa có phòng.`);
+    const confirmed = await confirmPropertyDeletion(property);
     if (!confirmed) return;
 
     try {
@@ -353,6 +356,34 @@ async function deleteProperty(property) {
         showNotice(error.message, "error");
     }
 }
+
+function confirmPropertyDeletion(property) {
+    deletePropertyDescription.textContent = `Bạn có chắc muốn xóa cơ sở “${property.name}”?`;
+    deletePropertyDialog.returnValue = "";
+    deletePropertyDialog.showModal();
+    return new Promise(resolve => {
+        propertyDeleteResolver = resolve;
+    });
+}
+
+function closePropertyDeletion(confirmed = false) {
+    if (deletePropertyDialog.open) {
+        deletePropertyDialog.close(confirmed ? "confirm" : "cancel");
+    }
+}
+
+deletePropertyDialog.addEventListener("close", () => {
+    if (!propertyDeleteResolver) return;
+    const resolve = propertyDeleteResolver;
+    propertyDeleteResolver = null;
+    resolve(deletePropertyDialog.returnValue === "confirm");
+});
+document.getElementById("closeDeletePropertyBtn").addEventListener("click", () => closePropertyDeletion());
+document.getElementById("cancelDeletePropertyBtn").addEventListener("click", () => closePropertyDeletion());
+document.getElementById("confirmDeletePropertyBtn").addEventListener("click", () => closePropertyDeletion(true));
+deletePropertyDialog.addEventListener("click", event => {
+    if (event.target === deletePropertyDialog) closePropertyDeletion();
+});
 
 addPropertyBtn.addEventListener("click", openCreateDialog);
 document.getElementById("refreshBtn").addEventListener("click", loadProperties);

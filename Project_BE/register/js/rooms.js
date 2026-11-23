@@ -16,6 +16,8 @@ const errorState = document.getElementById("errorState");
 const roomDialog = document.getElementById("roomDialog");
 const detailDialog = document.getElementById("detailDialog");
 const utilityHistoryDialog = document.getElementById("utilityHistoryDialog");
+const deleteRoomDialog = document.getElementById("deleteRoomDialog");
+const deleteRoomDescription = document.getElementById("deleteRoomDescription");
 const roomForm = document.getElementById("roomForm");
 const addRoomBtn = document.getElementById("addRoomBtn");
 const searchInput = document.getElementById("searchInput");
@@ -31,6 +33,7 @@ let currentPage = 1;
 let total = 0;
 let debounceTimer;
 let utilityHistory = [];
+let roomDeleteResolver = null;
 
 function showNotice(message, type = "info") {
     notice.textContent = message;
@@ -315,7 +318,7 @@ roomForm.addEventListener("submit", async event => {
 });
 
 async function deleteRoom(room) {
-    if (!window.confirm(`Bạn có chắc muốn xóa phòng ${room.room_number} tại ${room.property_name}?`)) return;
+    if (!await confirmRoomDeletion(room)) return;
     try {
         await apiRequest(`/rooms/${room.id}`, {method: "DELETE"});
         showNotice("Đã xóa phòng.", "success");
@@ -324,6 +327,34 @@ async function deleteRoom(room) {
         showNotice(error.message, "error");
     }
 }
+
+function confirmRoomDeletion(room) {
+    deleteRoomDescription.textContent = `Bạn có chắc muốn xóa phòng ${room.room_number} tại ${room.property_name}?`;
+    deleteRoomDialog.returnValue = "";
+    deleteRoomDialog.showModal();
+    return new Promise(resolve => {
+        roomDeleteResolver = resolve;
+    });
+}
+
+function closeRoomDeletion(confirmed = false) {
+    if (deleteRoomDialog.open) {
+        deleteRoomDialog.close(confirmed ? "confirm" : "cancel");
+    }
+}
+
+deleteRoomDialog.addEventListener("close", () => {
+    if (!roomDeleteResolver) return;
+    const resolve = roomDeleteResolver;
+    roomDeleteResolver = null;
+    resolve(deleteRoomDialog.returnValue === "confirm");
+});
+document.getElementById("closeDeleteRoomBtn").addEventListener("click", () => closeRoomDeletion());
+document.getElementById("cancelDeleteRoomBtn").addEventListener("click", () => closeRoomDeletion());
+document.getElementById("confirmDeleteRoomBtn").addEventListener("click", () => closeRoomDeletion(true));
+deleteRoomDialog.addEventListener("click", event => {
+    if (event.target === deleteRoomDialog) closeRoomDeletion();
+});
 
 function detailRow(label, value) {
     const row = createElement("div", "detail-row");

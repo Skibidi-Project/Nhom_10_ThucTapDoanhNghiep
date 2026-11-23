@@ -588,6 +588,82 @@ dialog:not(.property-dialog) .dialog-actions {
     width: min(520px, calc(100% - 28px));
 }
 
+.property-confirm-dialog {
+    width: min(480px, calc(100% - 28px));
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(.98);
+    transition: opacity .18s ease, transform .18s ease, display .18s allow-discrete, overlay .18s allow-discrete;
+}
+
+.property-confirm-dialog[open] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+@starting-style {
+    .property-confirm-dialog[open] {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+
+    .property-confirm-dialog[open]::backdrop {
+        background: transparent;
+    }
+}
+
+.property-confirm-dialog::backdrop {
+    background: transparent;
+    transition: background-color .18s ease, display .18s allow-discrete, overlay .18s allow-discrete;
+}
+
+.property-confirm-dialog[open]::backdrop {
+    background: #17212d80;
+}
+
+.confirm-dialog-body {
+    padding: 24px 26px 8px;
+}
+
+.confirm-dialog-body .dialog-heading {
+    align-items: flex-start;
+}
+
+.property-confirm-dialog .eyebrow {
+    margin: 0 0 5px;
+    color: #16765f;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.confirm-dialog-description,
+.confirm-dialog-warning {
+    margin: 16px 0 0;
+    color: #53606c;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.confirm-dialog-warning {
+    margin-top: 8px;
+    color: #875817;
+}
+
+.property-confirm-dialog .dialog-actions {
+    margin: 16px 0 0;
+    padding: 16px 26px 24px;
+    border-top: 1px solid #edf0f2;
+}
+
+.button-danger {
+    color: #fff;
+    background: #b9403a;
+}
+
+.button-danger:hover {
+    background: #9c332e;
+}
+
 .assignment-property {
     margin-top: 22px;
     padding: 16px;
@@ -757,6 +833,15 @@ dialog:not(.property-dialog) .dialog-actions {
         margin: 25px -20px -20px;
         padding: 14px 20px 20px;
     }
+
+    .property-confirm-dialog .dialog-actions {
+        margin: 16px 0 0;
+        padding: 14px 20px 20px;
+    }
+
+    .confirm-dialog-body {
+        padding: 20px 20px 8px;
+    }
 }
 
 @media (max-width: 380px) {
@@ -785,5 +870,10 @@ dialog:not(.property-dialog) .dialog-actions {
         transition-duration: .01ms !important;
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
+    }
+
+    .property-confirm-dialog,
+    .property-confirm-dialog::backdrop {
+        transition: none;
     }
 }

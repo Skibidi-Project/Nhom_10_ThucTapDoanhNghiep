@@ -21,6 +21,9 @@ let tenantPage = 1;
 let tenantRequestId = 0;
 let searchTimer = null;
 let accountLinkTenant = null;
+const deleteTenantDialog = document.getElementById("deleteTenantDialog");
+const deleteTenantDescription = document.getElementById("deleteTenantDescription");
+let tenantDeleteResolver = null;
 
 async function request(path, options = {}) {
     const headers = new Headers(options.headers);
@@ -85,6 +88,34 @@ function closeAccountLinkModal() {
     accountLinkTenant = null;
     accountLinkError.textContent = "";
 }
+
+function confirmTenantDeletion(tenant) {
+    deleteTenantDescription.textContent = `Bạn có chắc muốn xóa hồ sơ của ${tenant.full_name}?`;
+    deleteTenantDialog.returnValue = "";
+    deleteTenantDialog.showModal();
+    return new Promise(resolve => {
+        tenantDeleteResolver = resolve;
+    });
+}
+
+function closeTenantDeletion(confirmed = false) {
+    if (deleteTenantDialog.open) {
+        deleteTenantDialog.close(confirmed ? "confirm" : "cancel");
+    }
+}
+
+deleteTenantDialog.addEventListener("close", () => {
+    if (!tenantDeleteResolver) return;
+    const resolve = tenantDeleteResolver;
+    tenantDeleteResolver = null;
+    resolve(deleteTenantDialog.returnValue === "confirm");
+});
+document.getElementById("closeDeleteTenantBtn").addEventListener("click", () => closeTenantDeletion());
+document.getElementById("cancelDeleteTenantBtn").addEventListener("click", () => closeTenantDeletion());
+document.getElementById("confirmDeleteTenantBtn").addEventListener("click", () => closeTenantDeletion(true));
+deleteTenantDialog.addEventListener("click", event => {
+    if (event.target === deleteTenantDialog) closeTenantDeletion();
+});
 
 accountLinkCancelBtn.addEventListener("click", closeAccountLinkModal);
 accountLinkCloseBtn.addEventListener("click", closeAccountLinkModal);
@@ -278,7 +309,7 @@ async function loadTenants(resetPage = false) {
             form.elements.full_name.focus();
         }, "button button-outline tenant-edit");
         action(cardActions, "Xóa hồ sơ", async () => {
-            if (!confirm(`Xóa hồ sơ của ${tenant.full_name}?`)) return;
+            if (!await confirmTenantDeletion(tenant)) return;
             await request(`/tenants/${tenant.id}`, {method: "DELETE"});
             if (editing === tenant.id) resetEditor();
             notice.textContent = "Đã xóa hồ sơ.";
