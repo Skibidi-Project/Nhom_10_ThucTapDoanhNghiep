@@ -299,6 +299,37 @@ class ContractListResponse(BaseModel):
     page_size: int
 
 
+class ContractRenewalCreate(BaseModel):
+    new_end_date: date
+    new_monthly_rent: int | None = Field(default=None, gt=0)
+    new_payment_cycle_months: int | None = Field(default=None)
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("new_payment_cycle_months")
+    @classmethod
+    def validate_payment_cycle(cls, value):
+        if value is not None and value not in ALLOWED_PAYMENT_CYCLES:
+            raise ValueError("Kỳ thanh toán chỉ được là 1, 2, 3, 6 hoặc 12 tháng.")
+        return value
+
+
+class ContractRenewalResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    contract_id: int
+    previous_end_date: date
+    new_end_date: date
+    previous_monthly_rent: int
+    new_monthly_rent: int
+    previous_payment_cycle_months: int
+    new_payment_cycle_months: int
+    renewal_note: str | None
+    renewed_by: int
+    renewed_by_name: str | None = None
+    renewed_at: datetime
+
+
 class DepositUpdate(BaseModel):
     status: str = Field(pattern=r"^(held|returned|deducted|not_applicable)$")
     returned_amount: int = Field(default=0, ge=0)

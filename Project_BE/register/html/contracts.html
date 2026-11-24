@@ -188,7 +188,7 @@
         <form id="depositForm">
             <div class="dialog-heading">
                 <div>
-                    <p class="eyebrow">US-14 · TIỀN CỌC</p>
+                    <p class="eyebrow">TIỀN CỌC</p>
                     <h2>Quyết toán tiền cọc</h2>
                 </div>
                 <button type="button" class="close-btn" id="closeDepositDialogBtn" aria-label="Đóng">×</button>
@@ -219,6 +219,113 @@
                 <button type="submit" class="button button-primary" id="saveDepositBtn">Lưu quyết toán</button>
             </div>
         </form>
+    </dialog>
+
+    <dialog id="renewalDialog" class="property-dialog">
+        <form id="renewalForm">
+            <div class="dialog-heading">
+                <div>
+                    <p class="eyebrow">GIA HẠN HỢP ĐỒNG</p>
+                    <h2>Gia hạn thời hạn thuê phòng</h2>
+                </div>
+                <button type="button" class="close-btn" id="closeRenewalDialogBtn" aria-label="Đóng">×</button>
+            </div>
+            <input type="hidden" id="renewalContractId">
+            <p id="renewalContractSummary" class="deposit-summary"></p>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="renewalStartDate">Ngày bắt đầu hợp đồng <span>*</span></label>
+                    <input id="renewalStartDate" type="date" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="renewalCurrentEndDate">Ngày kết thúc hiện tại <span>*</span></label>
+                    <input id="renewalCurrentEndDate" type="date" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="renewalNewEndDate">Ngày kết thúc mới <span>*</span></label>
+                    <input id="renewalNewEndDate" type="date" required>
+                    <p id="renewalDateHint" class="field-hint"></p>
+                </div>
+                <div class="form-group">
+                    <label for="renewalCurrentRent">Giá thuê hiện tại (đ) <span>*</span></label>
+                    <input id="renewalCurrentRent" type="number" min="0" step="1" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="renewalNewRent">Giá thuê mới (đ) <span>*</span></label>
+                    <input id="renewalNewRent" type="number" min="1" step="1" required>
+                    <p id="renewalRentHint" class="field-hint">Để trống nếu giữ nguyên giá hiện tại.</p>
+                </div>
+                <div class="form-group">
+                    <label for="renewalCurrentCycle">Kỳ thanh toán hiện tại <span>*</span></label>
+                    <input id="renewalCurrentCycle" type="number" min="1" step="1" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="renewalNewCycle">Kỳ thanh toán mới <span>*</span></label>
+                    <select id="renewalNewCycle" required>
+                        <option value="1">Hàng tháng</option>
+                        <option value="2">2 tháng/lần</option>
+                        <option value="3">3 tháng/lần</option>
+                        <option value="6">6 tháng/lần</option>
+                        <option value="12">12 tháng/lần</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label for="renewalNote">Ghi chú gia hạn</label>
+                    <textarea id="renewalNote" rows="3" maxlength="500"></textarea>
+                </div>
+            </div>
+            <p id="renewalFormError" class="form-error" role="alert"></p>
+            <div class="dialog-actions">
+                <button type="button" class="button button-light" id="cancelRenewalBtn">Hủy</button>
+                <button type="submit" class="button button-primary" id="saveRenewalBtn">Xác nhận gia hạn</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="renewalHistoryDialog" class="property-dialog history-dialog">
+        <div class="dialog-heading">
+            <div>
+                <p class="eyebrow">LỊCH SỬ GIA HẠN HỢP ĐỒNG</p>
+                <h2 id="renewalHistoryTitle">Lịch sử gia hạn</h2>
+                <p id="renewalHistorySubtitle" class="history-subtitle">
+                    Theo dõi các lần gia hạn và thay đổi giá thuê của hợp đồng
+                </p>
+            </div>
+            <button type="button" class="close-btn" id="closeRenewalHistoryDialogBtn" aria-label="Đóng">×</button>
+        </div>
+        <input type="hidden" id="renewalHistoryContractId">
+        <div class="history-body">
+            <p id="renewalHistoryLoading" class="table-state">Đang tải lịch sử gia hạn...</p>
+            <div id="renewalHistoryEmpty" class="empty-state" hidden>
+                <span class="empty-icon">📭</span>
+                <h3>Chưa có lịch sử gia hạn</h3>
+                <p>Hợp đồng này chưa từng được gia hạn.</p>
+            </div>
+            <div id="renewalHistoryError" class="table-state error-state" hidden>
+                <span class="empty-icon" style="color:#a13b37">⚠</span>
+                <h3>Không thể tải lịch sử</h3>
+                <p id="renewalHistoryErrorMessage"></p>
+            </div>
+            <div class="table-scroll" id="renewalHistoryTableContainer" hidden>
+                <table class="renewal-history-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Thời hạn cũ</th>
+                            <th>Thời hạn mới</th>
+                            <th>Giá thuê cũ</th>
+                            <th>Giá thuê mới</th>
+                            <th>Kỳ cũ</th>
+                            <th>Kỳ mới</th>
+                            <th>Người thực hiện</th>
+                            <th>Ngày gia hạn</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody id="renewalHistoryRows"></tbody>
+                </table>
+            </div>
+        </div>
     </dialog>
 
     <script src="../js/contracts.js"></script>

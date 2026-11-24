@@ -13,9 +13,11 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
 FILES = ('us26_expenses_payment_note_mysql.sql', 'us20_dated_prices_mysql.sql',
-         'us24_payment_idempotency_mysql.sql', 'us25_due_date_mysql.sql')
+         'us24_payment_idempotency_mysql.sql', 'us25_due_date_mysql.sql',
+         'us30_contract_renewal_mysql.sql')
 NEW_TABLES = {'expenses', 'utility_price_history', 'invoice_utility_snapshots',
-              'invoice_service_snapshots', 'invoice_due_date_history'}
+              'invoice_service_snapshots', 'invoice_due_date_history',
+              'contract_renewal_histories'}
 NEW_COLUMNS = {'payments': {'note', 'idempotency_key', 'request_fingerprint'},
                'invoices': {'due_date'}}
 TRACK = 'ministay_migration_batches'

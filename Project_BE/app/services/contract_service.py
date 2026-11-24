@@ -1,13 +1,19 @@
-from datetime import date
+import calendar
+from datetime import date, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, Invoice, Property, PropertyManager, Room, TenantProfile, UtilityPriceHistory
+from app.models.boarding import Contract, ContractRenewalHistory, Invoice, Property, PropertyManager, Room, TenantProfile, UtilityPriceHistory
 from app.models.service_assignment import ServiceAssignment
 from app.models.user import User
-from app.schemas.boarding import ContractCreate
+from app.schemas.boarding import (
+    ALLOWED_PAYMENT_CYCLES,
+    ContractCreate,
+    ContractRenewalCreate,
+    ContractRenewalResponse,
+)
 from app.services.access_scope import assert_can_operate, get_contract, get_property, get_room, get_tenant, property_of_room
 from app.services.db_util import save
 
@@ -167,6 +173,123 @@ def read_contract(db: Session, user: User, contract_id: int) -> dict:
     prop = property_of_room(db, room)
     tenant = get_tenant(db, contract.tenant_id)
     return _contract_payload(contract, room, prop, tenant)
+
+
+def _latest_allowed_end(start_date: date) -> date:
+    end_year = start_date.year + 10
+    return date(
+        end_year,
+        start_date.month,
+        min(start_date.day, calendar.monthrange(end_year, start_date.month)[1]),
+    )
+
+
+def renew_contract(
+    db: Session, user: User, contract_id: int, data: ContractRenewalCreate
+) -> dict:
+    contract = get_contract(db, contract_id)
+    if not _visible(db, user, contract):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền gia hạn hợp đồng này.")
+    _sync_lifecycle(db, contract)
+    if contract.status != "active":
+        raise HTTPException(
+            status_code=409, detail="Chỉ gia hạn được hợp đồng đang hiệu lực."
+        )
+
+    if data.new_end_date <= contract.end_date:
+        raise HTTPException(
+            status_code=409,
+            detail="Ngày kết thúc mới phải sau ngày kết thúc hiện tại của hợp đồng.",
+        )
+
+    latest_end = _latest_allowed_end(contract.start_date)
+    if data.new_end_date > latest_end:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Thời gian gia hạn không được vượt quá 10 năm kể từ ngày bắt đầu ({latest_end.isoformat()}).",
+        )
+
+    new_monthly_rent = data.new_monthly_rent if data.new_monthly_rent is not None else contract.monthly_rent
+    new_payment_cycle = (
+        data.new_payment_cycle_months
+        if data.new_payment_cycle_months is not None
+        else contract.payment_cycle_months
+    )
+    if new_monthly_rent <= 0:
+        raise HTTPException(status_code=409, detail="Tiền thuê hàng tháng phải lớn hơn 0.")
+    if new_payment_cycle not in ALLOWED_PAYMENT_CYCLES:
+        raise HTTPException(
+            status_code=409,
+            detail="Kỳ thanh toán chỉ được là 1, 2, 3, 6 hoặc 12 tháng.",
+        )
+
+    overlap = db.scalar(
+        select(Contract.id).where(
+            Contract.room_id == contract.room_id,
+            Contract.id != contract.id,
+            Contract.status == "active",
+            Contract.start_date <= data.new_end_date,
+            Contract.end_date >= contract.start_date,
+        )
+    )
+    if overlap is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Khoảng thời gian gia hạn trùng với hợp đồng khác của phòng này.",
+        )
+
+    history = ContractRenewalHistory(
+        contract_id=contract.id,
+        previous_end_date=contract.end_date,
+        new_end_date=data.new_end_date,
+        previous_monthly_rent=contract.monthly_rent,
+        new_monthly_rent=new_monthly_rent,
+        previous_payment_cycle_months=contract.payment_cycle_months,
+        new_payment_cycle_months=new_payment_cycle,
+        renewal_note=data.note.strip() if data.note else None,
+        renewed_by=user.id,
+    )
+    db.add(history)
+    contract.end_date = data.new_end_date
+    contract.monthly_rent = new_monthly_rent
+    contract.payment_cycle_months = new_payment_cycle
+    # Ghi lịch sử trước, cập nhật hợp đồng sau. Nếu bất kỳ bước nào thất bại,
+    # save() sẽ rollback toàn bộ giao dịch, hợp đồng không bị thay đổi.
+    save(db, history, contract)
+
+    room = get_room(db, contract.room_id)
+    prop = property_of_room(db, room)
+    tenant = get_tenant(db, contract.tenant_id)
+    return _contract_payload(contract, room, prop, tenant)
+
+
+def list_renewals(db: Session, user: User, contract_id: int) -> list[ContractRenewalResponse]:
+    contract = get_contract(db, contract_id)
+    if not _visible(db, user, contract):
+        raise HTTPException(status_code=403, detail="Bạn không có quyền xem lịch sử gia hạn hợp đồng này.")
+    rows = db.execute(
+        select(ContractRenewalHistory, User.full_name)
+        .join(User, User.id == ContractRenewalHistory.renewed_by)
+        .where(ContractRenewalHistory.contract_id == contract_id)
+        .order_by(ContractRenewalHistory.id.desc())
+    ).all()
+    return [
+        ContractRenewalResponse(
+            id=row.id,
+            contract_id=row.contract_id,
+            previous_end_date=row.previous_end_date,
+            new_end_date=row.new_end_date,
+            previous_monthly_rent=row.previous_monthly_rent,
+            new_monthly_rent=row.new_monthly_rent,
+            previous_payment_cycle_months=row.previous_payment_cycle_months,
+            new_payment_cycle_months=row.new_payment_cycle_months,
+            renewal_note=row.renewal_note,
+            renewed_by=row.renewed_by,
+            renewed_by_name=name,
+            renewed_at=row.renewed_at,
+        )
+        for row, name in rows
+    ]
 
 
 def terminate_contract(db: Session, user: User, contract_id: int) -> dict:
