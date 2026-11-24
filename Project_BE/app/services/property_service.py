@@ -19,6 +19,41 @@ from app.schemas.boarding import (
 )
 from app.services.access_scope import assert_can_manage, assert_can_operate, get_property, get_room, property_of_room
 from app.services.db_util import save
+from app.services import service_price_service
+from app.schemas.service_price import BillingUnit, ServiceCode
+
+
+def sync_property_utility_prices(
+    db: Session, prop: Property, electricity: int | None, water: int | None
+) -> None:
+    """Đồng bộ giá điện/nước giữa cột Property và bảng property_service_prices (không commit)."""
+    if electricity is not None:
+        if electricity > 0:
+            service_price_service._upsert_service_price(
+                db, prop.id, ServiceCode.ELECTRICITY, BillingUnit.KWH, electricity
+            )
+        else:
+            service_price_service._delete_service_price(db, prop.id, ServiceCode.ELECTRICITY)
+
+    if water is not None:
+        water_row = db.scalar(
+            select(PropertyServicePrice).where(
+                PropertyServicePrice.property_id == prop.id,
+                PropertyServicePrice.service_code == ServiceCode.WATER.value,
+            )
+        )
+        if water > 0:
+            # Nếu config hiện có đang dùng person_month: không tự chuyển cách tính, chỉ lưu cột.
+            if water_row is not None and water_row.billing_unit == BillingUnit.PERSON_MONTH.value:
+                pass
+            else:
+                service_price_service._upsert_service_price(
+                    db, prop.id, ServiceCode.WATER, BillingUnit.CUBIC_METER, water
+                )
+        else:
+            # Giá 0: xóa config nếu có, trừ khi đang ở person_month (không xóa config đó).
+            if water_row is None or water_row.billing_unit != BillingUnit.PERSON_MONTH.value:
+                service_price_service._delete_service_price(db, prop.id, ServiceCode.WATER)
 
 
 def create_property(db: Session, user: User, data: PropertyCreate) -> Property:
@@ -29,6 +64,8 @@ def create_property(db: Session, user: User, data: PropertyCreate) -> Property:
         service_unit_price=data.service_unit_price,
     )
     db.add(prop)
+    db.flush()
+    sync_property_utility_prices(db, prop, data.electricity_unit_price, data.water_unit_price)
     save(db, prop)
     return prop
 
@@ -89,6 +126,7 @@ def update_property(db: Session, user: User, property_id: int, data: PropertyUpd
         value = getattr(data, field)
         if value is not None:
             setattr(prop, field, value)
+    sync_property_utility_prices(db, prop, data.electricity_unit_price, data.water_unit_price)
     save(db, prop)
     return prop
 

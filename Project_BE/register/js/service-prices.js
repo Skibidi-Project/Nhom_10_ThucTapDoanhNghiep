@@ -196,6 +196,10 @@ function openPriceDialog(service) {
     unitPriceInput.value = configured ? String(service.unit_price) : "";
     priceFormError.textContent = "";
     priceFormError.hidden = true;
+    if (service.code === "electricity" || service.code === "water") {
+        priceFormError.textContent = "Giá này cũng được cập nhật trong thông tin cơ sở.";
+        priceFormError.hidden = false;
+    }
     setSaving(false);
     priceDialog.showModal();
 }
@@ -247,7 +251,10 @@ async function saveServicePrice(event) {
         renderServicePrices();
         priceDialog.close();
         activeService = null;
-        showNotice(`Đã lưu đơn giá dịch vụ ${saved.name}.`, "success");
+        const note = saved.code === "electricity" || saved.code === "water"
+            ? " Giá này cũng được cập nhật trong thông tin cơ sở."
+            : "";
+        showNotice(`Đã lưu đơn giá dịch vụ ${saved.name}.${note}`, "success");
     } catch (error) {
         priceFormError.textContent = `Không thể lưu đơn giá: ${error.message}`;
         priceFormError.hidden = false;

@@ -18,7 +18,7 @@
         <section class="utility-pricing-intro">
             <p class="eyebrow">Điện nước</p>
             <h1>Tính điện/nước</h1>
-            <p class="subtitle">Chỉ số đã ghi và giá có chứng cứ được dùng cho kỳ hóa đơn.</p>
+            <p class="subtitle">Chỉ số điện/nước được tính theo đơn giá dịch vụ đã cấu hình cho cơ sở.</p>
         </section>
         <form class="panel utility-preview-form" id="previewForm">
             <div class="utility-form-heading">
@@ -32,41 +32,48 @@
             <button class="button button-primary utility-form-submit utility-preview-submit" type="submit">Xem tính tiền</button>
         </form>
         <p id="message" class="utility-message" role="status" aria-live="polite"></p>
+        <section class="panel utility-reading-panel" aria-labelledby="readingHeading">
+            <div class="utility-form-heading">
+                <h2 id="readingHeading">Nhập chỉ số điện/nước</h2>
+                <p>Ghi chỉ số theo phòng và kỳ. Chỉ số đầu kỳ được gợi ý từ lần ghi gần nhất.</p>
+            </div>
+            <p id="readingRoom" class="utility-reading-context">Chọn hợp đồng và kỳ ở phía trên để nhập chỉ số.</p>
+            <div class="utility-reading-grid">
+                <form class="utility-reading-card" data-utility="electricity">
+                    <h3>Điện (kWh)</h3>
+                    <div class="utility-reading-inputs">
+                        <label class="utility-field">Chỉ số đầu kỳ <input name="previous" type="number" min="0" step="1" required></label>
+                        <label class="utility-field">Chỉ số cuối kỳ <input name="current" type="number" min="0" step="1" required></label>
+                    </div>
+                    <p class="utility-consumption">Tiêu thụ: —</p>
+                    <p class="utility-reading-message" role="status" aria-live="polite"></p>
+                    <button class="button button-primary utility-form-submit" type="submit">Lưu chỉ số điện</button>
+                </form>
+                <form class="utility-reading-card" data-utility="water">
+                    <h3>Nước (m³)</h3>
+                    <div class="utility-reading-inputs">
+                        <label class="utility-field">Chỉ số đầu kỳ <input name="previous" type="number" min="0" step="1" required></label>
+                        <label class="utility-field">Chỉ số cuối kỳ <input name="current" type="number" min="0" step="1" required></label>
+                    </div>
+                    <p class="utility-consumption">Tiêu thụ: —</p>
+                    <p class="utility-reading-message" role="status" aria-live="polite"></p>
+                    <button class="button button-primary utility-form-submit" type="submit">Lưu chỉ số nước</button>
+                </form>
+            </div>
+        </section>
         <section id="result" class="panel utility-result" aria-live="polite" hidden></section>
         <div class="page-actions">
             <a id="issueLink" class="button button-primary" href="invoices.html" hidden>Chốt hóa đơn</a>
             <a class="button button-outline" href="rooms.html">Quản lý phòng</a>
         </div>
-        <details class="panel utility-history">
-            <summary>Thêm lịch sử giá có chứng cứ</summary>
-            <form id="priceForm" class="utility-price-form">
-                <div class="utility-form-grid">
-                    <label class="utility-field" for="property">Cơ sở <select id="property" required></select></label>
-                    <label class="utility-field" for="scope">Phạm vi
-                        <select id="scope">
-                            <option value="property">Khu trọ</option>
-                            <option value="room">Phòng</option>
-                            <option value="contract">Hợp đồng</option>
-                        </select>
-                    </label>
-                    <label class="utility-field" for="target">Mã phòng/hợp đồng (nếu chọn) <input id="target" type="number" min="1"></label>
-                    <label class="utility-field" for="utility">Loại
-                        <select id="utility">
-                            <option value="electricity">Điện</option>
-                            <option value="water">Nước</option>
-                        </select>
-                    </label>
-                    <label class="utility-field" for="price">Đơn giá <input id="price" type="number" min="0" step="1" required></label>
-                    <label class="utility-field" for="from">Hiệu lực từ <input id="from" type="date" required></label>
-                    <label class="utility-field" for="to">Đến <input id="to" type="date" required></label>
-                    <label class="utility-field utility-field-wide" for="evidence">Căn cứ <input id="evidence" minlength="3" maxlength="500" required></label>
-                </div>
-                <button class="button button-primary utility-form-submit" type="submit">Lưu giá</button>
-            </form>
-            <p id="priceMessage" class="utility-message" role="status" aria-live="polite"></p>
-            <button id="historyBtn" class="button button-outline history-button" type="button">Xem lịch sử giá cơ sở</button>
-            <div id="history" class="utility-history-list"></div>
-        </details>
+        <section class="panel utility-config-panel" aria-labelledby="utilityConfigHeading">
+            <div class="utility-form-heading">
+                <h2 id="utilityConfigHeading">Đơn giá dịch vụ đang cấu hình</h2>
+                <p>Tiền điện/nước được lấy từ cấu hình đơn giá dịch vụ của cơ sở đã chọn.</p>
+            </div>
+            <div id="configuredUtilityPrices" class="configured-utility-prices" aria-live="polite">Đang tải đơn giá…</div>
+            <a class="button button-outline utility-config-link" href="service-prices.html">Mở cấu hình đơn giá dịch vụ</a>
+        </section>
     </main>
     <script src="../js/utility-pricing.js"></script>
 </body>

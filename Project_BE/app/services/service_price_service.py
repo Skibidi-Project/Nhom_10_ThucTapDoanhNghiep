@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
-from app.models.boarding import Contract, PropertyServicePrice, Room
+from app.models.boarding import Contract, Property, PropertyServicePrice, Room
 from app.models.service_assignment import ServiceAssignment
 from app.schemas.service_price import BillingUnit, ServiceCode, ServicePriceResponse, ServicePriceWrite
 from app.services.db_util import save
@@ -35,15 +35,12 @@ def list_service_prices(db: Session, property_id: int) -> list[ServicePriceRespo
     ]
 
 
-def set_service_price(
-    db: Session, property_id: int, code: ServiceCode, data: ServicePriceWrite
-) -> ServicePriceResponse:
-    name, allowed_units = CATALOG[code]
-    if data.billing_unit not in allowed_units:
-        raise HTTPException(status_code=422, detail="Đơn vị tính không phù hợp với dịch vụ.")
-
+def _upsert_service_price(
+    db: Session, property_id: int, code: ServiceCode, unit: BillingUnit, price: int
+) -> None:
+    """Upsert dòng cấu hình đơn giá, không commit (để nằm trong cùng giao dịch gọi bên ngoài)."""
     prices = PropertyServicePrice.__table__
-    changes = {"billing_unit": data.billing_unit.value, "unit_price": data.unit_price}
+    changes = {"billing_unit": unit.value, "unit_price": price}
     values = {"property_id": property_id, "service_code": code.value, **changes}
     if db.get_bind().dialect.name == "sqlite":
         stmt = sqlite_insert(prices).values(**values).on_conflict_do_update(
@@ -52,11 +49,10 @@ def set_service_price(
     else:
         stmt = mysql_insert(prices).values(**values).on_duplicate_key_update(**changes)
     db.execute(stmt)
-    save(db)
-    return ServicePriceResponse(code=code, name=name, allowed_units=allowed_units, **changes)
 
 
-def clear_service_price(db: Session, property_id: int, code: ServiceCode) -> None:
+def _delete_service_price(db: Session, property_id: int, code: ServiceCode) -> PropertyServicePrice | None:
+    """Kiểm tra gán rồi xóa dòng cấu hình, không commit. Trả về dòng đã xóa (hoặc None nếu không có)."""
     room_assignment = db.scalar(
         select(ServiceAssignment.id)
         .join(Room, Room.id == ServiceAssignment.room_id)
@@ -76,8 +72,58 @@ def clear_service_price(db: Session, property_id: int, code: ServiceCode) -> Non
     )
     if room_assignment is not None or contract_assignment is not None:
         raise HTTPException(status_code=409, detail="Không thể xóa đơn giá của dịch vụ đang được gán.")
+    row = db.scalar(
+        select(PropertyServicePrice).where(
+            PropertyServicePrice.property_id == property_id,
+            PropertyServicePrice.service_code == code.value,
+        )
+    )
     db.execute(delete(PropertyServicePrice).where(
         PropertyServicePrice.property_id == property_id,
         PropertyServicePrice.service_code == code.value,
     ))
+    return row
+
+
+def set_service_price(
+    db: Session, property_id: int, code: ServiceCode, data: ServicePriceWrite
+) -> ServicePriceResponse:
+    name, allowed_units = CATALOG[code]
+    if data.billing_unit not in allowed_units:
+        raise HTTPException(status_code=422, detail="Đơn vị tính không phù hợp với dịch vụ.")
+
+    _upsert_service_price(db, property_id, code, data.billing_unit, data.unit_price)
+
+    prop = db.get(Property, property_id)
+    if prop is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy khu trọ.")
+    if code == ServiceCode.ELECTRICITY:
+        prop.electricity_unit_price = data.unit_price
+    elif code == ServiceCode.WATER and data.billing_unit == BillingUnit.CUBIC_METER:
+        prop.water_unit_price = data.unit_price
+    # Nước theo person_month: không đồng bộ cột water_unit_price.
+
+    save(db)
+    return ServicePriceResponse(
+        code=code,
+        name=name,
+        allowed_units=allowed_units,
+        billing_unit=data.billing_unit,
+        unit_price=data.unit_price,
+    )
+
+
+def clear_service_price(db: Session, property_id: int, code: ServiceCode) -> None:
+    removed = _delete_service_price(db, property_id, code)
+
+    prop = db.get(Property, property_id)
+    if prop is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy khu trọ.")
+    if removed is not None:
+        if code == ServiceCode.ELECTRICITY:
+            prop.electricity_unit_price = 0
+        elif code == ServiceCode.WATER and removed.billing_unit == BillingUnit.CUBIC_METER.value:
+            prop.water_unit_price = 0
+    # Nước person_month: không xóa cấu hình và không động cột.
+
     save(db)
