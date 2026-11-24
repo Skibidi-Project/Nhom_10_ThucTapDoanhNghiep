@@ -25,6 +25,98 @@
     margin-top: 0;
 }
 
+.utility-reading-panel {
+    margin-top: 18px;
+}
+
+.utility-reading-context {
+    margin: 0 0 14px;
+    color: #687481;
+    font-size: 14px;
+}
+
+.utility-reading-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.utility-reading-card {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.utility-reading-card h3 {
+    margin: 0 0 14px;
+    color: #34414d;
+    font-size: 17px;
+}
+
+.utility-reading-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.utility-reading-inputs input {
+    width: 100%;
+    min-height: 44px;
+}
+
+.utility-consumption,
+.utility-reading-message {
+    min-height: 21px;
+    margin: 12px 0 0;
+    color: #687481;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.utility-reading-card .utility-form-submit {
+    margin-top: 12px;
+}
+
+.utility-reading-card button:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+}
+
+.utility-config-panel {
+    margin-top: 18px;
+}
+
+.configured-utility-prices p {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    background: #fff;
+}
+
+.configured-utility-prices p + p {
+    margin-top: 8px;
+}
+
+.utility-config-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    padding: 10px 16px;
+    border: 1px solid #cfe1db;
+    border-radius: 9px;
+    color: #176b57;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 650;
+    text-decoration: none;
+}
+
 .utility-form-heading {
     margin-bottom: 18px;
 }
@@ -223,7 +315,9 @@
     }
 
     .utility-preview-form,
-    .utility-history {
+    .utility-history,
+    .utility-reading-panel,
+    .utility-config-panel {
         padding: 16px;
     }
 
@@ -234,6 +328,10 @@
 
     .utility-field-wide {
         grid-column: auto;
+    }
+
+    .utility-reading-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .utility-form-submit {

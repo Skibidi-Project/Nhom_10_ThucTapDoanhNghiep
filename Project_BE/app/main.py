@@ -61,6 +61,9 @@ async def lifespan(app: FastAPI):
             for table, columns in required.items():
                 if not inspector.has_table(table) or not columns.issubset({c['name'] for c in inspector.get_columns(table)}):
                     raise RuntimeError('US-20 pricing migration is required before starting this existing database.')
+            snapshot_columns = {column['name']: column for column in inspector.get_columns('invoice_utility_snapshots')}
+            if snapshot_columns['price_id'].get('nullable') is False:
+                raise RuntimeError('US-28 service-price snapshot migration is required before starting this existing database.')
         # MySQL schemas are managed by reviewed migrations, never by startup.
         # Check the complete mapped schema before serving requests.
         for table in Base.metadata.sorted_tables:

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL") or "mysql+pymysql://root:jay2007@localhost/products_db"
+DATABASE_URL = os.getenv("DATABASE_URL") or "mysql+pymysql://root:123456@localhost/products_db"
 
 engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):

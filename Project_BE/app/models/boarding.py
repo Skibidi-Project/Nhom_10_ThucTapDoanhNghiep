@@ -133,7 +133,7 @@ class InvoiceUtilitySnapshot(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     invoice_id: Mapped[int] = mapped_column(ForeignKey('invoices.id'), nullable=False)
     utility: Mapped[str] = mapped_column(String(20), nullable=False)
-    price_id: Mapped[int] = mapped_column(ForeignKey('utility_price_history.id'), nullable=False)
+    price_id: Mapped[int | None] = mapped_column(ForeignKey('utility_price_history.id'), nullable=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False)
     previous_reading: Mapped[int] = mapped_column(Integer, nullable=False)
     current_reading: Mapped[int] = mapped_column(Integer, nullable=False)
