@@ -519,6 +519,109 @@
     }
 }
 
+/* ===== Modal lịch sử gia hạn hợp đồng ===== */
+/* ===== Modal lịch sử gia hạn hợp đồng ===== */
+.history-dialog {
+    width: min(850px, 92vw);
+    max-height: 80vh;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(20, 35, 50, 0.2);
+    flex-direction: column;
+}
+
+/* Modal đóng: ẩn hoàn toàn */
+.history-dialog:not([open]) {
+    display: none;
+}
+
+/* Modal đang mở */
+.history-dialog[open] {
+    display: flex;
+}
+.history-dialog::backdrop {
+    background: rgba(23, 33, 45, 0.55);
+    backdrop-filter: blur(6px);
+}
+.history-dialog .dialog-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #edf0f2;
+    background: #f9fafb;
+    flex-shrink: 0;
+}
+.history-dialog .dialog-heading > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.history-dialog .dialog-heading .eyebrow {
+    margin: 0;
+    color: #16765f;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.history-dialog .dialog-heading h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #20272f;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.history-dialog .history-subtitle {
+    margin: 0;
+    color: #78838f;
+    font-size: 12.5px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.history-dialog .close-btn {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: #f0f3f5;
+    color: #65717c;
+    font-size: 22px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.history-dialog .close-btn:hover {
+    background: #e4e9ed;
+    color: #20272f;
+    transform: rotate(-90deg);
+}
+.history-dialog .close-btn:focus-visible {
+    outline: 2px solid #268a70;
+    outline-offset: 2px;
+}
+.history-dialog .history-body {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 24px 24px;
+    flex: 1;
+}
+
 @media (max-width: 720px) {
     .contract-form-grid {
         grid-template-columns: 1fr;

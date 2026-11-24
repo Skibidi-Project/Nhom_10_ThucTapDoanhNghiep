@@ -204,3 +204,20 @@ class Payment(Base):
     note: Mapped[str | None] = mapped_column(String(255), nullable=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
     request_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class ContractRenewalHistory(Base):
+    __tablename__ = "contract_renewal_histories"
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    contract_id: Mapped[int] = mapped_column(ForeignKey("rental_contracts.id"), nullable=False, index=True)
+    previous_end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    new_end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    previous_monthly_rent: Mapped[int] = mapped_column(Integer, nullable=False)
+    new_monthly_rent: Mapped[int] = mapped_column(Integer, nullable=False)
+    previous_payment_cycle_months: Mapped[int] = mapped_column(Integer, nullable=False)
+    new_payment_cycle_months: Mapped[int] = mapped_column(Integer, nullable=False)
+    renewal_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    renewed_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    renewed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)

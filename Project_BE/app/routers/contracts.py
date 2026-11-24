@@ -8,6 +8,8 @@ from app.models.user import User
 from app.schemas.boarding import (
     ContractCreate,
     ContractListResponse,
+    ContractRenewalCreate,
+    ContractRenewalResponse,
     ContractResponse,
     DepositUpdate,
     InvoiceCreate,
@@ -78,6 +80,25 @@ def terminate_contract(
     user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
 ):
     return contract_service.terminate_contract(db, user, contract_id)
+
+
+@router.post("/{contract_id}/renew", response_model=ContractResponse)
+def renew_contract(
+    contract_id: int,
+    data: ContractRenewalCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
+):
+    return contract_service.renew_contract(db, user, contract_id, data)
+
+
+@router.get("/{contract_id}/renewals", response_model=list[ContractRenewalResponse])
+def list_renewals(
+    contract_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_permissions(Permission.CONTRACT_MANAGE)),
+):
+    return contract_service.list_renewals(db, user, contract_id)
 
 
 @router.patch("/{contract_id}/deposit", response_model=ContractResponse)

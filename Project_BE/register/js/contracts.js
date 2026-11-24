@@ -25,6 +25,32 @@ const clearContractFiltersEmptyBtn = document.getElementById("clearContractFilte
 const tenantDialog = document.getElementById("tenantDialog");
 const tenantForm = document.getElementById("tenantForm");
 
+const renewalDialog = document.getElementById("renewalDialog");
+const renewalForm = document.getElementById("renewalForm");
+const renewalFormError = document.getElementById("renewalFormError");
+const renewalContractId = document.getElementById("renewalContractId");
+const renewalContractSummary = document.getElementById("renewalContractSummary");
+const renewalStartDate = document.getElementById("renewalStartDate");
+const renewalCurrentEndDate = document.getElementById("renewalCurrentEndDate");
+const renewalNewEndDate = document.getElementById("renewalNewEndDate");
+const renewalDateHint = document.getElementById("renewalDateHint");
+const renewalCurrentRent = document.getElementById("renewalCurrentRent");
+const renewalNewRent = document.getElementById("renewalNewRent");
+const renewalRentHint = document.getElementById("renewalRentHint");
+const renewalCurrentCycle = document.getElementById("renewalCurrentCycle");
+const renewalNewCycle = document.getElementById("renewalNewCycle");
+const renewalNote = document.getElementById("renewalNote");
+const saveRenewalBtn = document.getElementById("saveRenewalBtn");
+const cancelRenewalBtn = document.getElementById("cancelRenewalBtn");
+
+const renewalHistoryDialog = document.getElementById("renewalHistoryDialog");
+const renewalHistoryContractId = document.getElementById("renewalHistoryContractId");
+const renewalHistoryLoading = document.getElementById("renewalHistoryLoading");
+const renewalHistoryEmpty = document.getElementById("renewalHistoryEmpty");
+const renewalHistoryTableContainer = document.getElementById("renewalHistoryTableContainer");
+const renewalHistoryRows = document.getElementById("renewalHistoryRows");
+const closeRenewalHistoryDialogBtn = document.getElementById("closeRenewalHistoryDialogBtn");
+
 let accessToken = sessionStorage.getItem("us05_access_token") || "";
 let currentUser = null;
 let properties = [];
@@ -78,6 +104,19 @@ function formatMoney(value) {
 function formatDate(value) {
     const [year, month, day] = value.split("-");
     return `${day}/${month}/${year}`;
+}
+
+function formatDateTime(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 
 function setSelectOptions(select, placeholder, items, labelForItem) {
@@ -206,6 +245,95 @@ async function deleteExpiredContract(contract) {
     }
 }
 
+function openRenewalDialog(contract) {
+    renewalForm.reset();
+    renewalFormError.textContent = "";
+    renewalContractId.value = contract.id;
+    renewalContractSummary.textContent =
+        contract.property_name + " · Phòng " + contract.room_number + " · Khách thuê " + contract.tenant_name;
+    renewalStartDate.value = contract.start_date;
+    renewalCurrentEndDate.value = contract.end_date;
+    renewalNewEndDate.value = contract.end_date;
+    renewalDateHint.textContent = "Ngày kết thúc phải sau " + formatDate(contract.end_date) + ".";
+    renewalCurrentRent.value = contract.monthly_rent;
+    renewalNewRent.value = contract.monthly_rent;
+    renewalCurrentCycle.value = contract.payment_cycle_months;
+    renewalNewCycle.value = String(contract.payment_cycle_months);
+    renewalNote.value = "";
+    renewalDialog.showModal();
+}
+
+function renderRenewalHistory(items) {
+    renewalHistoryRows.replaceChildren();
+    let index = 1;
+    for (const item of items) {
+        const row = document.createElement("tr");
+        row.append(
+            createElement("td", "", String(index++)),
+            createElement("td", "", formatDate(String(item.previous_end_date))),
+            createElement("td", "", formatDate(String(item.new_end_date))),
+            createElement("td", "", formatMoney(item.previous_monthly_rent)),
+            createElement("td", "", formatMoney(item.new_monthly_rent)),
+            createElement("td", "", item.previous_payment_cycle_months + " tháng/lần"),
+            createElement("td", "", item.new_payment_cycle_months + " tháng/lần"),
+            createElement("td", "", item.renewed_by_name || ""),
+            createElement("td", "", item.renewed_at ? formatDateTime(item.renewed_at) : ""),
+            createElement("td", "", item.renewal_note || ""),
+        );
+        renewalHistoryRows.append(row);
+    }
+}
+
+async function openRenewalHistoryDialog(contractId) {
+    renewalHistoryRows.replaceChildren();
+    renewalHistoryContractId.value = contractId;
+    renewalHistoryLoading.hidden = false;
+    renewalHistoryEmpty.hidden = true;
+    renewalHistoryTableContainer.hidden = true;
+    renewalHistoryDialog.showModal();
+    try {
+        const history = await apiRequest("/contracts/" + contractId + "/renewals");
+        renewalHistoryLoading.hidden = true;
+        if (history.length === 0) {
+            renewalHistoryEmpty.hidden = false;
+        } else {
+            renewalHistoryTableContainer.hidden = false;
+            renderRenewalHistory(history);
+        }
+    } catch (error) {
+        renewalHistoryLoading.hidden = true;
+        showNotice(error.message, "error");
+    }
+}
+
+renewalForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const button = saveRenewalBtn;
+    const error = renewalFormError;
+    button.disabled = true;
+    error.textContent = "";
+    try {
+        const newRentRaw = renewalNewRent.value.trim();
+        const body = {
+            new_end_date: renewalNewEndDate.value,
+            new_monthly_rent: newRentRaw === "" ? undefined : Number(newRentRaw),
+            new_payment_cycle_months: Number(renewalNewCycle.value),
+            note: renewalNote.value.trim() || null,
+        };
+        await apiRequest("/contracts/" + renewalContractId.value + "/renew", {
+            method: "POST",
+            body: JSON.stringify(body),
+        });
+        renewalDialog.close();
+        showNotice("Gia hạn hợp đồng thành công.", "success");
+        await loadContracts(true);
+    } catch (requestError) {
+        error.textContent = requestError.message;
+    } finally {
+        button.disabled = false;
+    }
+});
+
 function openDepositDialog(contract) {
     const form = document.getElementById("depositForm");
     form.reset();
@@ -283,6 +411,10 @@ function renderContracts(items) {
         } else {
             actions.append(createElement("span", "muted-action", "\u0110\u00e3 ho\u00e0n t\u1ea5t"));
         }
+        if (contract.status === "active") {
+            actions.append(actionButton("Gia hạn hợp đồng", () => openRenewalDialog(contract)));
+        }
+        actions.append(actionButton("Lịch sử gia hạn", () => openRenewalHistoryDialog(contract.id)));
         actionsCell.append(actions);
         row.append(
             createElement("td", "", contract.property_name),
@@ -594,6 +726,9 @@ depositForm.addEventListener("submit", async event => {
 });
 document.getElementById("closeDepositDialogBtn").addEventListener("click", () => depositDialog.close());
 document.getElementById("cancelDepositBtn").addEventListener("click", () => depositDialog.close());
+document.getElementById("closeRenewalDialogBtn").addEventListener("click", () => renewalDialog.close());
+document.getElementById("cancelRenewalBtn").addEventListener("click", () => renewalDialog.close());
+document.getElementById("closeRenewalHistoryDialogBtn").addEventListener("click", () => renewalHistoryDialog.close());
 logoutBtn.addEventListener("click", disconnect);
 
 if (!accessToken) {
